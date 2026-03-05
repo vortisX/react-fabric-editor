@@ -1,4 +1,4 @@
-import { Canvas, FabricObject, IText } from "fabric";
+import { Canvas, FabricObject, Textbox } from "fabric";
 import type { DesignDocument, TextLayer } from "../types/schema";
 // 1. 直接引入 Zustand 大脑的实体
 import { useEditorStore } from "../store/useEditorStore";
@@ -119,14 +119,26 @@ export class EditorEngine {
   public addTextLayer(layer: TextLayer) {
     if (!this.canvas) return;
 
-    const textNode = new IText(layer.content, {
+    // 核心质变：使用 Textbox 替代 IText，它拥有真正的“段落边界”概念
+    const textNode = new Textbox(layer.content, {
       left: layer.x,
       top: layer.y,
+      width: layer.width, // 1. 极其重要：赋予它初始的固定外框宽度
+      angle: layer.rotation,
       fill: layer.fill,
       fontSize: layer.fontSize,
       fontFamily: layer.fontFamily,
-      fontWeight: layer.fontWeight as number | string,
-      textAlign: layer.textAlign,
+      fontWeight: layer.fontWeight,
+      textAlign: layer.textAlign, // 2. 现在框有宽度了，textAlign 终于能生效了！
+      lineHeight: layer.lineHeight ?? 1.2,
+      charSpacing: layer.letterSpacing ?? 0,
+      fontStyle: layer.fontStyle ?? "normal",
+      underline: layer.underline ?? false,
+      textBackgroundColor: layer.textBackgroundColor ?? "",
+      stroke: layer.stroke ?? "",
+      strokeWidth: layer.strokeWidth ?? 0,
+      strokeDashArray: layer.strokeDashArray,
+      splitByGrapheme: true, // 3. 亚洲语言排版神器：允许中文字符在中途自动换行
     });
 
     textNode.set("id", layer.id);

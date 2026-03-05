@@ -34,6 +34,14 @@ export interface TextLayer extends BaseLayer {
   textAlign: "left" | "center" | "right"; // 对齐方式
   lineHeight?: number; // 行高
   letterSpacing?: number; // 字间距
+
+  // === 👇 严格追加的高级排版属性 👇 ===
+  fontStyle?: "normal" | "italic"; // 斜体
+  underline?: boolean; // 下划线
+  textBackgroundColor?: string; // 文字背景色
+  stroke?: string; // 描边颜色
+  strokeWidth?: number; // 描边粗细
+  strokeDashArray?: number[]; // 虚线数组
 }
 /**
  * 图片裁剪数据 (预留扩展)
