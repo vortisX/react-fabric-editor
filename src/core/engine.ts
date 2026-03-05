@@ -135,7 +135,22 @@ export class EditorEngine {
     }
     this.canvas.renderAll();
   }
+  // 新增方法：从外部命令 Fabric 选中某个特定的图层
+  public selectLayer(layerId: string) {
+    if (!this.canvas) return;
 
+    // 找到对应 ID 的图层
+    const target = this.canvas
+      .getObjects()
+      .find((obj) => (obj as CustomFabricObject).id === layerId);
+
+    if (target) {
+      this.canvas.setActiveObject(target);
+    } else {
+      this.canvas.discardActiveObject(); // 找不到就取消选中
+    }
+    this.canvas.renderAll();
+  }
   public dispose() {
     if (this.canvas) {
       // 销毁时清理事件监听，防止内存泄漏
