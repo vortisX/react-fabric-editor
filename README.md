@@ -1,73 +1,19 @@
-# React + TypeScript + Vite
+# DesignX - 在线全场景视觉设计引擎
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 项目定位
+DesignX 是一款对标“稿定设计 / Canva”的全平台商业视觉设计工具。致力于通过拖拽式极简操作与 AI 辅助，降低专业设计门槛。
 
-Currently, two official plugins are available:
+## 当前开发阶段：MVP (最小可行性产品)
+- **切入场景**：电子请柬（婚礼、宝宝宴等）
+- **核心目标**：跑通底层的“万物皆 JSON”数据规范，以及基于 Fabric.js 的前端 Canvas 渲染与交互闭环。
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 技术栈 (MVP Web 端)
+- **框架**：React 18 + Vite
+- **语言**：TypeScript (严格模式)
+- **图形引擎**：Fabric.js
+- **状态管理**：Zustand
+- **样式方案**：Tailwind CSS
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 架构原则
+1. **绝对的数据驱动**：UI 层与渲染引擎严格解耦，所有状态以 JSON 数据字典（Store）为唯一事实来源。
+2. **面向对象封装**：图形引擎（Engine）与各种图层（Layer Elements）采用类与继承模式管理，防止代码腐化。
