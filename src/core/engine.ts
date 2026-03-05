@@ -122,11 +122,20 @@ export class EditorEngine {
     const textNode = new IText(layer.content, {
       left: layer.x,
       top: layer.y,
+      angle: layer.rotation, // 业务 rotation -> Fabric angle
       fill: layer.fill,
       fontSize: layer.fontSize,
       fontFamily: layer.fontFamily,
-      fontWeight: layer.fontWeight as number | string,
+      fontWeight: layer.fontWeight,
       textAlign: layer.textAlign,
+      lineHeight: layer.lineHeight ?? 1.2,
+      charSpacing: layer.letterSpacing ?? 0, // 业务 letterSpacing -> Fabric charSpacing
+      fontStyle: layer.fontStyle ?? "normal",
+      underline: layer.underline ?? false,
+      textBackgroundColor: layer.textBackgroundColor ?? "",
+      stroke: layer.stroke ?? "",
+      strokeWidth: layer.strokeWidth ?? 0,
+      strokeDashArray: layer.strokeDashArray,
     });
 
     textNode.set("id", layer.id);
