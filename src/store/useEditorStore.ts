@@ -1,67 +1,72 @@
-import { create } from "zustand";
-import type { DesignDocument, Layer, Page } from "../types/schema";
+import { create } from 'zustand';
+import type { DesignDocument, Layer } from '../types/schema';
 
+// 定义 Store 的类型接口
 interface EditorState {
-  document: DesignDocument | null;
-  activePageId: string | null;
-  selectedLayerIds: string[];
+  // === 数据状态 (State) ===
+  document: DesignDocument | null;    // 当前编辑的文档核心数据
+  activeLayerId: string | null;       // 当前选中的图层 ID
 
-  // Actions
-  setDocument: (doc: DesignDocument) => void;
-  setActivePage: (pageId: string) => void;
-  setSelectedLayers: (ids: string[]) => void;
-  updateLayer: (pageId: string, layer: Layer) => void;
-  addLayer: (pageId: string, layer: Layer) => void;
-  removeLayer: (pageId: string, layerId: string) => void;
+  // === 操作方法 (Actions) ===
+  initDocument: (doc: DesignDocument) => void;
+  setActiveLayer: (id: string | null) => void;
+  updateLayer: (pageId: string, layerId: string, payload: Partial<Layer>) => void;
 }
 
+// 预设一个空白的初始模板 (手机竖屏比例)
+const initialDoc: DesignDocument = {
+  version: '1.0.0',
+  workId: 'draft_001',
+  title: '未命名设计',
+  global: {
+    width: 375,
+    height: 667,
+    unit: 'px',
+    dpi: 72
+  },
+  pages: [
+    {
+      pageId: 'page_01',
+      name: '第 1 页',
+      background: { type: 'color', value: '#F3F4F6' },
+      layers: [] // 初始没有图层
+    }
+  ]
+};
+
+// 创建并导出全局 Store
 export const useEditorStore = create<EditorState>((set) => ({
-  document: null,
-  activePageId: null,
-  selectedLayerIds: [],
+  document: initialDoc,
+  activeLayerId: null,
 
-  setDocument: (doc) =>
-    set({ document: doc, activePageId: doc.pages[0]?.pageId ?? null }),
+  // 1. 初始化/覆盖整个文档 (用于从后端加载数据)
+  initDocument: (doc) => set({ document: doc }),
 
-  setActivePage: (pageId) => set({ activePageId: pageId }),
+  // 2. 设置当前选中的图层
+  setActiveLayer: (id) => set({ activeLayerId: id }),
 
-  setSelectedLayers: (ids) => set({ selectedLayerIds: ids }),
+  // 3. 核心：更新某个图层的属性 (严格的不可变数据更新)
+  updateLayer: (pageId, layerId, payload) => set((state) => {
+    if (!state.document) return state;
 
-  updateLayer: (pageId, updatedLayer) =>
-    set((state) => {
-      if (!state.document) return state;
-      const pages = state.document.pages.map((page: Page) => {
-        if (page.pageId !== pageId) return page;
-        return {
-          ...page,
-          layers: page.layers.map((l: Layer) =>
-            l.id === updatedLayer.id ? updatedLayer : l
-          ),
-        };
-      });
-      return { document: { ...state.document, pages } };
-    }),
+    // 遍历 pages，找到目标 page
+    const newPages = state.document.pages.map((page) => {
+      if (page.pageId !== pageId) return page;
+      
+      // 在目标 page 中遍历 layers，找到目标 layer 并合并新属性
+      return {
+        ...page,
+        layers: page.layers.map((layer) => 
+          layer.id === layerId ? { ...layer, ...payload } as Layer : layer
+        )
+      };
+    });
 
-  addLayer: (pageId, newLayer) =>
-    set((state) => {
-      if (!state.document) return state;
-      const pages = state.document.pages.map((page: Page) => {
-        if (page.pageId !== pageId) return page;
-        return { ...page, layers: [...page.layers, newLayer] };
-      });
-      return { document: { ...state.document, pages } };
-    }),
-
-  removeLayer: (pageId, layerId) =>
-    set((state) => {
-      if (!state.document) return state;
-      const pages = state.document.pages.map((page: Page) => {
-        if (page.pageId !== pageId) return page;
-        return {
-          ...page,
-          layers: page.layers.filter((l: Layer) => l.id !== layerId),
-        };
-      });
-      return { document: { ...state.document, pages } };
-    }),
+    return {
+      document: {
+        ...state.document,
+        pages: newPages
+      }
+    };
+  })
 }));
