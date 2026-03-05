@@ -1,33 +1,25 @@
-// src/views/Editor/components/Workspace.tsx
-import { useEffect, useRef } from "react";
-import { useEditorStore } from "../../../store/useEditorStore";
-import { EditorEngine } from "../../../core/engine";
+import { useEffect, useRef } from 'react';
+import { useEditorStore } from '../../../store/useEditorStore';
+import { engineInstance } from '../../../core/engine';
 
 export default function Workspace() {
   const document = useEditorStore((state) => state.document);
-  // 使用 useRef 保持 engine 实例在整个组件生命周期内唯一，不参与 React 渲染流
-  const engineRef = useRef<EditorEngine | null>(null);
+  // 1. 创建一个指向 Canvas DOM 的引用
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    if (!document) return;
+    // 2. 确保数据和 DOM 节点都已经准备就绪
+    if (!document || !canvasRef.current) return;
 
-    // 1. 实例化引擎，绑定到 <canvas id="designx-canvas">
-    const engine = new EditorEngine("designx-canvas");
-    engineRef.current = engine;
+    // 3. 将真实节点亲手交给引擎！
+    engineInstance.init(canvasRef.current, document.global.width, document.global.height);
+    engineInstance.loadDocument(document);
 
-    // 2. 初始化宽高
-    engine.init(document.global.width, document.global.height);
-
-    // 3. 将 Store 里的 JSON 数据喂给引擎去渲染
-    engine.loadDocument(document);
-
-    // 4. 清理函数：组件卸载时销毁实例，防止内存泄漏
     return () => {
-      engine.dispose();
-      engineRef.current = null;
+      engineInstance.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // 仅在初次挂载时执行一次！切勿把 document 放进依赖数组，否则敲个字画布都会重置
+  }, []);
 
   if (!document) return null;
 
@@ -35,15 +27,10 @@ export default function Workspace() {
     <main className="flex-1 relative flex items-center justify-center overflow-auto">
       <div
         className="bg-white shadow-xl relative transition-transform origin-center"
-        style={{
-          width: `${document.global.width}px`,
-          height: `${document.global.height}px`,
-        }}
+        style={{ width: `${document.global.width}px`, height: `${document.global.height}px` }}
       >
-        <canvas
-          id="designx-canvas"
-          className="absolute top-0 left-0 w-full h-full"
-        />
+        {/* 4. 绑定 ref，抛弃不可靠的 id */}
+        <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" />
       </div>
     </main>
   );

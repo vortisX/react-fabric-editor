@@ -1,7 +1,44 @@
+// src/views/Editor/components/LeftPanel.tsx
 import { Tooltip } from 'antd';
 import { AppstoreOutlined, FontSizeOutlined, PictureOutlined } from '@ant-design/icons';
+import { useEditorStore } from '../../../store/useEditorStore';
+import { engineInstance } from '../../../core/engine';
+import type { TextLayer } from '../../../types/schema';
 
 export default function LeftPanel() {
+  const addLayer = useEditorStore((state) => state.addLayer);
+
+  // 点击添加文字的核心逻辑
+  const handleAddText = () => {
+    // 增加探针 1：确认按钮确实被点到了
+    console.log('[Debug] 按钮被点击，准备添加文字...');
+    const newTextLayer: TextLayer = {
+      id: `layer_text_${Date.now()}`,
+      name: '双击修改文字',
+      type: 'text',
+      x: 100,
+      y: 100,
+      width: 200,
+      height: 50,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      lockMovement: false,
+      content: '双击修改文字',
+      fontFamily: 'Arial',
+      fontSize: 36,
+      fontWeight: 'normal',
+      fill: '#333333',
+      textAlign: 'left'
+    };
+
+    addLayer('page_01', newTextLayer);
+
+    // 增加探针 2：检查引擎状态
+    console.log('[Debug] 当前引擎的 canvas 状态:', engineInstance.canvas);
+
+    engineInstance.addTextLayer(newTextLayer);
+  };
   return (
     <>
       <aside className="w-14 bg-white border-r border-gray-200 flex flex-col items-center py-4 gap-4 shrink-0 z-10">
@@ -10,11 +47,17 @@ export default function LeftPanel() {
             <AppstoreOutlined />
           </div>
         </Tooltip>
+
+        {/* 重点看这里：绑定点击事件 onClick={handleAddText} */}
         <Tooltip title="添加文字" placement="right">
-          <div className="w-10 h-10 rounded-md text-gray-500 hover:bg-gray-100 flex items-center justify-center text-lg cursor-pointer transition-colors">
+          <div
+            onClick={handleAddText}
+            className="w-10 h-10 rounded-md text-gray-500 hover:bg-gray-100 flex items-center justify-center text-lg cursor-pointer transition-colors"
+          >
             <FontSizeOutlined />
           </div>
         </Tooltip>
+
         <Tooltip title="添加图片" placement="right">
           <div className="w-10 h-10 rounded-md text-gray-500 hover:bg-gray-100 flex items-center justify-center text-lg cursor-pointer transition-colors">
             <PictureOutlined />
