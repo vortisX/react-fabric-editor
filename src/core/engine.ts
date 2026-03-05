@@ -1,4 +1,3 @@
-// src/core/engine.ts
 // 1. 采用最新版 ESM 按需导入规范
 import { Canvas, FabricObject } from "fabric";
 import type { DesignDocument } from "../types/schema";
