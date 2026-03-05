@@ -1,10 +1,12 @@
+// src/views/Editor/index.tsx
 import { useEditorStore } from '../../store/useEditorStore';
+// 引入 Antd 组件和图标
+import { Button, Tooltip, Tabs } from 'antd';
+import { UndoOutlined, RedoOutlined, DownloadOutlined, PlusOutlined, PictureOutlined } from '@ant-design/icons';
 
 export default function EditorView() {
-  // 从大脑袋 (Store) 中读取当前文档数据
   const document = useEditorStore((state) => state.document);
 
-  // 防御性编程：如果没有数据，展示加载状态
   if (!document) {
     return <div className="h-screen flex items-center justify-center">加载中...</div>;
   }
@@ -13,21 +15,27 @@ export default function EditorView() {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-gray-50 overflow-hidden text-gray-800">
-      {/* 1. 顶部导航栏 (Header) */}
+      {/* 1. 顶部导航栏 */}
       <header className="h-14 bg-white border-b flex items-center px-6 justify-between shrink-0 select-none">
-        {/* 这里动态读取 Store 里的标题 */}
         <div className="font-bold text-lg tracking-wide">{title} - DesignX</div>
         <div className="flex gap-4 items-center">
-          <button className="text-sm text-gray-500 hover:text-gray-900">撤销</button>
-          <button className="text-sm text-gray-500 hover:text-gray-900">重做</button>
+          {/* 使用 Antd 的 Tooltip 和 Button 替换原生按钮 */}
+          <Tooltip title="撤销 (Ctrl+Z)">
+            <Button type="text" icon={<UndoOutlined />} />
+          </Tooltip>
+          <Tooltip title="重做 (Ctrl+Y)">
+            <Button type="text" icon={<RedoOutlined />} />
+          </Tooltip>
+          
           <div className="w-px h-4 bg-gray-300 mx-2"></div>
-          <button className="px-5 py-1.5 bg-blue-600 text-white rounded shadow-sm text-sm hover:bg-blue-700 transition-colors">
+          
+          <Button type="primary" icon={<DownloadOutlined />}>
             导出 / 保存
-          </button>
+          </Button>
         </div>
       </header>
 
-      {/* 2. 主体工作区 (Workspace) */}
+      {/* 2. 主体工作区 */}
       <div className="flex-1 flex overflow-hidden">
         
         {/* 左侧：物料与组件面板 */}
@@ -37,38 +45,53 @@ export default function EditorView() {
           </div>
           <div className="flex-1 p-4 overflow-y-auto">
             <div className="grid grid-cols-2 gap-3">
-              <div className="h-24 bg-gray-50 rounded border border-gray-200 flex items-center justify-center text-sm text-gray-500 hover:border-blue-400 hover:text-blue-500 cursor-pointer transition-colors">
-                + 添加文字
-              </div>
-              <div className="h-24 bg-gray-50 rounded border border-gray-200 flex items-center justify-center text-sm text-gray-500 hover:border-blue-400 hover:text-blue-500 cursor-pointer transition-colors">
-                + 添加图片
-              </div>
+              {/* 用 Antd 的 Button 规范化左侧添加物料的交互 */}
+              <Button className="h-24 flex flex-col items-center justify-center gap-2" type="dashed">
+                <PlusOutlined className="text-xl text-gray-400" />
+                <span className="text-gray-500">添加文字</span>
+              </Button>
+              <Button className="h-24 flex flex-col items-center justify-center gap-2" type="dashed">
+                <PictureOutlined className="text-xl text-gray-400" />
+                <span className="text-gray-500">添加图片</span>
+              </Button>
             </div>
           </div>
         </aside>
 
-        {/* 中间：画布容器 (读取 Store 里的宽高) */}
+        {/* 中间：画布容器 */}
         <main className="flex-1 bg-gray-100 relative flex items-center justify-center overflow-auto shadow-inner">
           <div 
             className="bg-white shadow-md relative transition-transform origin-center" 
-            style={{ 
-              width: `${global.width}px`, 
-              height: `${global.height}px` 
-            }}
+            style={{ width: `${global.width}px`, height: `${global.height}px` }}
           >
-            {/* 这里是留给 Fabric.js 的最终坑位 */}
             <canvas id="designx-canvas" className="absolute top-0 left-0 w-full h-full" />
           </div>
         </main>
 
         {/* 右侧：属性面板 */}
         <aside className="w-80 bg-white border-l flex flex-col shrink-0 z-10">
-          <div className="h-12 border-b flex items-center px-4 font-medium text-gray-700 select-none">
-            属性配置
-          </div>
-          <div className="flex-1 p-6 overflow-y-auto flex flex-col items-center justify-center text-sm text-gray-400 text-center">
-            <p>请在画布中选中元素<br/>以进行编辑</p>
-          </div>
+          {/* 使用 Antd 的 Tabs 组件，未来可以无缝切换“页面设置”和“图层设置” */}
+          <Tabs 
+            defaultActiveKey="1" 
+            centered 
+            className="w-full h-full custom-tabs"
+            items={[
+              {
+                key: '1',
+                label: '图层属性',
+                children: (
+                  <div className="p-6 text-center text-gray-400 mt-10">
+                    请在画布中选中元素<br/>以进行编辑
+                  </div>
+                ),
+              },
+              {
+                key: '2',
+                label: '页面设置',
+                children: <div className="p-6 text-center text-gray-400">全局背景与尺寸</div>,
+              },
+            ]}
+          />
         </aside>
 
       </div>
