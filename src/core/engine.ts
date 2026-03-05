@@ -8,8 +8,8 @@ interface CustomFabricObject extends FabricObject {
   id?: string;
 }
 interface FabricSelectionEvent {
-    selected?: CustomFabricObject[];
-  }
+  selected?: CustomFabricObject[];
+}
 export class EditorEngine {
   public canvas: Canvas | null = null;
 
@@ -108,7 +108,20 @@ export class EditorEngine {
     this.canvas.setActiveObject(textNode);
     this.canvas.renderAll();
   }
+  // 新增方法：根据 ID 精确修改画布中某个图层的属性
+  public updateLayerProps(layerId: string, props: Partial<CustomFabricObject>) {
+    if (!this.canvas) return;
 
+    // 遍历当前画布上的所有对象，找到对应 ID 的那个
+    const target = this.canvas
+      .getObjects()
+      .find((obj) => (obj as CustomFabricObject).id === layerId);
+
+    if (target) {
+      target.set(props);
+      this.canvas.renderAll(); // 重新渲染画布
+    }
+  }
   public loadDocument(doc: DesignDocument) {
     if (!this.canvas) return;
     this.canvas.clear();
