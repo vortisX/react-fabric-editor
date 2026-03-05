@@ -10,6 +10,13 @@ interface CustomFabricObject extends FabricObject {
 interface FabricSelectionEvent {
   selected?: CustomFabricObject[];
 }
+interface FabricTextEvent {
+  target?: CustomFabricObject & {
+    text?: string;
+    width?: number;
+    height?: number;
+  };
+}
 export class EditorEngine {
   public canvas: Canvas | null = null;
 
@@ -63,17 +70,37 @@ export class EditorEngine {
       if (!target || !target.id) return;
 
       const state = useEditorStore.getState();
-      const currentPageId = state.document?.pages[0]?.pageId; // MVP 阶段默认第一页
+      const currentPageId = state.document?.pages[0]?.pageId;
 
       if (currentPageId) {
-        // 反向将最新的坐标和角度写入 Zustand
         state.updateLayer(currentPageId, target.id, {
           x: target.left ?? 0,
           y: target.top ?? 0,
           rotation: target.angle ?? 0,
         });
         console.log(
-          `[Engine] 图层 ${target.id} 坐标已同步至大脑: X:${target.left}, Y:${target.top}`,
+          `[Engine] 图层 ${target.id} 坐标同步: X:${target.left}, Y:${target.top}`,
+        );
+      }
+    });
+
+    // D. 监听文字内容的实时修改 (核心新增)
+    this.canvas.on("text:changed", (e: FabricTextEvent) => {
+      const target = e.target;
+      if (!target || !target.id || target.text === undefined) return;
+
+      const state = useEditorStore.getState();
+      const currentPageId = state.document?.pages[0]?.pageId;
+
+      if (currentPageId) {
+        // 同步最新的文字内容，以及文字改变后被撑大的全新宽高度
+        state.updateLayer(currentPageId, target.id, {
+          content: target.text,
+          width: target.width ?? 0,
+          height: target.height ?? 0,
+        });
+        console.log(
+          `[Engine] 图层 ${target.id} 内容同步: "${target.text}" (W:${target.width})`,
         );
       }
     });
@@ -122,6 +149,7 @@ export class EditorEngine {
       this.canvas.renderAll(); // 重新渲染画布
     }
   }
+
   public loadDocument(doc: DesignDocument) {
     if (!this.canvas) return;
     this.canvas.clear();
