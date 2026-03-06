@@ -1,4 +1,4 @@
-import { FabricObject, Textbox, Control, controlsUtils } from "fabric";
+import { FabricObject, Textbox, Control } from "fabric";
 import { SUPPORTED_FONTS } from "../constants/fonts";
 
 // 定义控制点渲染函数的标准签名
@@ -65,32 +65,6 @@ export const setupGlobalUI = (): void => {
 // ==========================================
 // 🛠️ 胶囊画笔绘制逻辑
 // ==========================================
-const renderHorizontalPill: ControlRenderFunction = (
-  ctx,
-  left,
-  top,
-  styleOverride,
-  fabricObj,
-) => {
-  ctx.save();
-  ctx.translate(left, top);
-  ctx.fillStyle =
-    (styleOverride?.cornerColor as string) ||
-    fabricObj.cornerColor ||
-    "#ffffff";
-  ctx.strokeStyle =
-    (styleOverride?.cornerStrokeColor as string) ||
-    fabricObj.cornerStrokeColor ||
-    "#18a0fb";
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  if (ctx.roundRect) ctx.roundRect(-7, -3, 14, 6, 3);
-  else ctx.rect(-7, -3, 14, 6);
-  ctx.fill();
-  ctx.stroke();
-  ctx.restore();
-};
-
 const renderVerticalPill: ControlRenderFunction = (
   ctx,
   left,
@@ -127,23 +101,9 @@ export const applyCustomControls = (obj: FabricObject): void => {
   // 1. 隐藏旋转天线
   if (controls.mtr) controls.mtr.visible = false;
 
-  // 2. 恢复上下拉伸功能 (Textbox 默认禁用了这个)
-  // 在 v7 中，我们可以直接通过 controlsUtils 获取标准的缩放处理器
-  if (controls.mt) {
-    controls.mt.actionHandler = controlsUtils.scalingYOrSkewingX;
-    if (!controls.mt._isEnhanced) {
-      controls.mt.render = renderHorizontalPill;
-      controls.mt._isEnhanced = true;
-    }
-  }
-
-  if (controls.mb) {
-    controls.mb.actionHandler = controlsUtils.scalingYOrSkewingX;
-    if (!controls.mb._isEnhanced) {
-      controls.mb.render = renderHorizontalPill;
-      controls.mb._isEnhanced = true;
-    }
-  }
+  // 2. 隐藏上下控制点（mt/mb），不支持上下拉伸
+  if (controls.mt) controls.mt.visible = false;
+  if (controls.mb) controls.mb.visible = false;
 
   // 3. 左右胶囊 UI
   if (controls.ml && !controls.ml._isEnhanced) {

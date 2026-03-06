@@ -69,13 +69,11 @@ export class EditorEngine {
       const isSideX = ['ml', 'mr'].includes(corner);
 
       if (isCorner) {
-        // 四角拖动：等比缩放框体 + 字体大小
-        const scale = Math.max(scaleX, scaleY);
-        const newFontSize = Math.max(Math.round(oldFontSize * scale), 1);
-        const minWidth = newFontSize;
-        const minHeight = newFontSize * lineHeight;
-        const newWidth = Math.max((target.width ?? 0) * scaleX, minWidth);
-        const newHeight = Math.max((target.height ?? 0) * scaleY, minHeight);
+        // 四角拖动：等比缩放框体 + 字体大小（使用均匀缩放比，不取整，确保丝滑）
+        const uniformScale = (scaleX + scaleY) / 2;
+        const newFontSize = Math.max(oldFontSize * uniformScale, 1);
+        const newWidth = Math.max((target.width ?? 0) * uniformScale, newFontSize);
+        const newHeight = Math.max((target.height ?? 0) * uniformScale, newFontSize * lineHeight);
 
         target.set({
           fontSize: newFontSize,
@@ -104,7 +102,7 @@ export class EditorEngine {
           _manualHeight: autoHeight,
         });
       } else {
-        // 上下拖动(mt/mb)：只改高度
+        // 其他控制点：通用缩放
         const minWidth = oldFontSize;
         const minHeight = oldFontSize * lineHeight;
         const newWidth = Math.max((target.width ?? 0) * scaleX, minWidth);
