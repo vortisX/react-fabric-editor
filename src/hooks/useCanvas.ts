@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { editorEngine } from "../core/engine";
+import { editorEngine } from "../core/Engine";
 
 /**
  * useCanvas — React 与 EditorEngine 沟通的唯一桥梁

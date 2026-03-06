@@ -5,7 +5,7 @@ import {
   AlignLeftOutlined, AlignCenterOutlined, AlignRightOutlined, MenuOutlined
 } from '@ant-design/icons';
 import { useEditorStore } from '../../../store/useEditorStore';
-import { engineInstance } from '../../../core/engine';
+import { engineInstance } from '../../../core/Engine';
 import { SUPPORTED_FONTS } from '../../../constants/fonts'; 
 import type { TextLayer } from '../../../types/schema';
 import type { Color } from 'antd/es/color-picker';
@@ -125,8 +125,14 @@ export default function RightPanel() {
                     <div className="grid grid-cols-2 gap-2">
                       <DesignNumberInput label="水平" value={Math.round(activeLayer.x)} onChange={(val) => handlePropChange('x', val ?? 0)} />
                       <DesignNumberInput label="垂直" value={Math.round(activeLayer.y)} onChange={(val) => handlePropChange('y', val ?? 0)} />
-                      <DesignNumberInput label="宽度" value={Math.round(activeLayer.width)} onChange={(val) => handlePropChange('width', Math.max(val ?? 20, 20))} />
-                      <DesignNumberInput label="高度" value={Math.round(activeLayer.height)} onChange={(val) => handlePropChange('height', Math.max(val ?? 20, 20))} />
+                      <DesignNumberInput label="宽度" value={Math.round(activeLayer.width)} onChange={(val) => {
+                        const minW = isTextLayer ? textLayer.fontSize : 20;
+                        handlePropChange('width', Math.max(val ?? minW, minW));
+                      }} />
+                      <DesignNumberInput label="高度" value={Math.round(activeLayer.height)} onChange={(val) => {
+                        const minH = isTextLayer ? textLayer.fontSize * (textLayer.lineHeight ?? 1.2) : 20;
+                        handlePropChange('height', Math.max(val ?? minH, minH));
+                      }} />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <DesignNumberInput label="旋转" value={Math.round(activeLayer.rotation)} onChange={(val) => handlePropChange('rotation', val ?? 0)} />

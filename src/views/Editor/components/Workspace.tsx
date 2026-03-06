@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useEditorStore } from '../../../store/useEditorStore';
-import { engineInstance } from '../../../core/engine';
+import { engineInstance } from '../../../core/Engine';
 
 export default function Workspace() {
   const document = useEditorStore((state) => state.document);

@@ -1,7 +1,7 @@
 import { Tooltip } from 'antd';
 import { AppstoreOutlined, FontSizeOutlined, PictureOutlined } from '@ant-design/icons';
 import { useEditorStore } from '../../../store/useEditorStore';
-import { engineInstance } from '../../../core/engine';
+import { engineInstance } from '../../../core/Engine';
 import type { TextLayer } from '../../../types/schema';
 
 export default function LeftPanel() {

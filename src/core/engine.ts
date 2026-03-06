@@ -54,8 +54,13 @@ export class EditorEngine {
       const scaleX = target.scaleX ?? 1;
       const scaleY = target.scaleY ?? 1;
 
-      const newWidth = Math.max((target.width ?? 0) * scaleX, 20);
-      const newHeight = Math.max((target.height ?? 0) * scaleY, 20);
+      const fontSize = target.fontSize ?? 12;
+      const lineHeight = target.lineHeight ?? 1.2;
+      const minWidth = fontSize;
+      const minHeight = fontSize * lineHeight;
+
+      const newWidth = Math.max((target.width ?? 0) * scaleX, minWidth);
+      const newHeight = Math.max((target.height ?? 0) * scaleY, minHeight);
 
       target.set({
         width: newWidth,

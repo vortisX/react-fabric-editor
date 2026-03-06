@@ -83,7 +83,13 @@ export const createCustomTextbox = (layer: TextLayer): CustomTextbox => {
       ctx.restore();
     }
 
-    originalRender(ctx); 
+    // 裁剪文字渲染区域，防止文字超出边框
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(-w / 2, -h / 2, w, h);
+    ctx.clip();
+    originalRender(ctx);
+    ctx.restore(); 
     
     const strokeColor = this.boxStroke;
     const strokeWidth = this.boxStrokeWidth;
