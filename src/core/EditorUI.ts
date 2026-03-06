@@ -19,19 +19,30 @@ interface EnhancedControl extends Control {
 // ==========================================
 export const setupGlobalUI = (): void => {
   const loadLocalFonts = async (): Promise<void> => {
+    // 收集已注册的字体族名，用于判断是否需要重复加载
+    const registeredFamilies = new Set<string>();
+    document.fonts.forEach((face) => registeredFamilies.add(face.family));
+
     for (const font of SUPPORTED_FONTS) {
       if (font.path) {
+        if (registeredFamilies.has(font.value)) {
+          console.log(`[FontLoader] 已跳过 (已注册): ${font.label} (${font.value})`);
+          continue;
+        }
         try {
-          const isLoaded = document.fonts.check(`12px "${font.value}"`);
-          if (isLoaded) continue;
+          console.log(`[FontLoader] 开始加载: ${font.label} (${font.value}) <- ${font.path}`);
           const fontFace = new FontFace(font.value, `url(${font.path})`);
           const loadedFace = await fontFace.load();
           document.fonts.add(loadedFace);
+          console.log(`[FontLoader] ✅ 挂载成功: ${font.label} (${font.value})`);
         } catch (err) {
-          console.error(`[FontLoader] 加载失败: ${font.label}`, err);
+          console.error(`[FontLoader] ❌ 加载失败: ${font.label} (${font.value})`, err);
         }
+      } else {
+        console.log(`[FontLoader] 系统字体，无需加载: ${font.label} (${font.value})`);
       }
     }
+    console.log('[FontLoader] 全部字体处理完毕，已加载数量:', [...document.fonts].length);
   };
 
   loadLocalFonts();

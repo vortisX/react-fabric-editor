@@ -17,26 +17,8 @@ export const SUPPORTED_FONTS: FontOption[] = [
     path: "/fonts/ChillHuoFangSong.ttf",
   },
   {
-    label: "思源黑体",
-    value: "NotoSansSC",
-    path: "/fonts/NotoSansSC-Regular.otf",
+    label: "Aa狂派手书",
+    value: "AaKuangPaiShouShu-2",
+    path: "/fonts/AaKuangPaiShouShu-2.ttf",
   },
-  {
-    label: "思源宋体",
-    value: "NotoSerifSC",
-    path: "/fonts/NotoSerifSC-Regular.otf",
-  },
-  {
-    label: "阿里巴巴普惠体",
-    value: "AlibabaPuHuiTi",
-    path: "/fonts/Alibaba-PuHuiTi-Regular.ttf",
-  },
-  {
-    label: "得意黑",
-    value: "SmileySans",
-    path: "/fonts/SmileySans-Oblique.ttf",
-  },
-
-  // 3. 常用英文
-  { label: "Inter", value: "Inter", path: "/fonts/Inter-Regular.woff2" },
 ];

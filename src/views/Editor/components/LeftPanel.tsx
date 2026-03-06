@@ -25,7 +25,7 @@ export default function LeftPanel() {
       locked: false,
       lockMovement: false,
       content: '双击修改文字',
-      fontFamily: 'Arial',
+      fontFamily: 'AaKuangPaiShouShu-2',
       fontSize: 36,
       fontWeight: 'normal',
       fill: '#333333',

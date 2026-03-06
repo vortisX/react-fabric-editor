@@ -126,7 +126,10 @@ export class EditorEngine {
       
       target.set(finalProps);
 
-      if (props.text !== undefined || props.width !== undefined || props.height !== undefined || props.textAlign !== undefined) {
+      if (props.text !== undefined || props.width !== undefined || props.height !== undefined || props.textAlign !== undefined || props.fontFamily !== undefined) {
+        if (props.fontFamily !== undefined) {
+          console.log(`[Engine] 应用字体: ${props.fontFamily}，检查是否已加载:`, document.fonts.check(`12px "${props.fontFamily}"`) ? '✅ 已加载' : '❌ 未加载');
+        }
         if (target instanceof Textbox) {
           target.initDimensions(); 
         }
