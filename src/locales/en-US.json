@@ -1,0 +1,58 @@
+{
+  "header": {
+    "undo": "Undo (Ctrl+Z)",
+    "redo": "Redo (Ctrl+Y)",
+    "preview": "Preview",
+    "export": "Export"
+  },
+  "leftPanel": {
+    "layerManagement": "Layers",
+    "addText": "Add Text",
+    "addImage": "Add Image",
+    "layerTree": "Layers",
+    "emptyCanvas": "Canvas is empty",
+    "defaultTextContent": "Double-click to edit"
+  },
+  "rightPanel": {
+    "propertiesPanel": "Properties",
+    "selectLayer": "Select a layer",
+    "emptyText": "Empty text",
+    "propertiesConfig": "Properties",
+    "textPlaceholder": "Type here...",
+    "layout": "Layout",
+    "horizontal": "X",
+    "vertical": "Y",
+    "width": "W",
+    "height": "H",
+    "rotation": "Rotate",
+    "borderRadius": "Radius",
+    "typography": "Typography",
+    "fontWeightNormal": "Regular",
+    "fontWeightBold": "Bold",
+    "fontSize": "Size",
+    "lineHeight": "Line H",
+    "letterSpacing": "Spacing",
+    "justifyAlign": "Justify",
+    "colorFill": "Fill",
+    "textColor": "Text",
+    "backgroundColor": "BG",
+    "addBackground": "+ Add background",
+    "borderStyle": "Border",
+    "none": "None",
+    "strokeWidth": "Width",
+    "solid": "Solid",
+    "dashed": "Dashed",
+    "layerProperties": "Layer",
+    "opacity": "Opacity"
+  },
+  "editor": {
+    "loading": "Loading..."
+  },
+  "fonts": {
+    "systemDefault": "System Default",
+    "serif": "Serif",
+    "monospace": "Monospace",
+    "chillHuoFangSong": "Chill Huo FangSong",
+    "aaKuangPaiShouShu": "Aa KuangPai ShouShu"
+  }
+}

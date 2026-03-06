@@ -1,0 +1,58 @@
+{
+  "header": {
+    "undo": "되돌리기 (Ctrl+Z)",
+    "redo": "다시 실행 (Ctrl+Y)",
+    "preview": "미리보기",
+    "export": "내보내기"
+  },
+  "leftPanel": {
+    "layerManagement": "레이어 관리",
+    "addText": "텍스트 추가",
+    "addImage": "이미지 추가",
+    "layerTree": "레이어",
+    "emptyCanvas": "캔버스가 비어 있습니다",
+    "defaultTextContent": "더블클릭하여 편집"
+  },
+  "rightPanel": {
+    "propertiesPanel": "속성",
+    "selectLayer": "레이어를 선택하세요",
+    "emptyText": "빈 텍스트",
+    "propertiesConfig": "속성 설정",
+    "textPlaceholder": "여기에 텍스트 입력...",
+    "layout": "레이아웃",
+    "horizontal": "수평",
+    "vertical": "수직",
+    "width": "너비",
+    "height": "높이",
+    "rotation": "회전",
+    "borderRadius": "둥글기",
+    "typography": "타이포그래피",
+    "fontWeightNormal": "일반",
+    "fontWeightBold": "굵게",
+    "fontSize": "크기",
+    "lineHeight": "행간",
+    "letterSpacing": "자간",
+    "justifyAlign": "양쪽 정렬",
+    "colorFill": "색상 채우기",
+    "textColor": "텍스트",
+    "backgroundColor": "배경",
+    "addBackground": "+ 배경색 추가",
+    "borderStyle": "테두리",
+    "none": "없음",
+    "strokeWidth": "두께",
+    "solid": "실선",
+    "dashed": "점선",
+    "layerProperties": "레이어 속성",
+    "opacity": "불투명도"
+  },
+  "editor": {
+    "loading": "로딩 중..."
+  },
+  "fonts": {
+    "systemDefault": "시스템 기본",
+    "serif": "명조체",
+    "monospace": "고정폭",
+    "chillHuoFangSong": "寒蝉活仿宋",
+    "aaKuangPaiShouShu": "Aa狂派手書"
+  }
+}

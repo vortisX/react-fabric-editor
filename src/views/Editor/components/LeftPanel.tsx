@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Tooltip } from '../../../components/ui';
 import { GridIcon, TypeIcon, ImageIcon } from '../../../components/ui/Icons';
 import { useEditorStore } from '../../../store/useEditorStore';
@@ -5,6 +6,7 @@ import { engineInstance } from '../../../core/engine';
 import type { TextLayer } from '../../../types/schema';
 
 export default function LeftPanel() {
+  const { t } = useTranslation();
   const addLayer = useEditorStore((state) => state.addLayer);
   const document = useEditorStore((state) => state.document);
   const activeLayerId = useEditorStore((state) => state.activeLayerId);
@@ -13,7 +15,7 @@ export default function LeftPanel() {
   const handleAddText = () => {
     const newTextLayer: TextLayer = {
       id: `layer_text_${Date.now()}`,
-      name: '双击修改文字',
+      name: t('leftPanel.defaultTextContent'),
       type: 'text',
       x: 100,
       y: 100,
@@ -23,7 +25,7 @@ export default function LeftPanel() {
       opacity: 1,
       locked: false,
       lockMovement: false,
-      content: '双击修改文字',
+      content: t('leftPanel.defaultTextContent'),
       fontFamily: 'AaKuangPaiShouShu-2',
       fontSize: 36,
       fontWeight: 'normal',
@@ -46,12 +48,12 @@ export default function LeftPanel() {
     <>
       {/* 极窄工具栏 */}
       <aside className="w-14 bg-white border-r border-gray-200 flex flex-col items-center py-4 gap-4 shrink-0 z-10">
-        <Tooltip title="图层管理" placement="right">
+        <Tooltip title={t('leftPanel.layerManagement')} placement="right">
           <div className="w-10 h-10 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center text-lg cursor-pointer">
             <GridIcon />
           </div>
         </Tooltip>
-        <Tooltip title="添加文字" placement="right">
+        <Tooltip title={t('leftPanel.addText')} placement="right">
           <div 
             onClick={handleAddText}
             className="w-10 h-10 rounded-md text-gray-500 hover:bg-gray-100 flex items-center justify-center text-lg cursor-pointer transition-colors"
@@ -59,7 +61,7 @@ export default function LeftPanel() {
             <TypeIcon />
           </div>
         </Tooltip>
-        <Tooltip title="添加图片" placement="right">
+        <Tooltip title={t('leftPanel.addImage')} placement="right">
           <div className="w-10 h-10 rounded-md text-gray-500 hover:bg-gray-100 flex items-center justify-center text-lg cursor-pointer transition-colors">
             <ImageIcon />
           </div>
@@ -69,12 +71,12 @@ export default function LeftPanel() {
       {/* 图层树面板 */}
       <aside className="w-60 bg-white border-r border-gray-200 flex flex-col shrink-0 z-10 shadow-sm">
         <div className="h-10 border-b border-gray-100 flex items-center px-4 font-semibold text-gray-800">
-          图层树 (Layers)
+          {t('leftPanel.layerTree')}
         </div>
         <div className="flex-1 p-2 overflow-y-auto flex flex-col gap-1">
           {layers.length === 0 ? (
             <div className="text-center text-gray-400 mt-6 tracking-wide">
-              画布空空如也
+              {t('leftPanel.emptyCanvas')}
             </div>
           ) : (
             layers.map((layer) => {

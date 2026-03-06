@@ -1,0 +1,58 @@
+{
+  "header": {
+    "undo": "復原 (Ctrl+Z)",
+    "redo": "重做 (Ctrl+Y)",
+    "preview": "預覽",
+    "export": "匯出作品"
+  },
+  "leftPanel": {
+    "layerManagement": "圖層管理",
+    "addText": "新增文字",
+    "addImage": "新增圖片",
+    "layerTree": "圖層樹 (Layers)",
+    "emptyCanvas": "畫布空空如也",
+    "defaultTextContent": "雙擊修改文字"
+  },
+  "rightPanel": {
+    "propertiesPanel": "屬性面板",
+    "selectLayer": "請選擇一個圖層",
+    "emptyText": "空文本",
+    "propertiesConfig": "屬性配置",
+    "textPlaceholder": "在這裡輸入文字...",
+    "layout": "佈局",
+    "horizontal": "水平",
+    "vertical": "垂直",
+    "width": "寬度",
+    "height": "高度",
+    "rotation": "旋轉",
+    "borderRadius": "弧度",
+    "typography": "文字排版",
+    "fontWeightNormal": "常規",
+    "fontWeightBold": "加粗",
+    "fontSize": "字號",
+    "lineHeight": "行高",
+    "letterSpacing": "字距",
+    "justifyAlign": "兩端對齊",
+    "colorFill": "顏色填充",
+    "textColor": "文字",
+    "backgroundColor": "背景",
+    "addBackground": "+ 新增背景色",
+    "borderStyle": "邊框樣式",
+    "none": "無",
+    "strokeWidth": "粗細",
+    "solid": "實線",
+    "dashed": "虛線",
+    "layerProperties": "圖層屬性",
+    "opacity": "穿透"
+  },
+  "editor": {
+    "loading": "載入中..."
+  },
+  "fonts": {
+    "systemDefault": "系統預設",
+    "serif": "襯線體",
+    "monospace": "等寬體",
+    "chillHuoFangSong": "寒蟬活仿宋",
+    "aaKuangPaiShouShu": "Aa狂派手書"
+  }
+}

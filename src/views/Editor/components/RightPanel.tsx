@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Tabs, NumberInput, Select, Slider, ColorPicker, Button, Tooltip } from '../../../components/ui';
 import { TextArea } from '../../../components/ui/Input';
 import {
@@ -7,7 +8,7 @@ import {
 } from '../../../components/ui/Icons';
 import { useEditorStore } from '../../../store/useEditorStore';
 import { engineInstance } from '../../../core/engine';
-import { SUPPORTED_FONTS } from '../../../constants/fonts';
+import { getSupportedFonts } from '../../../constants/fonts';
 import type { TextLayer } from '../../../types/schema';
 
 interface DesignNumberInputProps {
@@ -45,14 +46,16 @@ export default function RightPanel() {
     (layer) => layer.id === activeLayerId
   );
 
+  const { t } = useTranslation();
+
   if (!activeLayer) {
     return (
       <aside className="w-[240px] bg-white border-l border-gray-200 flex flex-col shrink-0 z-10 shadow-sm">
         <div className="h-10 border-b border-gray-100 flex items-center px-4 font-semibold text-[11px] text-gray-800 tracking-wide">
-          属性面板
+          {t('rightPanel.propertiesPanel')}
         </div>
         <div className="flex-1 flex items-center justify-center text-gray-400 text-xs">
-          请选择一个图层
+          {t('rightPanel.selectLayer')}
         </div>
       </aside>
     );
@@ -66,7 +69,7 @@ export default function RightPanel() {
 
     if (key === 'content') {
       const textVal = (value as string) || '';
-      const newName = textVal.trim() || '空文本';
+      const newName = textVal.trim() || t('rightPanel.emptyText');
       updates.name = newName.length > 15 ? newName.slice(0, 15) + '...' : newName;
     }
 
@@ -98,7 +101,7 @@ export default function RightPanel() {
         items={[
           {
             key: '1',
-            label: <span className="text-[11px] font-medium">属性配置</span>,
+            label: <span className="text-[11px] font-medium">{t('rightPanel.propertiesConfig')}</span>,
             children: (
               <div className="overflow-y-auto h-[calc(100vh-40px)] pb-10 flex flex-col">
 
@@ -108,7 +111,7 @@ export default function RightPanel() {
                       <TextArea
                         value={textLayer.content}
                         onChange={(val) => handlePropChange('content', val)}
-                        placeholder="在这里输入文字..."
+                        placeholder={t('rightPanel.textPlaceholder')}
                         minRows={2}
                         maxRows={6}
                       />
@@ -117,24 +120,24 @@ export default function RightPanel() {
                 )}
 
                 <div className="flex flex-col border-b border-gray-100 pb-3">
-                  <SectionHeader title="布局" />
+                  <SectionHeader title={t('rightPanel.layout')} />
                   <div className="px-4 flex flex-col gap-2">
                     <div className="grid grid-cols-2 gap-2">
-                      <DesignNumberInput label="水平" value={Math.round(activeLayer.x)} onChange={(val) => handlePropChange('x', val ?? 0)} />
-                      <DesignNumberInput label="垂直" value={Math.round(activeLayer.y)} onChange={(val) => handlePropChange('y', val ?? 0)} />
-                      <DesignNumberInput label="宽度" value={Math.round(activeLayer.width)} onChange={(val) => {
+                      <DesignNumberInput label={t('rightPanel.horizontal')} value={Math.round(activeLayer.x)} onChange={(val) => handlePropChange('x', val ?? 0)} />
+                      <DesignNumberInput label={t('rightPanel.vertical')} value={Math.round(activeLayer.y)} onChange={(val) => handlePropChange('y', val ?? 0)} />
+                      <DesignNumberInput label={t('rightPanel.width')} value={Math.round(activeLayer.width)} onChange={(val) => {
                         const minW = isTextLayer ? textLayer.fontSize : 20;
                         handlePropChange('width', Math.max(val ?? minW, minW));
                       }} />
-                      <DesignNumberInput label="高度" value={Math.round(activeLayer.height)} onChange={(val) => {
+                      <DesignNumberInput label={t('rightPanel.height')} value={Math.round(activeLayer.height)} onChange={(val) => {
                         const minH = isTextLayer ? textLayer.fontSize * (textLayer.lineHeight ?? 1.2) : 20;
                         handlePropChange('height', Math.max(val ?? minH, minH));
                       }} />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <DesignNumberInput label="旋转" value={Math.round(activeLayer.rotation)} onChange={(val) => handlePropChange('rotation', val ?? 0)} />
+                      <DesignNumberInput label={t('rightPanel.rotation')} value={Math.round(activeLayer.rotation)} onChange={(val) => handlePropChange('rotation', val ?? 0)} />
                       {isTextLayer && (
-                        <DesignNumberInput label="弧度" value={textLayer.borderRadius ?? 0} onChange={(val) => handlePropChange('borderRadius', val ?? 0)} />
+                        <DesignNumberInput label={t('rightPanel.borderRadius')} value={textLayer.borderRadius ?? 0} onChange={(val) => handlePropChange('borderRadius', val ?? 0)} />
                       )}
                     </div>
                   </div>
@@ -142,25 +145,25 @@ export default function RightPanel() {
 
                 {isTextLayer && (
                   <div className="flex flex-col border-b border-gray-100 pb-3">
-                    <SectionHeader title="文字排版" />
+                    <SectionHeader title={t('rightPanel.typography')} />
                     <div className="px-4 flex flex-col gap-2">
                       <Select
                         className="w-full font-medium"
                         value={textLayer.fontFamily}
                         onChange={(val) => handlePropChange('fontFamily', val)}
-                        options={SUPPORTED_FONTS}
+                        options={getSupportedFonts()}
                       />
                       <div className="grid grid-cols-2 gap-2">
                         <Select
                           value={String(textLayer.fontWeight)}
                           onChange={(val) => handlePropChange('fontWeight', val)}
-                          options={[{ value: 'normal', label: '常规' }, { value: 'bold', label: '加粗' }]}
+                          options={[{ value: 'normal', label: t('rightPanel.fontWeightNormal') }, { value: 'bold', label: t('rightPanel.fontWeightBold') }]}
                         />
-                        <DesignNumberInput label="字号" value={textLayer.fontSize} onChange={(val) => handlePropChange('fontSize', val ?? 36)} />
+                        <DesignNumberInput label={t('rightPanel.fontSize')} value={textLayer.fontSize} onChange={(val) => handlePropChange('fontSize', val ?? 36)} />
                       </div>
                       <div className="grid grid-cols-2 gap-2">
-                        <DesignNumberInput label="行高" value={textLayer.lineHeight ?? 1.2} step={0.1} onChange={(val) => handlePropChange('lineHeight', val ?? 1.2)} />
-                        <DesignNumberInput label="字距" value={textLayer.letterSpacing ?? 0} onChange={(val) => handlePropChange('letterSpacing', val ?? 0)} />
+                        <DesignNumberInput label={t('rightPanel.lineHeight')} value={textLayer.lineHeight ?? 1.2} step={0.1} onChange={(val) => handlePropChange('lineHeight', val ?? 1.2)} />
+                        <DesignNumberInput label={t('rightPanel.letterSpacing')} value={textLayer.letterSpacing ?? 0} onChange={(val) => handlePropChange('letterSpacing', val ?? 0)} />
                       </div>
                       {/* 对齐 + 样式工具条 */}
                       <div className="flex justify-between items-center bg-[#f5f5f5] rounded p-0.5 mt-1">
@@ -168,7 +171,7 @@ export default function RightPanel() {
                           <Button variant="text" size="small" className={textLayer.textAlign === 'left' ? 'bg-white shadow-sm' : 'text-gray-500'} onClick={() => handlePropChange('textAlign', 'left')}><AlignLeftIcon className="w-3 h-3" /></Button>
                           <Button variant="text" size="small" className={textLayer.textAlign === 'center' ? 'bg-white shadow-sm' : 'text-gray-500'} onClick={() => handlePropChange('textAlign', 'center')}><AlignCenterIcon className="w-3 h-3" /></Button>
                           <Button variant="text" size="small" className={textLayer.textAlign === 'right' ? 'bg-white shadow-sm' : 'text-gray-500'} onClick={() => handlePropChange('textAlign', 'right')}><AlignRightIcon className="w-3 h-3" /></Button>
-                          <Tooltip title="两端对齐">
+                          <Tooltip title={t('rightPanel.justifyAlign')}>
                             <Button variant="text" size="small" className={textLayer.textAlign === 'justify' ? 'bg-white shadow-sm' : 'text-gray-500'} onClick={() => handlePropChange('textAlign', 'justify')}><AlignJustifyIcon className="w-3 h-3" /></Button>
                           </Tooltip>
                         </div>
@@ -184,14 +187,14 @@ export default function RightPanel() {
                 )}
 
                 <div className="flex flex-col border-b border-gray-100 pb-3">
-                  <SectionHeader title="颜色填充" />
+                  <SectionHeader title={t('rightPanel.colorFill')} />
                   <div className="px-4 flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                       <ColorPicker value={textLayer.fill} onChange={(c) => handlePropChange('fill', c || '#000000')} size="small" />
                       <div className="flex-1 bg-[#f5f5f5] rounded px-2 py-1 text-xs text-gray-600 uppercase font-mono">
                         {textLayer.fill || '#000000'}
                       </div>
-                      <span className="text-gray-400 text-[10px] w-8 text-right">文字</span>
+                      <span className="text-gray-400 text-[10px] w-8 text-right">{t('rightPanel.textColor')}</span>
                     </div>
                     {textLayer.textBackgroundColor && (
                       <div className="flex items-center gap-2 mt-1">
@@ -199,7 +202,7 @@ export default function RightPanel() {
                         <div className="flex-1 bg-[#f5f5f5] rounded px-2 py-1 text-xs text-gray-600 uppercase font-mono">
                           {textLayer.textBackgroundColor}
                         </div>
-                        <span className="text-gray-400 text-[10px] w-8 text-right">背景</span>
+                        <span className="text-gray-400 text-[10px] w-8 text-right">{t('rightPanel.backgroundColor')}</span>
                       </div>
                     )}
                     {!textLayer.textBackgroundColor && (
@@ -207,36 +210,36 @@ export default function RightPanel() {
                         className="text-[10px] text-gray-400 hover:text-gray-600 cursor-pointer mt-1 font-medium"
                         onClick={() => handlePropChange('textBackgroundColor', '#ffffff')}
                       >
-                        + 添加背景色
+                        {t('rightPanel.addBackground')}
                       </div>
                     )}
                   </div>
                 </div>
 
                 <div className="flex flex-col border-b border-gray-100 pb-3">
-                  <SectionHeader title="边框样式" />
+                  <SectionHeader title={t('rightPanel.borderStyle')} />
                   <div className="px-4 flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                       <ColorPicker value={textLayer.stroke || 'transparent'} onChange={(c) => handlePropChange('stroke', c)} size="small" allowClear />
                       <div className="flex-1 bg-[#f5f5f5] rounded px-2 py-1 text-xs text-gray-600 uppercase font-mono">
-                        {textLayer.stroke || '无'}
+                        {textLayer.stroke || t('rightPanel.none')}
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 mt-1">
-                      <DesignNumberInput label="粗细" value={textLayer.strokeWidth ?? 0} onChange={(val) => handlePropChange('strokeWidth', val ?? 0)} />
+                      <DesignNumberInput label={t('rightPanel.strokeWidth')} value={textLayer.strokeWidth ?? 0} onChange={(val) => handlePropChange('strokeWidth', val ?? 0)} />
                       <Select
                         value={textLayer.strokeDashArray ? 'dashed' : 'solid'}
                         onChange={(val) => handlePropChange('strokeDashArray', val === 'dashed' ? [5, 5] : undefined)}
-                        options={[{ value: 'solid', label: '实线' }, { value: 'dashed', label: '虚线' }]}
+                        options={[{ value: 'solid', label: t('rightPanel.solid') }, { value: 'dashed', label: t('rightPanel.dashed') }]}
                       />
                     </div>
                   </div>
                 </div>
 
                 <div className="flex flex-col pb-3">
-                  <SectionHeader title="图层属性" />
+                  <SectionHeader title={t('rightPanel.layerProperties')} />
                   <div className="px-4 flex items-center gap-3">
-                    <span className="text-[10px] text-gray-400 font-medium">穿透</span>
+                    <span className="text-[10px] text-gray-400 font-medium">{t('rightPanel.opacity')}</span>
                     <Slider className="flex-1" value={activeLayer.opacity * 100} onChange={(val) => handlePropChange('opacity', val / 100)} />
                     <span className="text-[10px] text-gray-600 w-8 text-right">{Math.round(activeLayer.opacity * 100)}%</span>
                   </div>
