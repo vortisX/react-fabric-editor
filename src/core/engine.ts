@@ -51,24 +51,76 @@ export class EditorEngine {
       const target = e.target as unknown as CustomTextbox;
       if (!target || !(target instanceof Textbox)) return;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const transform = (e as any).transform;
+      const corner: string = transform?.corner ?? '';
+      const anchorOriginX = transform?.originX ?? 'left';
+      const anchorOriginY = transform?.originY ?? 'top';
+
+      // 记住锚点位置（拖动控制点对面的角/边）
+      const anchorPoint = target.getPointByOrigin(anchorOriginX, anchorOriginY);
+
       const scaleX = target.scaleX ?? 1;
       const scaleY = target.scaleY ?? 1;
-
-      const fontSize = target.fontSize ?? 12;
+      const oldFontSize = target.fontSize ?? 12;
       const lineHeight = target.lineHeight ?? 1.2;
-      const minWidth = fontSize;
-      const minHeight = fontSize * lineHeight;
 
-      const newWidth = Math.max((target.width ?? 0) * scaleX, minWidth);
-      const newHeight = Math.max((target.height ?? 0) * scaleY, minHeight);
+      const isCorner = ['tl', 'tr', 'bl', 'br'].includes(corner);
+      const isSideX = ['ml', 'mr'].includes(corner);
 
-      target.set({
-        width: newWidth,
-        height: newHeight,
-        _manualHeight: newHeight, 
-        scaleX: 1,
-        scaleY: 1
-      });
+      if (isCorner) {
+        // 四角拖动：等比缩放框体 + 字体大小
+        const scale = Math.max(scaleX, scaleY);
+        const newFontSize = Math.max(Math.round(oldFontSize * scale), 1);
+        const minWidth = newFontSize;
+        const minHeight = newFontSize * lineHeight;
+        const newWidth = Math.max((target.width ?? 0) * scaleX, minWidth);
+        const newHeight = Math.max((target.height ?? 0) * scaleY, minHeight);
+
+        target.set({
+          fontSize: newFontSize,
+          width: newWidth,
+          height: newHeight,
+          _manualHeight: newHeight,
+          scaleX: 1,
+          scaleY: 1
+        });
+      } else if (isSideX) {
+        // 左右拖动：只改宽度，高度自动适应文字内容
+        const minWidth = oldFontSize;
+        const newWidth = Math.max((target.width ?? 0) * scaleX, minWidth);
+
+        // 临时移除手动高度限制，让 initDimensions 计算文字自然高度
+        target.set({
+          _manualHeight: undefined,
+          width: newWidth,
+          scaleX: 1,
+          scaleY: 1
+        });
+        target.initDimensions();
+        const autoHeight = target.height ?? oldFontSize * lineHeight;
+        target.set({
+          height: autoHeight,
+          _manualHeight: autoHeight,
+        });
+      } else {
+        // 上下拖动(mt/mb)：只改高度
+        const minWidth = oldFontSize;
+        const minHeight = oldFontSize * lineHeight;
+        const newWidth = Math.max((target.width ?? 0) * scaleX, minWidth);
+        const newHeight = Math.max((target.height ?? 0) * scaleY, minHeight);
+
+        target.set({
+          width: newWidth,
+          height: newHeight,
+          _manualHeight: newHeight,
+          scaleX: 1,
+          scaleY: 1
+        });
+      }
+
+      // 恢复锚点位置，防止拖动到最小时框体漂移
+      target.setPositionByOrigin(anchorPoint, anchorOriginX, anchorOriginY);
     });
 
     this.canvas.on('object:modified', (e) => {
@@ -87,6 +139,11 @@ export class EditorEngine {
           width: target.width ?? 0,
           height: target.height ?? 0,
         };
+
+        // 同步字号（四角拖动会改变 fontSize）
+        if (target instanceof Textbox) {
+          updates.fontSize = target.fontSize ?? 12;
+        }
 
         state.updateLayer(currentPageId, targetId, updates);
       }
