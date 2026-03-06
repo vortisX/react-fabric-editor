@@ -2,7 +2,6 @@ import { Textbox, FabricObject } from 'fabric';
 import type { TextLayer } from '../types/schema';
 import { applyCustomControls } from './EditorUI';
 
-// 暴露给外部的定制类型接口
 export interface CustomTextbox extends Textbox {
   id?: string;
   boxStroke?: string;
@@ -10,11 +9,12 @@ export interface CustomTextbox extends Textbox {
   boxStrokeDashArray?: number[];
   boxBackgroundColor?: string;
   boxBorderRadius?: number;
+  _manualHeight?: number; // 核心新增：记录用户手动拖拽或输入的高度
 }
 
-// 内部覆写专用接口
 interface OverridableTextbox extends CustomTextbox {
   _render(ctx: CanvasRenderingContext2D): void;
+  initDimensions(): void; // 拦截尺寸初始化
 }
 
 export const createCustomTextbox = (layer: TextLayer): CustomTextbox => {
@@ -34,16 +34,13 @@ export const createCustomTextbox = (layer: TextLayer): CustomTextbox => {
     underline: layer.underline ?? false,
     splitByGrapheme: true,
     
-    // ==========================================
-    // 🎨 核心修复：实例级别强制覆写，绝对保底！
-    // ==========================================
     transparentCorners: false,
     cornerColor: '#ffffff',
     cornerStrokeColor: '#18a0fb',
     borderColor: '#18a0fb',
     cornerSize: 8,
     padding: 0,
-    cornerStyle: 'circle', // 焊死圆形！
+    cornerStyle: 'circle',
     borderDashArray: undefined, 
   }) as unknown as CustomTextbox;
 
@@ -54,15 +51,23 @@ export const createCustomTextbox = (layer: TextLayer): CustomTextbox => {
     boxStrokeDashArray: layer.strokeDashArray,
     boxBackgroundColor: layer.textBackgroundColor ?? '',
     boxBorderRadius: layer.borderRadius ?? 0,
+    _manualHeight: layer.height, // 加载时恢复手动高度
   });
 
-  // 注入自研的极简胶囊 UI
   applyCustomControls(textNode as unknown as FabricObject);
 
-  // 核心渲染器拦截：背景 -> 原生文字 -> 边框
   const overrideNode = textNode as unknown as OverridableTextbox;
-  const originalRender = overrideNode._render.bind(overrideNode);
   
+  // === 核心修复：拦截尺寸计算，强行锁死用户指定的高度！ ===
+  const originalInitDimensions = overrideNode.initDimensions.bind(overrideNode);
+  overrideNode.initDimensions = function() {
+    originalInitDimensions(); // 先让原生算完文字真实高度
+    if (this._manualHeight !== undefined) {
+      this.height = this._manualHeight; // 强行覆写为外框手动高度！
+    }
+  };
+
+  const originalRender = overrideNode._render.bind(overrideNode);
   overrideNode._render = function(this: OverridableTextbox, ctx: CanvasRenderingContext2D) {
     const w = this.width ?? 0;
     const h = this.height ?? 0;

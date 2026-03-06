@@ -1,4 +1,4 @@
-import { FabricObject, Textbox } from 'fabric';
+import { FabricObject } from 'fabric';
 
 // 严格定义样式覆写接口
 interface StyleOverride {
@@ -10,34 +10,29 @@ interface StyleOverride {
 interface FabricControl {
   visible?: boolean;
   render?: (ctx: CanvasRenderingContext2D, left: number, top: number, styleOverride: StyleOverride, fabricObj: FabricObject) => void;
+  actionHandler?: unknown; // 补充操作处理器的类型
+  getActionName?: unknown;
   _isEnhanced?: boolean; 
 }
 
 // ==========================================
-// 🎨 全局基础皮肤配置 (自研高级 UI)
+// 🎨 全局基础皮肤配置
 // ==========================================
 export const setupGlobalUI = () => {
-  // 核心修复：必须封装一个函数，同时覆写基础图形和文本图形的原型！
-  const applyConfig = (objProto: Record<string, unknown>) => {
-    objProto.transparentCorners = false;
-    objProto.cornerColor = '#ffffff';
-    objProto.cornerStrokeColor = '#18a0fb';
-    objProto.borderColor = '#18a0fb';
-    objProto.cornerSize = 8;
-    objProto.padding = 0;
-    objProto.cornerStyle = 'circle'; // 绝对圆形
-    objProto.borderDashArray = undefined;
-  };
-
-  applyConfig(FabricObject.prototype as unknown as Record<string, unknown>);
-  applyConfig(Textbox.prototype as unknown as Record<string, unknown>);
+  const objProto = FabricObject.prototype as unknown as Record<string, unknown>;
+  objProto.transparentCorners = false;
+  objProto.cornerColor = '#ffffff';
+  objProto.cornerStrokeColor = '#18a0fb';
+  objProto.borderColor = '#18a0fb';
+  objProto.cornerSize = 8;
+  objProto.padding = 0;
+  objProto.cornerStyle = 'circle';
+  objProto.borderDashArray = undefined;
 };
 
 // ==========================================
 // 🛠️ 高级胶囊画笔与控制点替换
 // ==========================================
-
-// 绘制横向胶囊 (上下边)
 const renderHorizontalPill = (ctx: CanvasRenderingContext2D, left: number, top: number, styleOverride: StyleOverride, fabricObj: FabricObject) => {
   ctx.save();
   ctx.translate(left, top);
@@ -52,7 +47,6 @@ const renderHorizontalPill = (ctx: CanvasRenderingContext2D, left: number, top: 
   ctx.restore();
 };
 
-// 绘制纵向胶囊 (左右边)
 const renderVerticalPill = (ctx: CanvasRenderingContext2D, left: number, top: number, styleOverride: StyleOverride, fabricObj: FabricObject) => {
   ctx.save();
   ctx.translate(left, top);
@@ -67,13 +61,25 @@ const renderVerticalPill = (ctx: CanvasRenderingContext2D, left: number, top: nu
   ctx.restore();
 };
 
-// 暴露给实例调用的自研 UI 注入方法
 export const applyCustomControls = (obj: FabricObject) => {
   const controls = obj.controls as Record<string, FabricControl>;
+  // 偷偷拿到 Fabric 默认对象的控制点能力
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const defaultControls = (FabricObject.prototype as any).controls as Record<string, FabricControl>;
   if (!controls) return;
 
-  // 1. 极简模式：隐藏旋转点
+  // 1. 隐藏旋转天线
   if (controls.mtr) controls.mtr.visible = false;
+
+  // === 核心修复：把丢失的上下拉伸能力“偷”回来还给 Textbox ===
+  if (controls.mt && defaultControls?.mt) {
+    controls.mt.actionHandler = defaultControls.mt.actionHandler;
+    controls.mt.getActionName = defaultControls.mt.getActionName;
+  }
+  if (controls.mb && defaultControls?.mb) {
+    controls.mb.actionHandler = defaultControls.mb.actionHandler;
+    controls.mb.getActionName = defaultControls.mb.getActionName;
+  }
 
   // 2. 注入自研胶囊画笔
   if (controls.mt && !controls.mt._isEnhanced) { controls.mt.render = renderHorizontalPill; controls.mt._isEnhanced = true; }

@@ -16,7 +16,6 @@ interface DesignNumberInputProps {
   readOnly?: boolean;
 }
 
-// 洗白：从 FigmaNumberInput 改为 DesignNumberInput
 const DesignNumberInput = ({ label, value, onChange, readOnly = false }: DesignNumberInputProps) => (
   <div className={`flex items-center bg-[#f5f5f5] rounded px-2 py-0.5 border border-transparent hover:border-gray-300 transition-colors ${readOnly ? 'opacity-60 cursor-not-allowed' : ''}`}>
     <span className="text-[10px] text-gray-400 font-medium w-8 select-none flex items-center justify-center">{label}</span>
@@ -64,7 +63,17 @@ export default function RightPanel() {
   const textLayer = activeLayer as TextLayer;
 
   const handlePropChange = <K extends keyof TextLayer>(key: K, value: TextLayer[K]) => {
-    updateLayer('page_01', activeLayer.id, { [key]: value });
+    const updates: Partial<TextLayer> = { [key]: value };
+
+    // === 核心新增：如果修改的是文本内容，连带更新左侧的图层名称 ===
+    if (key === 'content') {
+      const textVal = (value as string) || '';
+      const newName = textVal.trim() || '空文本';
+      // 避免长篇大论撑爆左侧面板
+      updates.name = newName.length > 15 ? newName.slice(0, 15) + '...' : newName;
+    }
+
+    updateLayer('page_01', activeLayer.id, updates);
 
     const fabricProps: Record<string, unknown> = {};
     if (key === 'x') fabricProps.left = value;

@@ -4,7 +4,6 @@ import { useEditorStore } from '../store/useEditorStore';
 import { setupGlobalUI } from './EditorUI';
 import { createCustomTextbox, type CustomTextbox } from './CustomTextbox';
 
-// 扩展暴露 ID 的基础对象
 export interface CustomFabricObject extends FabricObject {
   id?: string;
 }
@@ -25,7 +24,6 @@ export class EditorEngine {
       backgroundColor: '#ffffff'
     });
 
-    // 初始化全局定制 UI 配置
     setupGlobalUI();
 
     this.bindEvents();
@@ -56,9 +54,13 @@ export class EditorEngine {
       const scaleX = target.scaleX ?? 1;
       const scaleY = target.scaleY ?? 1;
 
+      const newWidth = Math.max((target.width ?? 0) * scaleX, 20);
+      const newHeight = Math.max((target.height ?? 0) * scaleY, 20);
+
       target.set({
-        width: Math.max((target.width ?? 0) * scaleX, 20),
-        fontSize: Math.max((target.fontSize ?? 0) * scaleY, 12),
+        width: newWidth,
+        height: newHeight,
+        _manualHeight: newHeight, 
         scaleX: 1,
         scaleY: 1
       });
@@ -81,10 +83,6 @@ export class EditorEngine {
           height: target.height ?? 0,
         };
 
-        if (target instanceof Textbox) {
-          updates.fontSize = Math.round((target as Textbox).fontSize ?? 36);
-        }
-
         state.updateLayer(currentPageId, targetId, updates);
       }
     });
@@ -97,8 +95,14 @@ export class EditorEngine {
       const currentPageId = state.document?.pages[0]?.pageId;
 
       if (currentPageId) {
+        // === 核心新增：画布内打字时，动态计算并同步图层名称 ===
+        const textVal = target.text || '';
+        const newName = textVal.trim() || '空文本';
+        const finalName = newName.length > 15 ? newName.slice(0, 15) + '...' : newName;
+
         state.updateLayer(currentPageId, target.id, {
-          content: target.text,
+          content: textVal,
+          name: finalName, // 同步给左侧的图层树结构
           width: target.width ?? 0,
           height: target.height ?? 0,
         });
@@ -114,7 +118,13 @@ export class EditorEngine {
     );
 
     if (target) {
-      target.set({ ...props, dirty: true });
+      const finalProps = { ...props, dirty: true };
+      if (props.height !== undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (finalProps as any)._manualHeight = props.height;
+      }
+      
+      target.set(finalProps);
 
       if (props.text !== undefined || props.width !== undefined || props.height !== undefined || props.textAlign !== undefined) {
         if (target instanceof Textbox) {
@@ -155,7 +165,6 @@ export class EditorEngine {
   public addTextLayer(layer: TextLayer) {
     if (!this.canvas) return;
     
-    // 调用自研渲染层创建文本
     const textNode = createCustomTextbox(layer);
     
     this.canvas.add(textNode as unknown as FabricObject);

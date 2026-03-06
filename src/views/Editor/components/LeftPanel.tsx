@@ -14,7 +14,7 @@ export default function LeftPanel() {
   const handleAddText = () => {
     const newTextLayer: TextLayer = {
       id: `layer_text_${Date.now()}`,
-      name: '正文文本', // 列表里显示的图层名称
+      name: '双击修改文字', // 列表里显示的图层名称
       type: 'text',
       x: 100,
       y: 100,
