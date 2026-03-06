@@ -42,43 +42,69 @@ export class EditorEngine {
     if (id) useEditorStore.getState().setActiveLayer(id);
   }
 
-  /** 四角拖动：等比缩放框体 + 字体；其他控制点：通用最小值约束 */
+  /** 拖动中：仅做最小尺寸约束，不修改 fontSize / 不重置 scale，完全依赖 Fabric 原生定位 */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private handleScaling(e: any) {
     const target = e.target;
     if (!(target instanceof CustomTextbox)) return;
 
-    const { corner = '', originX = 'left', originY = 'top' } = e.transform ?? {};
-    const anchorPoint = target.getPointByOrigin(originX, originY);
-
-    const scaleX = target.scaleX ?? 1;
-    const scaleY = target.scaleY ?? 1;
     const fontSize = target.fontSize ?? 12;
     const lineHeight = target.lineHeight ?? 1.2;
+    const scaleX = target.scaleX ?? 1;
+    const scaleY = target.scaleY ?? 1;
 
-    if (['tl', 'tr', 'bl', 'br'].includes(corner)) {
-      // 四角：均匀缩放字号 + 框体
+    // 计算缩放后的视觉尺寸，约束最小值
+    const visualW = (target.width ?? 0) * scaleX;
+    const visualH = (target.height ?? 0) * scaleY;
+    const minW = fontSize * scaleX;
+    const minH = fontSize * lineHeight * scaleY;
+
+    if (visualW < minW) target.scaleX = minW / (target.width ?? 1);
+    if (visualH < minH) target.scaleY = minH / (target.height ?? 1);
+  }
+
+  /** 松手后：一次性将 scale 转换为真实尺寸，四角额外同步 fontSize */
+  private finalizeScaling(target: CustomTextbox, corner: string) {
+    const scaleX = target.scaleX ?? 1;
+    const scaleY = target.scaleY ?? 1;
+    if (scaleX === 1 && scaleY === 1) return;
+
+    const fontSize = target.fontSize ?? 12;
+    const lineHeight = target.lineHeight ?? 1.2;
+    const isCorner = ['tl', 'tr', 'bl', 'br'].includes(corner);
+
+    // left/top 已经被 Fabric 计算好了，直接保存
+    const left = target.left;
+    const top = target.top;
+
+    const newWidth = (target.width ?? 0) * scaleX;
+    const newHeight = (target.height ?? 0) * scaleY;
+    let newFontSize = fontSize;
+
+    if (isCorner) {
       const scale = (scaleX + scaleY) / 2;
-      const newFontSize = Math.max(fontSize * scale, 1);
-      const newWidth = Math.max((target.width ?? 0) * scale, newFontSize);
-      const newHeight = Math.max((target.height ?? 0) * scale, newFontSize * lineHeight);
-      target.set({
-        fontSize: newFontSize, width: newWidth,
-        height: newHeight, _manualHeight: newHeight,
-        scaleX: 1, scaleY: 1,
-      });
-    } else {
-      // 通用：仅缩放框体，字号不变
-      const newWidth = Math.max((target.width ?? 0) * scaleX, fontSize);
-      const newHeight = Math.max((target.height ?? 0) * scaleY, fontSize * lineHeight);
-      target.set({
-        width: newWidth, height: newHeight, _manualHeight: newHeight,
-        scaleX: 1, scaleY: 1,
-      });
+      newFontSize = Math.max(fontSize * scale, 1);
     }
 
-    // 恢复锚点位置，防止拖到最小时框体漂移
-    target.setPositionByOrigin(anchorPoint, originX, originY);
+    const finalW = Math.max(newWidth, newFontSize);
+    const finalH = Math.max(newHeight, newFontSize * lineHeight);
+
+    // 先清 _manualHeight，防止 set() 触发 initDimensions 时用旧值覆写高度
+    target._manualHeight = undefined;
+
+    target.set({
+      fontSize: newFontSize,
+      width: finalW,
+      height: finalH,
+      scaleX: 1,
+      scaleY: 1,
+    });
+
+    // 恢复位置和手动高度
+    target._manualHeight = finalH;
+    target.left = left;
+    target.top = top;
+    target.setCoords();
   }
 
   /** ml/mr 侧边拖动（Fabric Textbox 的 changeWidth 行为）：自动适应文字高度 */
@@ -97,11 +123,17 @@ export class EditorEngine {
     target.setCoords();
   }
 
-  /** 操作完成 → 同步属性到 Zustand Store */
+  /** 操作完成 → 归一化 scale + 同步属性到 Zustand Store */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private handleModified(e: any) {
     const target = e.target as CustomTextbox;
     if (!target?.id) return;
+
+    // 松手时将 scale 转换为真实尺寸 + fontSize
+    const corner: string = e.transform?.corner ?? '';
+    if (target instanceof CustomTextbox) {
+      this.finalizeScaling(target, corner);
+    }
 
     const pageId = this.getCurrentPageId();
     if (!pageId) return;
