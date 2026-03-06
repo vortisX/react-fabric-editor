@@ -12,24 +12,16 @@ export const setupGlobalUI = (): void => {
 
     for (const font of SUPPORTED_FONTS) {
       if (font.path) {
-        if (registeredFamilies.has(font.value)) {
-          console.log(`[FontLoader] 已跳过 (已注册): ${font.label} (${font.value})`);
-          continue;
-        }
+        if (registeredFamilies.has(font.value)) continue;
         try {
-          console.log(`[FontLoader] 开始加载: ${font.label} (${font.value}) <- ${font.path}`);
           const fontFace = new FontFace(font.value, `url(${font.path})`);
           const loadedFace = await fontFace.load();
           document.fonts.add(loadedFace);
-          console.log(`[FontLoader] ✅ 挂载成功: ${font.label} (${font.value})`);
         } catch (err) {
-          console.error(`[FontLoader] ❌ 加载失败: ${font.label} (${font.value})`, err);
+          console.error(`[FontLoader] 加载失败: ${font.label}`, err);
         }
-      } else {
-        console.log(`[FontLoader] 系统字体，无需加载: ${font.label} (${font.value})`);
       }
     }
-    console.log('[FontLoader] 全部字体处理完毕，已加载数量:', [...document.fonts].length);
   };
 
   loadLocalFonts();

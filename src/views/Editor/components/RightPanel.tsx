@@ -5,7 +5,7 @@ import {
   AlignLeftOutlined, AlignCenterOutlined, AlignRightOutlined, MenuOutlined
 } from '@ant-design/icons';
 import { useEditorStore } from '../../../store/useEditorStore';
-import { engineInstance } from '../../../core/Engine';
+import { engineInstance } from '../../../core/engine';
 import { SUPPORTED_FONTS } from '../../../constants/fonts'; 
 import type { TextLayer } from '../../../types/schema';
 import type { Color } from 'antd/es/color-picker';

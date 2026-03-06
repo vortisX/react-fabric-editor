@@ -27,7 +27,6 @@ export class EditorEngine {
     setupGlobalUI();
 
     this.bindEvents();
-    console.log('[Engine] 核心引擎初始化成功，高级定制 UI 已挂载');
   }
 
   private bindEvents() {
@@ -66,7 +65,6 @@ export class EditorEngine {
       const lineHeight = target.lineHeight ?? 1.2;
 
       const isCorner = ['tl', 'tr', 'bl', 'br'].includes(corner);
-      const isSideX = ['ml', 'mr'].includes(corner);
 
       if (isCorner) {
         // 四角拖动：等比缩放框体 + 字体大小（使用均匀缩放比，不取整，确保丝滑）
@@ -82,24 +80,6 @@ export class EditorEngine {
           _manualHeight: newHeight,
           scaleX: 1,
           scaleY: 1
-        });
-      } else if (isSideX) {
-        // 左右拖动：只改宽度，高度自动适应文字内容
-        const minWidth = oldFontSize;
-        const newWidth = Math.max((target.width ?? 0) * scaleX, minWidth);
-
-        // 临时移除手动高度限制，让 initDimensions 计算文字自然高度
-        target.set({
-          _manualHeight: undefined,
-          width: newWidth,
-          scaleX: 1,
-          scaleY: 1
-        });
-        target.initDimensions();
-        const autoHeight = target.height ?? oldFontSize * lineHeight;
-        target.set({
-          height: autoHeight,
-          _manualHeight: autoHeight,
         });
       } else {
         // 其他控制点：通用缩放
@@ -119,6 +99,23 @@ export class EditorEngine {
 
       // 恢复锚点位置，防止拖动到最小时框体漂移
       target.setPositionByOrigin(anchorPoint, anchorOriginX, anchorOriginY);
+    });
+
+    // Fabric.js Textbox 的 ml/mr 使用 changeWidth，触发 object:resizing 而非 object:scaling
+    this.canvas.on('object:resizing', (e) => {
+      const target = e.target as unknown as CustomTextbox;
+      if (!target || !(target instanceof Textbox)) return;
+
+      const oldFontSize = target.fontSize ?? 12;
+      const lineHeight = target.lineHeight ?? 1.2;
+
+      // Fabric 已经直接修改了 width，用 calcTextHeight 获取文字换行后的真实高度
+      const textHeight = target.calcTextHeight();
+      const autoHeight = Math.max(textHeight, oldFontSize * lineHeight);
+      target.height = autoHeight;
+      target._manualHeight = autoHeight;
+      target.dirty = true;
+      target.setCoords();
     });
 
     this.canvas.on('object:modified', (e) => {
@@ -187,9 +184,7 @@ export class EditorEngine {
       target.set(finalProps);
 
       if (props.text !== undefined || props.width !== undefined || props.height !== undefined || props.textAlign !== undefined || props.fontFamily !== undefined) {
-        if (props.fontFamily !== undefined) {
-          console.log(`[Engine] 应用字体: ${props.fontFamily}，检查是否已加载:`, document.fonts.check(`12px "${props.fontFamily}"`) ? '✅ 已加载' : '❌ 未加载');
-        }
+
         if (target instanceof Textbox) {
           target.initDimensions(); 
         }

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { editorEngine } from "../core/Engine";
+import { engineInstance } from "../core/engine";
 
 /**
  * useCanvas — React 与 EditorEngine 沟通的唯一桥梁
@@ -13,12 +13,12 @@ export function useCanvas(width: number, height: number) {
     const el = canvasRef.current;
     if (!el) return;
 
-    editorEngine.init(el, width, height);
+    engineInstance.init(el, width, height);
 
     return () => {
-      editorEngine.destroy();
+      engineInstance.dispose();
     };
   }, [width, height]);
 
-  return { canvasRef, engine: editorEngine };
+  return { canvasRef, engine: engineInstance };
 }
