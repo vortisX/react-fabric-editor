@@ -1,22 +1,12 @@
 import { Canvas, FabricObject, Textbox } from 'fabric';
 import type { DesignDocument, TextLayer } from '../types/schema';
 import { useEditorStore } from '../store/useEditorStore';
+import { setupGlobalUI } from './EditorUI';
+import { createCustomTextbox, type CustomTextbox } from './CustomTextbox';
 
-interface CustomFabricObject extends FabricObject {
+// 扩展暴露 ID 的基础对象
+export interface CustomFabricObject extends FabricObject {
   id?: string;
-}
-
-interface CustomTextbox extends Textbox {
-  id?: string;
-  boxStroke?: string;
-  boxStrokeWidth?: number;
-  boxStrokeDashArray?: number[];
-  boxBackgroundColor?: string;
-  boxBorderRadius?: number;
-}
-
-interface OverridableTextbox extends CustomTextbox {
-  _render(ctx: CanvasRenderingContext2D): void;
 }
 
 export class EditorEngine {
@@ -30,22 +20,16 @@ export class EditorEngine {
     this.canvas = new Canvas(canvasEl, {
       width,
       height,
-      preserveObjectStacking: true,
+      preserveObjectStacking: true, 
       selection: true,
       backgroundColor: '#ffffff'
     });
 
-    FabricObject.prototype.transparentCorners = false;
-    FabricObject.prototype.cornerColor = '#ffffff';
-    FabricObject.prototype.cornerStrokeColor = '#0d99ff';
-    FabricObject.prototype.borderColor = '#0d99ff';
-    FabricObject.prototype.cornerSize = 8;
-    FabricObject.prototype.padding = 0;
-    FabricObject.prototype.cornerStyle = 'circle';
-    FabricObject.prototype.borderDashArray = [4, 4];
+    // 初始化全局定制 UI 配置
+    setupGlobalUI();
 
     this.bindEvents();
-    console.log('[Engine] 引擎初始化成功，支持圆角和两端对齐');
+    console.log('[Engine] 核心引擎初始化成功，高级定制 UI 已挂载');
   }
 
   private bindEvents() {
@@ -98,7 +82,7 @@ export class EditorEngine {
         };
 
         if (target instanceof Textbox) {
-          updates.fontSize = Math.round(target.fontSize ?? 36);
+          updates.fontSize = Math.round((target as Textbox).fontSize ?? 36);
         }
 
         state.updateLayer(currentPageId, targetId, updates);
@@ -155,7 +139,11 @@ export class EditorEngine {
 
   public selectLayer(layerId: string) {
     if (!this.canvas) return;
-    const target = this.canvas.getObjects().find((obj) => (obj as unknown as CustomFabricObject).id === layerId);
+    
+    const target = this.canvas.getObjects().find(
+      (obj) => (obj as unknown as CustomFabricObject).id === layerId
+    );
+
     if (target) {
       this.canvas.setActiveObject(target);
     } else {
@@ -166,82 +154,10 @@ export class EditorEngine {
 
   public addTextLayer(layer: TextLayer) {
     if (!this.canvas) return;
-
-    const textNode = new Textbox(layer.content, {
-      left: layer.x,
-      top: layer.y,
-      width: layer.width, 
-      angle: layer.rotation, 
-      fill: layer.fill,
-      fontSize: layer.fontSize,
-      fontFamily: layer.fontFamily,
-      fontWeight: layer.fontWeight,
-      textAlign: layer.textAlign, 
-      lineHeight: layer.lineHeight ?? 1.2,
-      charSpacing: layer.letterSpacing ?? 0,
-      fontStyle: layer.fontStyle ?? 'normal',
-      underline: layer.underline ?? false,
-      // 注意：这里故意不传 backgroundColor 给原生系统，由我们自己画圆角背景
-      splitByGrapheme: true,
-    }) as unknown as CustomTextbox;
-
-    textNode.set({
-      id: layer.id,
-      boxStroke: layer.stroke ?? '',
-      boxStrokeWidth: layer.strokeWidth ?? 0,
-      boxStrokeDashArray: layer.strokeDashArray,
-      boxBackgroundColor: layer.textBackgroundColor ?? '',
-      boxBorderRadius: layer.borderRadius ?? 0, // 新增弧度
-    });
-
-    const overrideNode = textNode as unknown as OverridableTextbox;
-    const originalRender = overrideNode._render.bind(overrideNode);
     
-    // 自定义渲染：画圆角背景 -> 画文字 -> 画圆角边框
-    overrideNode._render = function(this: OverridableTextbox, ctx: CanvasRenderingContext2D) {
-      const w = this.width ?? 0;
-      const h = this.height ?? 0;
-      const r = this.boxBorderRadius ?? 0;
-
-      // 1. 绘制带弧度的背景色
-      if (this.boxBackgroundColor) {
-        ctx.save();
-        ctx.fillStyle = this.boxBackgroundColor;
-        ctx.beginPath();
-        if (ctx.roundRect) {
-          ctx.roundRect(-w / 2, -h / 2, w, h, r);
-        } else {
-          ctx.rect(-w / 2, -h / 2, w, h);
-        }
-        ctx.fill();
-        ctx.restore();
-      }
-
-      // 2. 绘制原生文字
-      originalRender(ctx); 
-      
-      // 3. 绘制带弧度的边框描边
-      const strokeColor = this.boxStroke;
-      const strokeWidth = this.boxStrokeWidth;
-      
-      if (strokeColor && strokeWidth && strokeWidth > 0) {
-        ctx.save();
-        ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = strokeWidth;
-        if (this.boxStrokeDashArray) {
-          ctx.setLineDash(this.boxStrokeDashArray);
-        }
-        ctx.beginPath();
-        if (ctx.roundRect) {
-          ctx.roundRect(-w / 2, -h / 2, w, h, r);
-        } else {
-          ctx.rect(-w / 2, -h / 2, w, h);
-        }
-        ctx.stroke();
-        ctx.restore();
-      }
-    };
-
+    // 调用自研渲染层创建文本
+    const textNode = createCustomTextbox(layer);
+    
     this.canvas.add(textNode as unknown as FabricObject);
     this.canvas.setActiveObject(textNode as unknown as FabricObject);
     this.canvas.renderAll();

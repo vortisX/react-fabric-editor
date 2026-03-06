@@ -9,14 +9,15 @@ import { engineInstance } from '../../../core/engine';
 import type { TextLayer } from '../../../types/schema';
 import type { Color } from 'antd/es/color-picker';
 
-interface FigmaNumberInputProps {
+interface DesignNumberInputProps {
   label: React.ReactNode;
   value: number;
   onChange?: (value: number | null) => void;
   readOnly?: boolean;
 }
 
-const FigmaNumberInput = ({ label, value, onChange, readOnly = false }: FigmaNumberInputProps) => (
+// 洗白：从 FigmaNumberInput 改为 DesignNumberInput
+const DesignNumberInput = ({ label, value, onChange, readOnly = false }: DesignNumberInputProps) => (
   <div className={`flex items-center bg-[#f5f5f5] rounded px-2 py-0.5 border border-transparent hover:border-gray-300 transition-colors ${readOnly ? 'opacity-60 cursor-not-allowed' : ''}`}>
     <span className="text-[10px] text-gray-400 font-medium w-8 select-none flex items-center justify-center">{label}</span>
     <InputNumber 
@@ -115,16 +116,15 @@ export default function RightPanel() {
                   <SectionHeader title="布局" />
                   <div className="px-4 flex flex-col gap-2">
                     <div className="grid grid-cols-2 gap-2">
-                      <FigmaNumberInput label="水平" value={Math.round(activeLayer.x)} onChange={(val) => handlePropChange('x', val ?? 0)} />
-                      <FigmaNumberInput label="垂直" value={Math.round(activeLayer.y)} onChange={(val) => handlePropChange('y', val ?? 0)} />
-                      <FigmaNumberInput label="宽度" value={Math.round(activeLayer.width)} onChange={(val) => handlePropChange('width', Math.max(val ?? 20, 20))} />
-                      <FigmaNumberInput label="高度" value={Math.round(activeLayer.height)} onChange={(val) => handlePropChange('height', Math.max(val ?? 20, 20))} />
+                      <DesignNumberInput label="水平" value={Math.round(activeLayer.x)} onChange={(val) => handlePropChange('x', val ?? 0)} />
+                      <DesignNumberInput label="垂直" value={Math.round(activeLayer.y)} onChange={(val) => handlePropChange('y', val ?? 0)} />
+                      <DesignNumberInput label="宽度" value={Math.round(activeLayer.width)} onChange={(val) => handlePropChange('width', Math.max(val ?? 20, 20))} />
+                      <DesignNumberInput label="高度" value={Math.round(activeLayer.height)} onChange={(val) => handlePropChange('height', Math.max(val ?? 20, 20))} />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <FigmaNumberInput label="旋转" value={Math.round(activeLayer.rotation)} onChange={(val) => handlePropChange('rotation', val ?? 0)} />
-                      {/* 新增弧度调节项 */}
+                      <DesignNumberInput label="旋转" value={Math.round(activeLayer.rotation)} onChange={(val) => handlePropChange('rotation', val ?? 0)} />
                       {isTextLayer && (
-                        <FigmaNumberInput label="弧度" value={textLayer.borderRadius ?? 0} onChange={(val) => handlePropChange('borderRadius', val ?? 0)} />
+                        <DesignNumberInput label="弧度" value={textLayer.borderRadius ?? 0} onChange={(val) => handlePropChange('borderRadius', val ?? 0)} />
                       )}
                     </div>
                   </div>
@@ -152,17 +152,16 @@ export default function RightPanel() {
                           onChange={(val) => handlePropChange('fontWeight', val)}
                           options={[{ value: 'normal', label: '常规' }, { value: 'bold', label: '加粗' }]}
                         />
-                        <FigmaNumberInput label="字号" value={textLayer.fontSize} onChange={(val) => handlePropChange('fontSize', val ?? 36)} />
+                        <DesignNumberInput label="字号" value={textLayer.fontSize} onChange={(val) => handlePropChange('fontSize', val ?? 36)} />
                       </div>
 
                       <div className="grid grid-cols-2 gap-2">
-                        <FigmaNumberInput label="行高" value={textLayer.lineHeight ?? 1.2} onChange={(val) => handlePropChange('lineHeight', val ?? 1.2)} />
-                        <FigmaNumberInput label="字距" value={textLayer.letterSpacing ?? 0} onChange={(val) => handlePropChange('letterSpacing', val ?? 0)} />
+                        <DesignNumberInput label="行高" value={textLayer.lineHeight ?? 1.2} onChange={(val) => handlePropChange('lineHeight', val ?? 1.2)} />
+                        <DesignNumberInput label="字距" value={textLayer.letterSpacing ?? 0} onChange={(val) => handlePropChange('letterSpacing', val ?? 0)} />
                       </div>
 
                       <div className="flex justify-between items-center bg-[#f5f5f5] rounded p-0.5 mt-1">
                         <div className="flex gap-0.5">
-                          {/* 新增了两端对齐 (justify) */}
                           <Button type="text" size="small" className={`px-2 min-w-0 ${textLayer.textAlign === 'left' ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-800'}`} onClick={() => handlePropChange('textAlign', 'left')}><AlignLeftOutlined className="text-[10px]" /></Button>
                           <Button type="text" size="small" className={`px-2 min-w-0 ${textLayer.textAlign === 'center' ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-800'}`} onClick={() => handlePropChange('textAlign', 'center')}><AlignCenterOutlined className="text-[10px]" /></Button>
                           <Button type="text" size="small" className={`px-2 min-w-0 ${textLayer.textAlign === 'right' ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-800'}`} onClick={() => handlePropChange('textAlign', 'right')}><AlignRightOutlined className="text-[10px]" /></Button>
@@ -228,7 +227,7 @@ export default function RightPanel() {
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 mt-1">
-                        <FigmaNumberInput label="粗细" value={textLayer.strokeWidth ?? 0} onChange={(val) => handlePropChange('strokeWidth', val ?? 0)} />
+                        <DesignNumberInput label="粗细" value={textLayer.strokeWidth ?? 0} onChange={(val) => handlePropChange('strokeWidth', val ?? 0)} />
                         <Select 
                           variant="filled" size="small"
                           value={textLayer.strokeDashArray ? 'dashed' : 'solid'}
