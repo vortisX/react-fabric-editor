@@ -1,5 +1,5 @@
-import { FabricObject, Textbox, Control, controlsUtils } from 'fabric';
-import { SUPPORTED_FONTS } from '../constants/fonts';
+import { FabricObject, Textbox, Control, controlsUtils } from "fabric";
+import { SUPPORTED_FONTS } from "../constants/fonts";
 
 // 定义控制点渲染函数的标准签名
 type ControlRenderFunction = (
@@ -7,7 +7,7 @@ type ControlRenderFunction = (
   left: number,
   top: number,
   styleOverride: Record<string, unknown>,
-  fabricObj: FabricObject
+  fabricObj: FabricObject,
 ) => void;
 
 interface EnhancedControl extends Control {
@@ -24,7 +24,6 @@ export const setupGlobalUI = (): void => {
         try {
           const isLoaded = document.fonts.check(`12px "${font.value}"`);
           if (isLoaded) continue;
-
           const fontFace = new FontFace(font.value, `url(${font.path})`);
           const loadedFace = await fontFace.load();
           document.fonts.add(loadedFace);
@@ -39,12 +38,12 @@ export const setupGlobalUI = (): void => {
 
   const applyConfig = (objProto: FabricObject): void => {
     objProto.transparentCorners = false;
-    objProto.cornerColor = '#ffffff';
-    objProto.cornerStrokeColor = '#18a0fb';
-    objProto.borderColor = '#18a0fb';
+    objProto.cornerColor = "#ffffff";
+    objProto.cornerStrokeColor = "#18a0fb";
+    objProto.borderColor = "#18a0fb";
     objProto.cornerSize = 8;
     objProto.padding = 0;
-    objProto.cornerStyle = 'circle';
+    objProto.cornerStyle = "circle";
     objProto.borderDashArray = null;
   };
 
@@ -55,11 +54,23 @@ export const setupGlobalUI = (): void => {
 // ==========================================
 // 🛠️ 胶囊画笔绘制逻辑
 // ==========================================
-const renderHorizontalPill: ControlRenderFunction = (ctx, left, top, styleOverride, fabricObj) => {
+const renderHorizontalPill: ControlRenderFunction = (
+  ctx,
+  left,
+  top,
+  styleOverride,
+  fabricObj,
+) => {
   ctx.save();
   ctx.translate(left, top);
-  ctx.fillStyle = (styleOverride?.cornerColor as string) || fabricObj.cornerColor || '#ffffff';
-  ctx.strokeStyle = (styleOverride?.cornerStrokeColor as string) || fabricObj.cornerStrokeColor || '#18a0fb';
+  ctx.fillStyle =
+    (styleOverride?.cornerColor as string) ||
+    fabricObj.cornerColor ||
+    "#ffffff";
+  ctx.strokeStyle =
+    (styleOverride?.cornerStrokeColor as string) ||
+    fabricObj.cornerStrokeColor ||
+    "#18a0fb";
   ctx.lineWidth = 1.5;
   ctx.beginPath();
   if (ctx.roundRect) ctx.roundRect(-7, -3, 14, 6, 3);
@@ -69,11 +80,23 @@ const renderHorizontalPill: ControlRenderFunction = (ctx, left, top, styleOverri
   ctx.restore();
 };
 
-const renderVerticalPill: ControlRenderFunction = (ctx, left, top, styleOverride, fabricObj) => {
+const renderVerticalPill: ControlRenderFunction = (
+  ctx,
+  left,
+  top,
+  styleOverride,
+  fabricObj,
+) => {
   ctx.save();
   ctx.translate(left, top);
-  ctx.fillStyle = (styleOverride?.cornerColor as string) || fabricObj.cornerColor || '#ffffff';
-  ctx.strokeStyle = (styleOverride?.cornerStrokeColor as string) || fabricObj.cornerStrokeColor || '#18a0fb';
+  ctx.fillStyle =
+    (styleOverride?.cornerColor as string) ||
+    fabricObj.cornerColor ||
+    "#ffffff";
+  ctx.strokeStyle =
+    (styleOverride?.cornerStrokeColor as string) ||
+    fabricObj.cornerStrokeColor ||
+    "#18a0fb";
   ctx.lineWidth = 1.5;
   ctx.beginPath();
   if (ctx.roundRect) ctx.roundRect(-3, -7, 6, 14, 3);
