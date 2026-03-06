@@ -1,7 +1,7 @@
 import React from 'react';
-import { Tabs, InputNumber, ColorPicker, Slider, Select, Button } from 'antd';
-import {
-  BoldOutlined, ItalicOutlined, UnderlineOutlined,
+import { Tabs, InputNumber, ColorPicker, Slider, Select, Button, Input } from 'antd';
+import { 
+  BoldOutlined, ItalicOutlined, UnderlineOutlined, 
   AlignLeftOutlined, AlignCenterOutlined, AlignRightOutlined
 } from '@ant-design/icons';
 import { useEditorStore } from '../../../store/useEditorStore';
@@ -9,7 +9,6 @@ import { engineInstance } from '../../../core/engine';
 import type { TextLayer } from '../../../types/schema';
 import type { Color } from 'antd/es/color-picker';
 
-// 1. 极其严谨的 Props 接口定义，杜绝任何 any 和空指针异常
 interface FigmaNumberInputProps {
   label: React.ReactNode;
   value: number;
@@ -17,15 +16,14 @@ interface FigmaNumberInputProps {
   readOnly?: boolean;
 }
 
-// 2. Figma 风格的无边框输入框组件
 const FigmaNumberInput = ({ label, value, onChange, readOnly = false }: FigmaNumberInputProps) => (
   <div className={`flex items-center bg-[#f5f5f5] rounded px-2 py-0.5 border border-transparent hover:border-gray-300 transition-colors ${readOnly ? 'opacity-60 cursor-not-allowed' : ''}`}>
     <span className="text-[10px] text-gray-400 font-medium w-3 select-none flex items-center justify-center">{label}</span>
-    <InputNumber
-      bordered={false}
-      size="small"
-      className="flex-1 w-full bg-transparent shadow-none text-xs"
-      value={value}
+    <InputNumber 
+      bordered={false} 
+      size="small" 
+      className="flex-1 w-full bg-transparent shadow-none text-xs" 
+      value={value} 
       onChange={onChange}
       readOnly={readOnly}
       controls={false}
@@ -33,7 +31,6 @@ const FigmaNumberInput = ({ label, value, onChange, readOnly = false }: FigmaNum
   </div>
 );
 
-// 3. 区块标题组件
 const SectionHeader = ({ title }: { title: string }) => (
   <div className="flex justify-between items-center px-4 py-2 bg-white mt-1">
     <span className="text-[11px] font-bold text-gray-800 tracking-wide">{title}</span>
@@ -49,10 +46,9 @@ export default function RightPanel() {
     (layer) => layer.id === activeLayerId
   );
 
-  // 空状态防御
   if (!activeLayer) {
     return (
-      <aside className="w-60 bg-white border-l border-gray-200 flex flex-col shrink-0 z-10 shadow-sm">
+      <aside className="w-[240px] bg-white border-l border-gray-200 flex flex-col shrink-0 z-10 shadow-sm">
         <div className="h-10 border-b border-gray-100 flex items-center px-4 font-semibold text-[11px] text-gray-800 tracking-wide">
           设计
         </div>
@@ -66,7 +62,6 @@ export default function RightPanel() {
   const isTextLayer = activeLayer.type === 'text';
   const textLayer = activeLayer as TextLayer;
 
-  // 严谨的状态同步与引擎调度方法
   const handlePropChange = <K extends keyof TextLayer>(key: K, value: TextLayer[K]) => {
     updateLayer('page_01', activeLayer.id, { [key]: value });
 
@@ -75,15 +70,23 @@ export default function RightPanel() {
     else if (key === 'y') fabricProps.top = value;
     else if (key === 'rotation') fabricProps.angle = value;
     else if (key === 'letterSpacing') fabricProps.charSpacing = value;
+    else if (key === 'textBackgroundColor') fabricProps.backgroundColor = value;
+    else if (key === 'stroke') fabricProps.boxStroke = value;
+    else if (key === 'strokeWidth') fabricProps.boxStrokeWidth = value;
+    else if (key === 'strokeDashArray') fabricProps.boxStrokeDashArray = value;
+    // === 核心新增：直接同步内容、宽、高到画布引擎 ===
+    else if (key === 'content') fabricProps.text = value; 
+    else if (key === 'width') fabricProps.width = value;
+    else if (key === 'height') fabricProps.height = value;
     else fabricProps[key as string] = value;
 
     engineInstance.updateLayerProps(activeLayer.id, fabricProps);
   };
 
   return (
-    <aside className="w-60 bg-white border-l border-gray-200 flex flex-col shrink-0 z-10 shadow-sm text-xs selection:bg-blue-100">
-      <Tabs
-        defaultActiveKey="1"
+    <aside className="w-[240px] bg-white border-l border-gray-200 flex flex-col shrink-0 z-10 shadow-sm text-xs selection:bg-blue-100">
+      <Tabs 
+        defaultActiveKey="1" 
         className="w-full h-full custom-tabs flex flex-col"
         items={[
           {
@@ -91,6 +94,21 @@ export default function RightPanel() {
             label: <span className="px-4 text-[11px] font-medium">设计</span>,
             children: (
               <div className="overflow-y-auto h-[calc(100vh-40px)] pb-10 flex flex-col">
+                
+                {/* === 内容 Content (新增功能区) === */}
+                {isTextLayer && (
+                   <div className="flex flex-col border-b border-gray-100 pb-3 pt-1">
+                     <div className="px-4">
+                        <Input.TextArea 
+                          value={textLayer.content}
+                          onChange={(e) => handlePropChange('content', e.target.value)}
+                          className="text-xs bg-[#f5f5f5] border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white transition-colors rounded-md p-2"
+                          autoSize={{ minRows: 2, maxRows: 6 }}
+                          placeholder="在这里输入文字..."
+                        />
+                     </div>
+                   </div>
+                )}
 
                 {/* === 布局 Layout === */}
                 <div className="flex flex-col border-b border-gray-100 pb-3">
@@ -99,8 +117,9 @@ export default function RightPanel() {
                     <div className="grid grid-cols-2 gap-2">
                       <FigmaNumberInput label="X" value={Math.round(activeLayer.x)} onChange={(val) => handlePropChange('x', val ?? 0)} />
                       <FigmaNumberInput label="Y" value={Math.round(activeLayer.y)} onChange={(val) => handlePropChange('y', val ?? 0)} />
-                      <FigmaNumberInput label="W" value={Math.round(activeLayer.width)} readOnly />
-                      <FigmaNumberInput label="H" value={Math.round(activeLayer.height)} readOnly />
+                      {/* === 核心新增：解锁宽高的直接输入修改 === */}
+                      <FigmaNumberInput label="W" value={Math.round(activeLayer.width)} onChange={(val) => handlePropChange('width', Math.max(val ?? 20, 20))} />
+                      <FigmaNumberInput label="H" value={Math.round(activeLayer.height)} onChange={(val) => handlePropChange('height', Math.max(val ?? 20, 20))} />
                     </div>
                     <div className="flex items-center gap-2">
                       <FigmaNumberInput label="∠" value={Math.round(activeLayer.rotation)} onChange={(val) => handlePropChange('rotation', val ?? 0)} />
@@ -113,20 +132,20 @@ export default function RightPanel() {
                   <div className="flex flex-col border-b border-gray-100 pb-3">
                     <SectionHeader title="Text" />
                     <div className="px-4 flex flex-col gap-2">
-
-                      <Select
-                        className="w-full font-medium"
-                        variant="filled"
+                      
+                      <Select 
+                        className="w-full font-medium" 
+                        variant="filled" 
                         size="small"
-                        value={textLayer.fontFamily}
+                        value={textLayer.fontFamily} 
                         onChange={(val) => handlePropChange('fontFamily', val)}
                         options={[{ value: 'Arial', label: 'Arial' }, { value: 'Times New Roman', label: 'Times New Roman' }, { value: 'Courier New', label: 'Courier New' }]}
                       />
-
+                      
                       <div className="grid grid-cols-2 gap-2">
-                        <Select
+                        <Select 
                           variant="filled" size="small"
-                          value={String(textLayer.fontWeight)}
+                          value={String(textLayer.fontWeight)} 
                           onChange={(val) => handlePropChange('fontWeight', val)}
                           options={[{ value: 'normal', label: 'Regular' }, { value: 'bold', label: 'Bold' }]}
                         />
@@ -162,23 +181,23 @@ export default function RightPanel() {
                     <SectionHeader title="Fill" />
                     <div className="px-4 flex flex-col gap-2">
                       <div className="flex items-center gap-2">
-                        <ColorPicker value={textLayer.fill} onChange={(c: Color) => handlePropChange('fill', c.toHexString())} size="small" />
+                        <ColorPicker value={textLayer.fill} onChange={(c: Color | null) => handlePropChange('fill', c ? c.toHexString() : '#000000')} size="small" />
                         <div className="flex-1 bg-[#f5f5f5] rounded px-2 py-1 text-xs text-gray-600 uppercase font-mono">
                           {textLayer.fill || '#000000'}
                         </div>
                         <span className="text-gray-400 text-[10px] w-8 text-right">100%</span>
                       </div>
-
+                      
                       {textLayer.textBackgroundColor && (
-                        <div className="flex items-center gap-2 mt-1">
-                          <ColorPicker value={textLayer.textBackgroundColor} onChange={(c: Color) => handlePropChange('textBackgroundColor', c.toHexString())} size="small" allowClear />
-                          <div className="flex-1 bg-[#f5f5f5] rounded px-2 py-1 text-xs text-gray-600 uppercase font-mono">
-                            {textLayer.textBackgroundColor}
-                          </div>
-                        </div>
+                         <div className="flex items-center gap-2 mt-1">
+                         <ColorPicker value={textLayer.textBackgroundColor} onChange={(c: Color | null) => handlePropChange('textBackgroundColor', c ? c.toHexString() : '')} size="small" allowClear />
+                         <div className="flex-1 bg-[#f5f5f5] rounded px-2 py-1 text-xs text-gray-600 uppercase font-mono">
+                           {textLayer.textBackgroundColor}
+                         </div>
+                       </div>
                       )}
                       {!textLayer.textBackgroundColor && (
-                        <div
+                        <div 
                           className="text-[10px] text-gray-400 hover:text-gray-600 cursor-pointer mt-1 font-medium"
                           onClick={() => handlePropChange('textBackgroundColor', '#ffffff')}
                         >
@@ -192,17 +211,17 @@ export default function RightPanel() {
                 {/* === 描边 Stroke === */}
                 {isTextLayer && (
                   <div className="flex flex-col border-b border-gray-100 pb-3">
-                    <SectionHeader title="Stroke" />
+                    <SectionHeader title="Border" />
                     <div className="px-4 flex flex-col gap-2">
                       <div className="flex items-center gap-2">
-                        <ColorPicker value={textLayer.stroke || 'transparent'} onChange={(c: Color) => handlePropChange('stroke', c.toHexString())} size="small" allowClear />
+                        <ColorPicker value={textLayer.stroke || 'transparent'} onChange={(c: Color | null) => handlePropChange('stroke', c ? c.toHexString() : '')} size="small" allowClear />
                         <div className="flex-1 bg-[#f5f5f5] rounded px-2 py-1 text-xs text-gray-600 uppercase font-mono">
                           {textLayer.stroke || 'None'}
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 mt-1">
                         <FigmaNumberInput label="≡" value={textLayer.strokeWidth ?? 0} onChange={(val) => handlePropChange('strokeWidth', val ?? 0)} />
-                        <Select
+                        <Select 
                           variant="filled" size="small"
                           value={textLayer.strokeDashArray ? 'dashed' : 'solid'}
                           onChange={(val) => handlePropChange('strokeDashArray', val === 'dashed' ? [5, 5] : undefined)}
