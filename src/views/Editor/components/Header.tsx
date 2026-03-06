@@ -1,6 +1,6 @@
 import { useEditorStore } from '../../../store/useEditorStore';
-import { Button, Tooltip } from 'antd';
-import { UndoOutlined, RedoOutlined, PlaySquareOutlined } from '@ant-design/icons';
+import { Button, Tooltip } from '../../../components/ui';
+import { UndoIcon, RedoIcon, PlayIcon } from '../../../components/ui/Icons';
 
 export default function Header() {
   const title = useEditorStore((state) => state.document?.title);
@@ -16,16 +16,16 @@ export default function Header() {
 
       <div className="flex gap-2 items-center">
         <Tooltip title="撤销 (Ctrl+Z)" placement="bottom">
-          <Button type="text" icon={<UndoOutlined />} />
+          <Button variant="text" icon={<UndoIcon />} />
         </Tooltip>
         <Tooltip title="重做 (Ctrl+Y)" placement="bottom">
-          <Button type="text" icon={<RedoOutlined />} />
+          <Button variant="text" icon={<RedoIcon />} />
         </Tooltip>
         
         <div className="w-px h-4 bg-gray-300 mx-3"></div>
         
-        <Button icon={<PlaySquareOutlined />}>预览</Button>
-        <Button type="primary">导出作品</Button>
+        <Button icon={<PlayIcon />}>预览</Button>
+        <Button variant="primary">导出作品</Button>
       </div>
     </header>
   );

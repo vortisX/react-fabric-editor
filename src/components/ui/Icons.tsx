@@ -1,0 +1,82 @@
+import React from 'react';
+import { cn } from '../../utils/cn';
+
+type IconProps = React.SVGProps<SVGSVGElement>;
+
+const Icon: React.FC<IconProps & { d: string }> = ({ d, className, ...props }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+    className={cn('w-4 h-4', className)} {...props}>
+    <path d={d} />
+  </svg>
+);
+
+// ===== Header Icons =====
+export const UndoIcon: React.FC<IconProps> = (props) => <Icon d="M3 10h10a5 5 0 015 5v0a5 5 0 01-5 5H3M3 10l4-4M3 10l4 4" {...props} />;
+export const RedoIcon: React.FC<IconProps> = (props) => <Icon d="M21 10H11a5 5 0 00-5 5v0a5 5 0 005 5h10M21 10l-4-4M21 10l-4 4" {...props} />;
+export const PlayIcon: React.FC<IconProps> = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+    className={cn('w-4 h-4', props.className)} {...props}>
+    <rect x="2" y="2" width="20" height="20" rx="2" />
+    <path d="M10 8l6 4-6 4V8z" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+// ===== LeftPanel Icons =====
+export const GridIcon: React.FC<IconProps> = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+    className={cn('w-4 h-4', props.className)} {...props}>
+    <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+    <rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
+  </svg>
+);
+export const TypeIcon: React.FC<IconProps> = (props) => <Icon d="M4 7V4h16v3M9 20h6M12 4v16" {...props} />;
+export const ImageIcon: React.FC<IconProps> = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+    className={cn('w-4 h-4', props.className)} {...props}>
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" />
+  </svg>
+);
+
+// ===== RightPanel Icons =====
+export const BoldIcon: React.FC<IconProps> = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+    className={cn('w-4 h-4', props.className)} {...props}>
+    <path d="M6 4h8a4 4 0 014 4 4 4 0 01-4 4H6z" /><path d="M6 12h9a4 4 0 014 4 4 4 0 01-4 4H6z" />
+  </svg>
+);
+export const ItalicIcon: React.FC<IconProps> = (props) => <Icon d="M19 4h-9M14 20H5M15 4L9 20" {...props} />;
+export const UnderlineIcon: React.FC<IconProps> = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+    className={cn('w-4 h-4', props.className)} {...props}>
+    <path d="M6 3v7a6 6 0 006 6 6 6 0 006-6V3" /><line x1="4" y1="21" x2="20" y2="21" />
+  </svg>
+);
+export const AlignLeftIcon: React.FC<IconProps> = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+    className={cn('w-4 h-4', props.className)} {...props}>
+    <line x1="17" y1="10" x2="3" y2="10" /><line x1="21" y1="6" x2="3" y2="6" />
+    <line x1="21" y1="14" x2="3" y2="14" /><line x1="17" y1="18" x2="3" y2="18" />
+  </svg>
+);
+export const AlignCenterIcon: React.FC<IconProps> = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+    className={cn('w-4 h-4', props.className)} {...props}>
+    <line x1="18" y1="10" x2="6" y2="10" /><line x1="21" y1="6" x2="3" y2="6" />
+    <line x1="21" y1="14" x2="3" y2="14" /><line x1="18" y1="18" x2="6" y2="18" />
+  </svg>
+);
+export const AlignRightIcon: React.FC<IconProps> = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+    className={cn('w-4 h-4', props.className)} {...props}>
+    <line x1="21" y1="10" x2="7" y2="10" /><line x1="21" y1="6" x2="3" y2="6" />
+    <line x1="21" y1="14" x2="3" y2="14" /><line x1="21" y1="18" x2="7" y2="18" />
+  </svg>
+);
+export const AlignJustifyIcon: React.FC<IconProps> = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+    className={cn('w-4 h-4', props.className)} {...props}>
+    <line x1="21" y1="10" x2="3" y2="10" /><line x1="21" y1="6" x2="3" y2="6" />
+    <line x1="21" y1="14" x2="3" y2="14" /><line x1="21" y1="18" x2="3" y2="18" />
+  </svg>
+);
