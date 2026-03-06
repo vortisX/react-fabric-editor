@@ -50,18 +50,55 @@ export const setupGlobalUI = (): void => {
 };
 
 // ==========================================
-// � 实例控制点增强
+// 🛠️ 胶囊画笔绘制逻辑
+// ==========================================
+const renderVerticalPill = (
+  ctx: CanvasRenderingContext2D,
+  left: number,
+  top: number,
+  styleOverride: Record<string, unknown>,
+  fabricObj: FabricObject,
+): void => {
+  ctx.save();
+  ctx.translate(left, top);
+  ctx.fillStyle =
+    (styleOverride?.cornerColor as string) ||
+    fabricObj.cornerColor ||
+    "#ffffff";
+  ctx.strokeStyle =
+    (styleOverride?.cornerStrokeColor as string) ||
+    fabricObj.cornerStrokeColor ||
+    "#18a0fb";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(-3, -7, 6, 14, 3);
+  else ctx.rect(-3, -7, 6, 14);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+};
+
+// ==========================================
+// 🔧 实例控制点增强
 // ==========================================
 export const applyCustomControls = (obj: FabricObject): void => {
-  const controls = obj.controls as Record<string, Control>;
+  const controls = obj.controls as Record<string, Control & { _isEnhanced?: boolean }>;
   if (!controls) return;
 
   // 1. 隐藏旋转天线
   if (controls.mtr) controls.mtr.visible = false;
 
-  // 2. 隐藏上下/左右控制点，只保留四角
+  // 2. 隐藏上下控制点（mt/mb），不支持上下拉伸
   if (controls.mt) controls.mt.visible = false;
   if (controls.mb) controls.mb.visible = false;
-  if (controls.ml) controls.ml.visible = false;
-  if (controls.mr) controls.mr.visible = false;
+
+  // 3. 左右胶囊 UI
+  if (controls.ml && !controls.ml._isEnhanced) {
+    controls.ml.render = renderVerticalPill;
+    controls.ml._isEnhanced = true;
+  }
+  if (controls.mr && !controls.mr._isEnhanced) {
+    controls.mr.render = renderVerticalPill;
+    controls.mr._isEnhanced = true;
+  }
 };

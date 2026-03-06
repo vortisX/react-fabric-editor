@@ -66,6 +66,7 @@ export class EditorEngine {
       const lineHeight = target.lineHeight ?? 1.2;
 
       const isCorner = ['tl', 'tr', 'bl', 'br'].includes(corner);
+      const isSideX = ['ml', 'mr'].includes(corner);
 
       if (isCorner) {
         // 四角拖动：等比缩放框体 + 字体大小（使用均匀缩放比，不取整，确保丝滑）
@@ -81,6 +82,24 @@ export class EditorEngine {
           _manualHeight: newHeight,
           scaleX: 1,
           scaleY: 1
+        });
+      } else if (isSideX) {
+        // 左右拖动：只改宽度，高度自动适应文字内容
+        const minWidth = oldFontSize;
+        const newWidth = Math.max((target.width ?? 0) * scaleX, minWidth);
+
+        // 临时移除手动高度限制，让 initDimensions 计算文字自然高度
+        target.set({
+          _manualHeight: undefined,
+          width: newWidth,
+          scaleX: 1,
+          scaleY: 1
+        });
+        target.initDimensions();
+        const autoHeight = target.height ?? oldFontSize * lineHeight;
+        target.set({
+          height: autoHeight,
+          _manualHeight: autoHeight,
         });
       } else {
         // 其他控制点：通用缩放
