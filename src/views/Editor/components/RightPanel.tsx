@@ -6,6 +6,7 @@ import {
 } from '@ant-design/icons';
 import { useEditorStore } from '../../../store/useEditorStore';
 import { engineInstance } from '../../../core/engine';
+import { SUPPORTED_FONTS } from '../../../constants/fonts'; 
 import type { TextLayer } from '../../../types/schema';
 import type { Color } from 'antd/es/color-picker';
 
@@ -20,7 +21,7 @@ const DesignNumberInput = ({ label, value, onChange, readOnly = false }: DesignN
   <div className={`flex items-center bg-[#f5f5f5] rounded px-2 py-0.5 border border-transparent hover:border-gray-300 transition-colors ${readOnly ? 'opacity-60 cursor-not-allowed' : ''}`}>
     <span className="text-[10px] text-gray-400 font-medium w-8 select-none flex items-center justify-center">{label}</span>
     <InputNumber 
-      bordered={false} 
+      variant="borderless" // 核心修改：替代了之前的 bordered={false}
       size="small" 
       className="flex-1 w-full bg-transparent shadow-none text-xs" 
       value={value} 
@@ -65,11 +66,9 @@ export default function RightPanel() {
   const handlePropChange = <K extends keyof TextLayer>(key: K, value: TextLayer[K]) => {
     const updates: Partial<TextLayer> = { [key]: value };
 
-    // === 核心新增：如果修改的是文本内容，连带更新左侧的图层名称 ===
     if (key === 'content') {
       const textVal = (value as string) || '';
       const newName = textVal.trim() || '空文本';
-      // 避免长篇大论撑爆左侧面板
       updates.name = newName.length > 15 ? newName.slice(0, 15) + '...' : newName;
     }
 
@@ -105,14 +104,14 @@ export default function RightPanel() {
             children: (
               <div className="overflow-y-auto h-[calc(100vh-40px)] pb-10 flex flex-col">
                 
-                {/* === 内容 (文本独有) === */}
                 {isTextLayer && (
                    <div className="flex flex-col border-b border-gray-100 pb-3 pt-1">
                      <div className="px-4">
                         <Input.TextArea 
+                          variant="borderless" // 同样保持风格统一
                           value={textLayer.content}
                           onChange={(e) => handlePropChange('content', e.target.value)}
-                          className="text-xs bg-[#f5f5f5] border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white transition-colors rounded-md p-2"
+                          className="text-xs bg-[#f5f5f5] hover:border-gray-300 focus:border-blue-400 focus:bg-white transition-colors rounded-md p-2"
                           autoSize={{ minRows: 2, maxRows: 6 }}
                           placeholder="在这里输入文字..."
                         />
@@ -120,7 +119,6 @@ export default function RightPanel() {
                    </div>
                 )}
 
-                {/* === 布局 === */}
                 <div className="flex flex-col border-b border-gray-100 pb-3">
                   <SectionHeader title="布局" />
                   <div className="px-4 flex flex-col gap-2">
@@ -139,21 +137,18 @@ export default function RightPanel() {
                   </div>
                 </div>
 
-                {/* === 文字排版 === */}
                 {isTextLayer && (
                   <div className="flex flex-col border-b border-gray-100 pb-3">
                     <SectionHeader title="文字排版" />
                     <div className="px-4 flex flex-col gap-2">
-                      
                       <Select 
                         className="w-full font-medium" 
                         variant="filled" 
                         size="small"
                         value={textLayer.fontFamily} 
                         onChange={(val) => handlePropChange('fontFamily', val)}
-                        options={[{ value: 'Arial', label: 'Arial' }, { value: 'Times New Roman', label: 'Times New Roman' }, { value: 'Courier New', label: 'Courier New' }]}
+                        options={SUPPORTED_FONTS}
                       />
-                      
                       <div className="grid grid-cols-2 gap-2">
                         <Select 
                           variant="filled" size="small"
@@ -163,12 +158,10 @@ export default function RightPanel() {
                         />
                         <DesignNumberInput label="字号" value={textLayer.fontSize} onChange={(val) => handlePropChange('fontSize', val ?? 36)} />
                       </div>
-
                       <div className="grid grid-cols-2 gap-2">
                         <DesignNumberInput label="行高" value={textLayer.lineHeight ?? 1.2} onChange={(val) => handlePropChange('lineHeight', val ?? 1.2)} />
                         <DesignNumberInput label="字距" value={textLayer.letterSpacing ?? 0} onChange={(val) => handlePropChange('letterSpacing', val ?? 0)} />
                       </div>
-
                       <div className="flex justify-between items-center bg-[#f5f5f5] rounded p-0.5 mt-1">
                         <div className="flex gap-0.5">
                           <Button type="text" size="small" className={`px-2 min-w-0 ${textLayer.textAlign === 'left' ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-800'}`} onClick={() => handlePropChange('textAlign', 'left')}><AlignLeftOutlined className="text-[10px]" /></Button>
@@ -185,70 +178,61 @@ export default function RightPanel() {
                           <Button type="text" size="small" className={`px-2 min-w-0 ${textLayer.underline ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}`} onClick={() => handlePropChange('underline', !textLayer.underline)}><UnderlineOutlined className="text-[10px]" /></Button>
                         </div>
                       </div>
-
                     </div>
                   </div>
                 )}
 
-                {/* === 颜色填充 === */}
-                {isTextLayer && (
-                  <div className="flex flex-col border-b border-gray-100 pb-3">
-                    <SectionHeader title="颜色填充" />
-                    <div className="px-4 flex flex-col gap-2">
-                      <div className="flex items-center gap-2">
-                        <ColorPicker value={textLayer.fill} onChange={(c: Color | null) => handlePropChange('fill', c ? c.toHexString() : '#000000')} size="small" />
-                        <div className="flex-1 bg-[#f5f5f5] rounded px-2 py-1 text-xs text-gray-600 uppercase font-mono">
-                          {textLayer.fill || '#000000'}
-                        </div>
-                        <span className="text-gray-400 text-[10px] w-8 text-right">文字</span>
+                <div className="flex flex-col border-b border-gray-100 pb-3">
+                  <SectionHeader title="颜色填充" />
+                  <div className="px-4 flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <ColorPicker value={textLayer.fill} onChange={(c: Color | null) => handlePropChange('fill', c ? c.toHexString() : '#000000')} size="small" />
+                      <div className="flex-1 bg-[#f5f5f5] rounded px-2 py-1 text-xs text-gray-600 uppercase font-mono">
+                        {textLayer.fill || '#000000'}
                       </div>
-                      
-                      {textLayer.textBackgroundColor && (
-                         <div className="flex items-center gap-2 mt-1">
+                      <span className="text-gray-400 text-[10px] w-8 text-right">文字</span>
+                    </div>
+                    {textLayer.textBackgroundColor && (
+                       <div className="flex items-center gap-2 mt-1">
                          <ColorPicker value={textLayer.textBackgroundColor} onChange={(c: Color | null) => handlePropChange('textBackgroundColor', c ? c.toHexString() : '')} size="small" allowClear />
                          <div className="flex-1 bg-[#f5f5f5] rounded px-2 py-1 text-xs text-gray-600 uppercase font-mono">
                            {textLayer.textBackgroundColor}
                          </div>
                          <span className="text-gray-400 text-[10px] w-8 text-right">背景</span>
                        </div>
-                      )}
-                      {!textLayer.textBackgroundColor && (
-                        <div 
-                          className="text-[10px] text-gray-400 hover:text-gray-600 cursor-pointer mt-1 font-medium"
-                          onClick={() => handlePropChange('textBackgroundColor', '#ffffff')}
-                        >
-                          + 添加背景色
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* === 边框样式 === */}
-                {isTextLayer && (
-                  <div className="flex flex-col border-b border-gray-100 pb-3">
-                    <SectionHeader title="边框样式" />
-                    <div className="px-4 flex flex-col gap-2">
-                      <div className="flex items-center gap-2">
-                        <ColorPicker value={textLayer.stroke || 'transparent'} onChange={(c: Color | null) => handlePropChange('stroke', c ? c.toHexString() : '')} size="small" allowClear />
-                        <div className="flex-1 bg-[#f5f5f5] rounded px-2 py-1 text-xs text-gray-600 uppercase font-mono">
-                          {textLayer.stroke || '无'}
-                        </div>
+                    )}
+                    {!textLayer.textBackgroundColor && (
+                      <div 
+                        className="text-[10px] text-gray-400 hover:text-gray-600 cursor-pointer mt-1 font-medium"
+                        onClick={() => handlePropChange('textBackgroundColor', '#ffffff')}
+                      >
+                        + 添加背景色
                       </div>
-                      <div className="grid grid-cols-2 gap-2 mt-1">
-                        <DesignNumberInput label="粗细" value={textLayer.strokeWidth ?? 0} onChange={(val) => handlePropChange('strokeWidth', val ?? 0)} />
-                        <Select 
-                          variant="filled" size="small"
-                          value={textLayer.strokeDashArray ? 'dashed' : 'solid'}
-                          onChange={(val) => handlePropChange('strokeDashArray', val === 'dashed' ? [5, 5] : undefined)}
-                          options={[{ value: 'solid', label: '实线' }, { value: 'dashed', label: '虚线' }]}
-                        />
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col border-b border-gray-100 pb-3">
+                  <SectionHeader title="边框样式" />
+                  <div className="px-4 flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <ColorPicker value={textLayer.stroke || 'transparent'} onChange={(c: Color | null) => handlePropChange('stroke', c ? c.toHexString() : '')} size="small" allowClear />
+                      <div className="flex-1 bg-[#f5f5f5] rounded px-2 py-1 text-xs text-gray-600 uppercase font-mono">
+                        {textLayer.stroke || '无'}
                       </div>
                     </div>
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                      <DesignNumberInput label="粗细" value={textLayer.strokeWidth ?? 0} onChange={(val) => handlePropChange('strokeWidth', val ?? 0)} />
+                      <Select 
+                        variant="filled" size="small"
+                        value={textLayer.strokeDashArray ? 'dashed' : 'solid'}
+                        onChange={(val) => handlePropChange('strokeDashArray', val === 'dashed' ? [5, 5] : undefined)}
+                        options={[{ value: 'solid', label: '实线' }, { value: 'dashed', label: '虚线' }]}
+                      />
+                    </div>
                   </div>
-                )}
+                </div>
 
-                {/* === 图层属性 === */}
                 <div className="flex flex-col pb-3">
                   <SectionHeader title="图层属性" />
                   <div className="px-4 flex items-center gap-3">
@@ -257,7 +241,6 @@ export default function RightPanel() {
                     <span className="text-[10px] text-gray-600 w-8 text-right">{Math.round(activeLayer.opacity * 100)}%</span>
                   </div>
                 </div>
-
               </div>
             ),
           }
