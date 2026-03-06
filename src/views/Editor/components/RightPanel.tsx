@@ -191,18 +191,12 @@ export default function RightPanel() {
                   <div className="px-4 flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                       <ColorPicker value={textLayer.fill} onChange={(c) => handlePropChange('fill', c || '#000000')} size="small" />
-                      <div className="flex-1 bg-[#f5f5f5] rounded px-2 py-1 text-xs text-gray-600 uppercase font-mono">
-                        {textLayer.fill || '#000000'}
-                      </div>
-                      <span className="text-gray-400 text-[10px] w-8 text-right">{t('rightPanel.textColor')}</span>
+                      <span className="text-xs text-gray-500">{t('rightPanel.textColor')}</span>
                     </div>
                     {textLayer.textBackgroundColor && (
                       <div className="flex items-center gap-2 mt-1">
                         <ColorPicker value={textLayer.textBackgroundColor} onChange={(c) => handlePropChange('textBackgroundColor', c)} size="small" allowClear />
-                        <div className="flex-1 bg-[#f5f5f5] rounded px-2 py-1 text-xs text-gray-600 uppercase font-mono">
-                          {textLayer.textBackgroundColor}
-                        </div>
-                        <span className="text-gray-400 text-[10px] w-8 text-right">{t('rightPanel.backgroundColor')}</span>
+                        <span className="text-xs text-gray-500">{t('rightPanel.backgroundColor')}</span>
                       </div>
                     )}
                     {!textLayer.textBackgroundColor && (
@@ -221,9 +215,7 @@ export default function RightPanel() {
                   <div className="px-4 flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                       <ColorPicker value={textLayer.stroke || 'transparent'} onChange={(c) => handlePropChange('stroke', c)} size="small" allowClear />
-                      <div className="flex-1 bg-[#f5f5f5] rounded px-2 py-1 text-xs text-gray-600 uppercase font-mono">
-                        {textLayer.stroke || t('rightPanel.none')}
-                      </div>
+                      <span className="text-xs text-gray-500">{t('rightPanel.borderStyle')}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 mt-1">
                       <DesignNumberInput label={t('rightPanel.strokeWidth')} value={textLayer.strokeWidth ?? 0} onChange={(val) => handlePropChange('strokeWidth', val ?? 0)} />

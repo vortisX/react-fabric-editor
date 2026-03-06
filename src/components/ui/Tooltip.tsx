@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { cn } from '../../utils/cn';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 
 interface TooltipProps {
   title: string;
@@ -9,11 +9,44 @@ interface TooltipProps {
 
 export const Tooltip: React.FC<TooltipProps> = ({ title, placement = 'top', children }) => {
   const [visible, setVisible] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const triggerRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const updatePosition = useCallback(() => {
+    const el = triggerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const gap = 6;
+    let top = 0, left = 0;
+    switch (placement) {
+      case 'bottom':
+        top = rect.bottom + gap;
+        left = rect.left + rect.width / 2;
+        break;
+      case 'left':
+        top = rect.top + rect.height / 2;
+        left = rect.left - gap;
+        break;
+      case 'right':
+        top = rect.top + rect.height / 2;
+        left = rect.right + gap;
+        break;
+      case 'top':
+      default:
+        top = rect.top - gap;
+        left = rect.left + rect.width / 2;
+        break;
+    }
+    setPosition({ top, left });
+  }, [placement]);
 
   const show = () => {
     clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => setVisible(true), 400);
+    timeoutRef.current = setTimeout(() => {
+      updatePosition();
+      setVisible(true);
+    }, 400);
   };
   const hide = () => {
     clearTimeout(timeoutRef.current);
@@ -22,23 +55,39 @@ export const Tooltip: React.FC<TooltipProps> = ({ title, placement = 'top', chil
 
   useEffect(() => () => clearTimeout(timeoutRef.current), []);
 
-  const positions: Record<string, string> = {
-    top: 'bottom-full left-1/2 -translate-x-1/2 mb-1.5',
-    bottom: 'top-full left-1/2 -translate-x-1/2 mt-1.5',
-    left: 'right-full top-1/2 -translate-y-1/2 mr-1.5',
-    right: 'left-full top-1/2 -translate-y-1/2 ml-1.5',
+  const arrowStyle: Record<string, React.CSSProperties> = {
+    top:    { bottom: -4, left: '50%', marginLeft: -4, borderWidth: '4px 4px 0', borderColor: 'rgba(17,24,39,0.92) transparent transparent' },
+    bottom: { top: -4, left: '50%', marginLeft: -4, borderWidth: '0 4px 4px', borderColor: 'transparent transparent rgba(17,24,39,0.92)' },
+    left:   { right: -4, top: '50%', marginTop: -4, borderWidth: '4px 0 4px 4px', borderColor: 'transparent transparent transparent rgba(17,24,39,0.92)' },
+    right:  { left: -4, top: '50%', marginTop: -4, borderWidth: '4px 4px 4px 0', borderColor: 'transparent rgba(17,24,39,0.92) transparent transparent' },
   };
 
   return (
-    <div className="relative inline-flex" onMouseEnter={show} onMouseLeave={hide}>
+    <div ref={triggerRef} className="relative inline-flex" onMouseEnter={show} onMouseLeave={hide}>
       {children}
-      {visible && (
-        <div className={cn(
-          'absolute z-50 px-2 py-1 text-[11px] text-white bg-gray-800 rounded shadow whitespace-nowrap pointer-events-none',
-          positions[placement]
-        )}>
-          {title}
-        </div>
+      {visible && ReactDOM.createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            top: position.top,
+            left: position.left,
+            zIndex: 99999,
+            animation: `tooltip-in-${placement} 0.18s cubic-bezier(0.16,1,0.3,1) both`,
+          }}
+        >
+          <div
+            className="relative px-3 py-1.5 text-xs font-medium text-white rounded-lg shadow-xl whitespace-nowrap pointer-events-none"
+            style={{
+              background: 'linear-gradient(135deg, rgba(17,24,39,0.95), rgba(31,41,55,0.92))',
+              backdropFilter: 'blur(8px)',
+              boxShadow: '0 4px 14px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06)',
+            }}
+          >
+            {title}
+            <span style={{ position: 'absolute', width: 0, height: 0, borderStyle: 'solid', ...arrowStyle[placement] }} />
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

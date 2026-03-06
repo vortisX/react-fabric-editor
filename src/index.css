@@ -1,5 +1,22 @@
 @import "tailwindcss";
 
+@keyframes tooltip-in-top {
+  from { opacity: 0; transform: translate(-50%, -100%) translateY(4px); }
+  to   { opacity: 1; transform: translate(-50%, -100%) translateY(0); }
+}
+@keyframes tooltip-in-bottom {
+  from { opacity: 0; transform: translate(-50%, 0) translateY(-4px); }
+  to   { opacity: 1; transform: translate(-50%, 0) translateY(0); }
+}
+@keyframes tooltip-in-left {
+  from { opacity: 0; transform: translate(-100%, -50%) translateX(4px); }
+  to   { opacity: 1; transform: translate(-100%, -50%) translateX(0); }
+}
+@keyframes tooltip-in-right {
+  from { opacity: 0; transform: translate(0, -50%) translateX(-4px); }
+  to   { opacity: 1; transform: translate(0, -50%) translateX(0); }
+}
+
 body {
   margin: 0;
   overflow: hidden;
