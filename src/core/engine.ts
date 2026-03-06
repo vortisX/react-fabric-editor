@@ -2,231 +2,195 @@ import { Canvas, FabricObject, Textbox } from 'fabric';
 import type { DesignDocument, TextLayer } from '../types/schema';
 import { useEditorStore } from '../store/useEditorStore';
 import { setupGlobalUI } from './EditorUI';
-import { createCustomTextbox, type CustomTextbox } from './CustomTextbox';
-
-export interface CustomFabricObject extends FabricObject {
-  id?: string;
-}
+import { createCustomTextbox, CustomTextbox } from './CustomTextbox';
 
 export class EditorEngine {
   public canvas: Canvas | null = null;
 
   public init(canvasEl: HTMLCanvasElement, width: number, height: number) {
-    if (this.canvas) {
-      this.dispose();
-    }
+    if (this.canvas) this.dispose();
 
     this.canvas = new Canvas(canvasEl, {
       width,
       height,
-      preserveObjectStacking: true, 
+      preserveObjectStacking: true,
       selection: true,
-      backgroundColor: '#ffffff'
+      backgroundColor: '#ffffff',
     });
 
     setupGlobalUI();
-
     this.bindEvents();
   }
 
+  // ==================== 事件绑定 ====================
+
   private bindEvents() {
-    if (!this.canvas) return;
+    const c = this.canvas!;
 
-    this.canvas.on('selection:created', (e) => {
-      const target = e.selected?.[0] as unknown as CustomFabricObject;
-      if (target && target.id) useEditorStore.getState().setActiveLayer(target.id);
-    });
+    c.on('selection:created', (e) => this.syncActiveLayer(e.selected?.[0]));
+    c.on('selection:updated', (e) => this.syncActiveLayer(e.selected?.[0]));
+    c.on('selection:cleared', () => useEditorStore.getState().setActiveLayer(null));
 
-    this.canvas.on('selection:updated', (e) => {
-      const target = e.selected?.[0] as unknown as CustomFabricObject;
-      if (target && target.id) useEditorStore.getState().setActiveLayer(target.id);
-    });
-    
-    this.canvas.on('selection:cleared', () => {
-      useEditorStore.getState().setActiveLayer(null);
-    });
+    c.on('object:scaling', (e) => this.handleScaling(e));
+    c.on('object:resizing', (e) => this.handleResizing(e));
+    c.on('object:modified', (e) => this.handleModified(e));
+    c.on('text:changed', (e) => this.handleTextChanged(e));
+  }
 
-    this.canvas.on('object:scaling', (e) => {
-      const target = e.target as unknown as CustomTextbox;
-      if (!target || !(target instanceof Textbox)) return;
+  private syncActiveLayer(target?: FabricObject) {
+    const id = (target as CustomTextbox)?.id;
+    if (id) useEditorStore.getState().setActiveLayer(id);
+  }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const transform = (e as any).transform;
-      const corner: string = transform?.corner ?? '';
-      const anchorOriginX = transform?.originX ?? 'left';
-      const anchorOriginY = transform?.originY ?? 'top';
+  /** 四角拖动：等比缩放框体 + 字体；其他控制点：通用最小值约束 */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private handleScaling(e: any) {
+    const target = e.target;
+    if (!(target instanceof CustomTextbox)) return;
 
-      // 记住锚点位置（拖动控制点对面的角/边）
-      const anchorPoint = target.getPointByOrigin(anchorOriginX, anchorOriginY);
+    const { corner = '', originX = 'left', originY = 'top' } = e.transform ?? {};
+    const anchorPoint = target.getPointByOrigin(originX, originY);
 
-      const scaleX = target.scaleX ?? 1;
-      const scaleY = target.scaleY ?? 1;
-      const oldFontSize = target.fontSize ?? 12;
-      const lineHeight = target.lineHeight ?? 1.2;
+    const scaleX = target.scaleX ?? 1;
+    const scaleY = target.scaleY ?? 1;
+    const fontSize = target.fontSize ?? 12;
+    const lineHeight = target.lineHeight ?? 1.2;
 
-      const isCorner = ['tl', 'tr', 'bl', 'br'].includes(corner);
+    if (['tl', 'tr', 'bl', 'br'].includes(corner)) {
+      // 四角：均匀缩放字号 + 框体
+      const scale = (scaleX + scaleY) / 2;
+      const newFontSize = Math.max(fontSize * scale, 1);
+      const newWidth = Math.max((target.width ?? 0) * scale, newFontSize);
+      const newHeight = Math.max((target.height ?? 0) * scale, newFontSize * lineHeight);
+      target.set({
+        fontSize: newFontSize, width: newWidth,
+        height: newHeight, _manualHeight: newHeight,
+        scaleX: 1, scaleY: 1,
+      });
+    } else {
+      // 通用：仅缩放框体，字号不变
+      const newWidth = Math.max((target.width ?? 0) * scaleX, fontSize);
+      const newHeight = Math.max((target.height ?? 0) * scaleY, fontSize * lineHeight);
+      target.set({
+        width: newWidth, height: newHeight, _manualHeight: newHeight,
+        scaleX: 1, scaleY: 1,
+      });
+    }
 
-      if (isCorner) {
-        // 四角拖动：等比缩放框体 + 字体大小（使用均匀缩放比，不取整，确保丝滑）
-        const uniformScale = (scaleX + scaleY) / 2;
-        const newFontSize = Math.max(oldFontSize * uniformScale, 1);
-        const newWidth = Math.max((target.width ?? 0) * uniformScale, newFontSize);
-        const newHeight = Math.max((target.height ?? 0) * uniformScale, newFontSize * lineHeight);
+    // 恢复锚点位置，防止拖到最小时框体漂移
+    target.setPositionByOrigin(anchorPoint, originX, originY);
+  }
 
-        target.set({
-          fontSize: newFontSize,
-          width: newWidth,
-          height: newHeight,
-          _manualHeight: newHeight,
-          scaleX: 1,
-          scaleY: 1
-        });
-      } else {
-        // 其他控制点：通用缩放
-        const minWidth = oldFontSize;
-        const minHeight = oldFontSize * lineHeight;
-        const newWidth = Math.max((target.width ?? 0) * scaleX, minWidth);
-        const newHeight = Math.max((target.height ?? 0) * scaleY, minHeight);
+  /** ml/mr 侧边拖动（Fabric Textbox 的 changeWidth 行为）：自动适应文字高度 */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private handleResizing(e: any) {
+    const target = e.target;
+    if (!(target instanceof CustomTextbox)) return;
 
-        target.set({
-          width: newWidth,
-          height: newHeight,
-          _manualHeight: newHeight,
-          scaleX: 1,
-          scaleY: 1
-        });
-      }
+    const fontSize = target.fontSize ?? 12;
+    const lineHeight = target.lineHeight ?? 1.2;
+    const autoHeight = Math.max(target.calcTextHeight(), fontSize * lineHeight);
 
-      // 恢复锚点位置，防止拖动到最小时框体漂移
-      target.setPositionByOrigin(anchorPoint, anchorOriginX, anchorOriginY);
-    });
+    target.height = autoHeight;
+    target._manualHeight = autoHeight;
+    target.dirty = true;
+    target.setCoords();
+  }
 
-    // Fabric.js Textbox 的 ml/mr 使用 changeWidth，触发 object:resizing 而非 object:scaling
-    this.canvas.on('object:resizing', (e) => {
-      const target = e.target as unknown as CustomTextbox;
-      if (!target || !(target instanceof Textbox)) return;
+  /** 操作完成 → 同步属性到 Zustand Store */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private handleModified(e: any) {
+    const target = e.target as CustomTextbox;
+    if (!target?.id) return;
 
-      const oldFontSize = target.fontSize ?? 12;
-      const lineHeight = target.lineHeight ?? 1.2;
+    const pageId = this.getCurrentPageId();
+    if (!pageId) return;
 
-      // Fabric 已经直接修改了 width，用 calcTextHeight 获取文字换行后的真实高度
-      const textHeight = target.calcTextHeight();
-      const autoHeight = Math.max(textHeight, oldFontSize * lineHeight);
-      target.height = autoHeight;
-      target._manualHeight = autoHeight;
-      target.dirty = true;
-      target.setCoords();
-    });
+    const updates: Partial<TextLayer> = {
+      x: target.left ?? 0,
+      y: target.top ?? 0,
+      rotation: target.angle ?? 0,
+      width: target.width ?? 0,
+      height: target.height ?? 0,
+    };
 
-    this.canvas.on('object:modified', (e) => {
-      const target = e.target as unknown as CustomFabricObject;
-      const targetId = target?.id; 
-      if (!target || !targetId) return;
+    if (target instanceof Textbox) {
+      updates.fontSize = target.fontSize ?? 12;
+    }
 
-      const state = useEditorStore.getState();
-      const currentPageId = state.document?.pages[0]?.pageId;
+    useEditorStore.getState().updateLayer(pageId, target.id, updates);
+  }
 
-      if (currentPageId) {
-        const updates: Partial<TextLayer> = {
-          x: target.left ?? 0,
-          y: target.top ?? 0,
-          rotation: target.angle ?? 0,
-          width: target.width ?? 0,
-          height: target.height ?? 0,
-        };
+  /** 画布内编辑文字 → 同步内容和图层名称 */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private handleTextChanged(e: any) {
+    const target = e.target as CustomTextbox;
+    if (!target?.id || target.text === undefined) return;
 
-        // 同步字号（四角拖动会改变 fontSize）
-        if (target instanceof Textbox) {
-          updates.fontSize = target.fontSize ?? 12;
-        }
+    const pageId = this.getCurrentPageId();
+    if (!pageId) return;
 
-        state.updateLayer(currentPageId, targetId, updates);
-      }
-    });
+    const text = target.text || '';
+    const trimmed = text.trim() || '空文本';
+    const name = trimmed.length > 15 ? trimmed.slice(0, 15) + '...' : trimmed;
 
-    this.canvas.on('text:changed', (e) => {
-      const target = e.target as unknown as CustomTextbox;
-      if (!target || !target.id || target.text === undefined) return;
-
-      const state = useEditorStore.getState();
-      const currentPageId = state.document?.pages[0]?.pageId;
-
-      if (currentPageId) {
-        // === 核心新增：画布内打字时，动态计算并同步图层名称 ===
-        const textVal = target.text || '';
-        const newName = textVal.trim() || '空文本';
-        const finalName = newName.length > 15 ? newName.slice(0, 15) + '...' : newName;
-
-        state.updateLayer(currentPageId, target.id, {
-          content: textVal,
-          name: finalName, // 同步给左侧的图层树结构
-          width: target.width ?? 0,
-          height: target.height ?? 0,
-        });
-      }
+    useEditorStore.getState().updateLayer(pageId, target.id, {
+      content: text,
+      name,
+      width: target.width ?? 0,
+      height: target.height ?? 0,
     });
   }
 
+  // ==================== 公共 API ====================
+
   public updateLayerProps(layerId: string, props: Record<string, unknown>) {
     if (!this.canvas) return;
+    const target = this.findObjectById(layerId);
+    if (!target) return;
 
-    const target = this.canvas.getObjects().find(
-      (obj) => (obj as unknown as CustomFabricObject).id === layerId
-    );
-
-    if (target) {
-      const finalProps = { ...props, dirty: true };
-      if (props.height !== undefined) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (finalProps as any)._manualHeight = props.height;
-      }
-      
-      target.set(finalProps);
-
-      if (props.text !== undefined || props.width !== undefined || props.height !== undefined || props.textAlign !== undefined || props.fontFamily !== undefined) {
-
-        if (target instanceof Textbox) {
-          target.initDimensions(); 
-        }
-        
-        setTimeout(() => {
-          const state = useEditorStore.getState();
-          const currentPageId = state.document?.pages[0]?.pageId;
-          if (currentPageId && (target as unknown as CustomFabricObject).id) {
-            state.updateLayer(currentPageId, (target as unknown as CustomFabricObject).id!, {
-              width: target.width ?? 0,
-              height: target.height ?? 0,
-            });
-          }
-        }, 0);
-      }
-
-      this.canvas.renderAll();
+    // 同步 _manualHeight 以保持高度锁定
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const finalProps: Record<string, any> = { ...props, dirty: true };
+    if (props.height !== undefined) {
+      finalProps._manualHeight = props.height;
     }
+
+    target.set(finalProps);
+
+    // 影响文字排版的属性变更后，重新计算尺寸
+    const layoutKeys = ['text', 'width', 'height', 'textAlign', 'fontFamily'];
+    if (layoutKeys.some((k) => props[k] !== undefined) && target instanceof Textbox) {
+      target.initDimensions();
+      // 延迟同步，initDimensions 可能改变 width/height
+      setTimeout(() => {
+        const pageId = this.getCurrentPageId();
+        const id = (target as CustomTextbox).id;
+        if (pageId && id) {
+          useEditorStore.getState().updateLayer(pageId, id, {
+            width: target.width ?? 0,
+            height: target.height ?? 0,
+          });
+        }
+      }, 0);
+    }
+
+    this.canvas.renderAll();
   }
 
   public selectLayer(layerId: string) {
     if (!this.canvas) return;
-    
-    const target = this.canvas.getObjects().find(
-      (obj) => (obj as unknown as CustomFabricObject).id === layerId
-    );
-
-    if (target) {
-      this.canvas.setActiveObject(target);
-    } else {
-      this.canvas.discardActiveObject();
-    }
+    const target = this.findObjectById(layerId);
+    if (target) this.canvas.setActiveObject(target);
+    else this.canvas.discardActiveObject();
     this.canvas.renderAll();
   }
 
   public addTextLayer(layer: TextLayer) {
     if (!this.canvas) return;
-    
-    const textNode = createCustomTextbox(layer);
-    
-    this.canvas.add(textNode as unknown as FabricObject);
-    this.canvas.setActiveObject(textNode as unknown as FabricObject);
+    const node = createCustomTextbox(layer);
+    this.canvas.add(node as unknown as FabricObject);
+    this.canvas.setActiveObject(node as unknown as FabricObject);
     this.canvas.renderAll();
   }
 
@@ -247,6 +211,16 @@ export class EditorEngine {
       this.canvas.dispose();
       this.canvas = null;
     }
+  }
+
+  // ==================== 内部工具 ====================
+
+  private getCurrentPageId(): string | undefined {
+    return useEditorStore.getState().document?.pages[0]?.pageId;
+  }
+
+  private findObjectById(id: string): FabricObject | undefined {
+    return this.canvas?.getObjects().find((obj) => (obj as CustomTextbox).id === id);
   }
 }
 
