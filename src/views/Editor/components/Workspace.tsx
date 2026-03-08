@@ -29,7 +29,6 @@ export default function Workspace() {
         className="bg-white shadow-xl relative transition-transform origin-center"
         style={{ width: `${document.global.width}px`, height: `${document.global.height}px` }}
       >
-        {/* 4. 绑定 ref，抛弃不可靠的 id */}
         <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" />
       </div>
     </main>
