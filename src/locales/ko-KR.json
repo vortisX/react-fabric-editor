@@ -43,7 +43,11 @@
     "solid": "실선",
     "dashed": "점선",
     "layerProperties": "레이어 속성",
-    "opacity": "불투명도"
+    "opacity": "불투명도",
+    "searchFont": "글꼴 검색...",
+    "noFontFound": "글꼴을 찾을 수 없습니다",
+    "licenseFree": "상업용 무료",
+    "licenseVip": "회원 무료"
   },
   "editor": {
     "loading": "로딩 중..."

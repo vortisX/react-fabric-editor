@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { NumberInput, Select, Slider, ColorPicker, Button, Tooltip } from '../../../../components/ui';
+import { NumberInput, Select, FontSelect, Slider, ColorPicker, Button, Tooltip } from '../../../../components/ui';
 import { TextArea } from '../../../../components/ui/Input';
 import {
   BoldIcon, ItalicIcon, UnderlineIcon,
@@ -112,7 +112,7 @@ export function TypographySection({ layer, onPropChange }: TextSectionProps) {
     <div className="flex flex-col border-b border-gray-100 pb-3">
       <SectionHeader title={t('rightPanel.typography')} />
       <div className="px-4 flex flex-col gap-2">
-        <Select
+        <FontSelect
           className="w-full font-medium"
           value={layer.fontFamily}
           onChange={(val) => onPropChange('fontFamily', val)}

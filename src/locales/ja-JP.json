@@ -43,7 +43,11 @@
     "solid": "実線",
     "dashed": "破線",
     "layerProperties": "レイヤー属性",
-    "opacity": "不透明度"
+    "opacity": "不透明度",
+    "searchFont": "フォントを検索...",
+    "noFontFound": "フォントが見つかりません",
+    "licenseFree": "商用無料",
+    "licenseVip": "会員無料"
   },
   "editor": {
     "loading": "読み込み中..."

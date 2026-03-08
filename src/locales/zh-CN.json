@@ -43,7 +43,11 @@
     "solid": "实线",
     "dashed": "虚线",
     "layerProperties": "图层属性",
-    "opacity": "穿透"
+    "opacity": "穿透",
+    "searchFont": "搜索字体...",
+    "noFontFound": "未找到匹配字体",
+    "licenseFree": "商用免费",
+    "licenseVip": "会员免费"
   },
   "editor": {
     "loading": "加载中..."

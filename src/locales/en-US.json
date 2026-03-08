@@ -43,7 +43,11 @@
     "solid": "Solid",
     "dashed": "Dashed",
     "layerProperties": "Layer",
-    "opacity": "Opacity"
+    "opacity": "Opacity",
+    "searchFont": "Search fonts...",
+    "noFontFound": "No fonts found",
+    "licenseFree": "Free",
+    "licenseVip": "VIP"
   },
   "editor": {
     "loading": "Loading..."
