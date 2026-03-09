@@ -155,12 +155,40 @@ export class EditorEngine {
     this.canvas.renderAll();
   }
 
-  public addTextLayer(layer: TextLayer) {
+  public addTextLayer(layer: TextLayer): { x: number; y: number; width: number; height: number } | undefined {
     if (!this.canvas) return;
-    const node = CustomTextbox.fromLayer(layer);
+
+    const canvasW = this.canvas.getWidth();
+    const maxTextW = canvasW * 0.9;
+
+    // 先用足够大的宽度创建，让文字排成一行以便测量
+    const node = CustomTextbox.fromLayer({ ...layer, width: maxTextW });
+    node.initDimensions();
+
+    // 测量文字自然宽度（一行所需的宽度）
+    const naturalW = node.calcTextWidth();
+    // 宽度：优先一行显示，超出画布 90% 则限制换行
+    const finalW = Math.min(naturalW + 2, maxTextW);
+
+    node.set({ width: finalW });
+    node._manualHeight = undefined;
+    node.initDimensions();
+
+    const fontSize = node.fontSize ?? 12;
+    const lineHeight = node.lineHeight ?? 1.2;
+    const finalH = Math.max(node.calcTextHeight(), fontSize * lineHeight);
+    node.set({ height: finalH });
+    node._manualHeight = finalH;
+
+    // 居中放置（使用 Fabric 内置方法，确保水平和垂直都居中）
     this.canvas.add(node as unknown as FabricObject);
+    this.canvas.centerObject(node as unknown as FabricObject);
+    node.setCoords();
+
     this.canvas.setActiveObject(node as unknown as FabricObject);
     this.canvas.renderAll();
+
+    return { x: node.left ?? 0, y: node.top ?? 0, width: finalW, height: finalH };
   }
 
   public loadDocument(doc: DesignDocument) {

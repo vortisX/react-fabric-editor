@@ -17,10 +17,10 @@ export default function LeftPanel() {
       id: `layer_text_${Date.now()}`,
       name: t('leftPanel.defaultTextContent'),
       type: 'text',
-      x: 100,
-      y: 100,
-      width: 200,
-      height: 50,
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
       rotation: 0,
       opacity: 1,
       locked: false,
@@ -33,8 +33,14 @@ export default function LeftPanel() {
       textAlign: 'left'
     };
 
+    const measured = engineInstance.addTextLayer(newTextLayer);
+    if (measured) {
+      newTextLayer.x = measured.x;
+      newTextLayer.y = measured.y;
+      newTextLayer.width = measured.width;
+      newTextLayer.height = measured.height;
+    }
     addLayer('page_01', newTextLayer);
-    engineInstance.addTextLayer(newTextLayer);
   };
 
   const handleLayerClick = (id: string) => {
