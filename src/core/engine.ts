@@ -4,7 +4,7 @@ import { useEditorStore } from '../store/useEditorStore';
 import { setupGlobalUI } from './EditorUI';
 import { CustomTextbox } from './CustomTextbox';
 
-const LAYOUT_KEYS = ['text', 'width', 'height', 'textAlign', 'fontFamily'] as const;
+const LAYOUT_KEYS = ['text', 'width', 'height', 'textAlign', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'charSpacing', 'fontStyle'] as const;
 
 export class EditorEngine {
   public canvas: Canvas | null = null;
@@ -129,6 +129,9 @@ export class EditorEngine {
 
     if (LAYOUT_KEYS.some((k) => props[k] !== undefined) && target instanceof Textbox) {
       target.initDimensions();
+      if (target instanceof CustomTextbox && props.height === undefined) {
+        target.autoFitHeight();
+      }
       setTimeout(() => {
         const pageId = this.getCurrentPageId();
         const id = (target as CustomTextbox).id;
