@@ -12,17 +12,19 @@ interface NumberInputProps {
   className?: string;
 }
 
+const round1 = (n: number) => Math.round(n * 10) / 10;
+
 export const NumberInput: React.FC<NumberInputProps> = ({
   value, onChange, min, max, step = 1, readOnly = false, className,
 }) => {
-  const [local, setLocal] = useState(String(value));
+  const [local, setLocal] = useState(String(round1(value)));
 
-  useEffect(() => { setLocal(String(value)); }, [value]);
+  useEffect(() => { setLocal(String(round1(value))); }, [value]);
 
   const commit = () => {
     const n = parseFloat(local);
-    if (isNaN(n)) { setLocal(String(value)); return; }
-    const clamped = Math.min(max ?? Infinity, Math.max(min ?? -Infinity, n));
+    if (isNaN(n)) { setLocal(String(round1(value))); return; }
+    const clamped = round1(Math.min(max ?? Infinity, Math.max(min ?? -Infinity, n)));
     onChange?.(clamped);
     setLocal(String(clamped));
   };
@@ -37,8 +39,8 @@ export const NumberInput: React.FC<NumberInputProps> = ({
       onBlur={commit}
       onKeyDown={(e) => {
         if (e.key === 'Enter') commit();
-        if (e.key === 'ArrowUp') { e.preventDefault(); onChange?.((parseFloat(local) || 0) + step); }
-        if (e.key === 'ArrowDown') { e.preventDefault(); onChange?.((parseFloat(local) || 0) - step); }
+        if (e.key === 'ArrowUp') { e.preventDefault(); onChange?.(round1((parseFloat(local) || 0) + step)); }
+        if (e.key === 'ArrowDown') { e.preventDefault(); onChange?.(round1((parseFloat(local) || 0) - step)); }
       }}
       className={cn(
         'w-full h-6 px-1.5 text-xs bg-transparent outline-none text-gray-700 tabular-nums',

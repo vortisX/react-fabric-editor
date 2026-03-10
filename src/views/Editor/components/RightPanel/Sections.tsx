@@ -87,13 +87,13 @@ export function LayoutSection({ layer, isTextLayer, textLayer, onPropChange }: L
       <SectionHeader title={t('rightPanel.layout')} />
       <div className="px-4 flex flex-col gap-2">
         <div className="grid grid-cols-2 gap-2">
-          <DesignNumberInput label={t('rightPanel.horizontal')} value={Math.round(layer.x)} onChange={(val) => onPropChange('x', val ?? 0)} />
-          <DesignNumberInput label={t('rightPanel.vertical')} value={Math.round(layer.y)} onChange={(val) => onPropChange('y', val ?? 0)} />
-          <DesignNumberInput label={t('rightPanel.width')} value={Math.round(layer.width)} onChange={handleWidthChange} />
-          <DesignNumberInput label={t('rightPanel.height')} value={Math.round(layer.height)} onChange={handleHeightChange} />
+          <DesignNumberInput label={t('rightPanel.horizontal')} value={layer.x} onChange={(val) => onPropChange('x', val ?? 0)} />
+          <DesignNumberInput label={t('rightPanel.vertical')} value={layer.y} onChange={(val) => onPropChange('y', val ?? 0)} />
+          <DesignNumberInput label={t('rightPanel.width')} value={layer.width} onChange={handleWidthChange} />
+          <DesignNumberInput label={t('rightPanel.height')} value={layer.height} onChange={handleHeightChange} />
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <DesignNumberInput label={t('rightPanel.rotation')} value={Math.round(layer.rotation)} onChange={(val) => onPropChange('rotation', val ?? 0)} />
+          <DesignNumberInput label={t('rightPanel.rotation')} value={layer.rotation} onChange={(val) => onPropChange('rotation', val ?? 0)} />
           {isTextLayer && (
             <DesignNumberInput label={t('rightPanel.borderRadius')} value={textLayer.borderRadius ?? 0} onChange={(val) => onPropChange('borderRadius', val ?? 0)} />
           )}

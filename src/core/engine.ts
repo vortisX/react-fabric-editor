@@ -44,6 +44,8 @@ export class EditorEngine {
 
     c.on('object:scaling', (e) => this.onScaling(e.target));
     c.on('object:resizing', (e) => this.onResizing(e.target));
+    c.on('object:moving', (e) => this.syncLiveTransform(e.target as CustomTextbox));
+    c.on('object:rotating', (e) => this.syncLiveTransform(e.target as CustomTextbox));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     c.on('object:modified', (e: any) => this.onModified(e));
     c.on('text:changed', (e) => this.onTextChanged(e.target));
@@ -56,10 +58,12 @@ export class EditorEngine {
 
   private onScaling(target: FabricObject) {
     if (target instanceof CustomTextbox) target.constrainScaling();
+    this.syncLiveTransform(target as CustomTextbox);
   }
 
   private onResizing(target: FabricObject) {
     if (target instanceof CustomTextbox) target.autoFitHeight();
+    this.syncLiveTransform(target as CustomTextbox);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -93,21 +97,54 @@ export class EditorEngine {
     });
   }
 
+  private static round1(n: number) { return Math.round(n * 10) / 10; }
+
+  /** 拖动/旋转/缩放过程中实时同步视觉属性到 Store（不做 scale 转换） */
+  private syncLiveTransform(target: CustomTextbox) {
+    if (!target?.id) return;
+    const pageId = this.getCurrentPageId();
+    if (!pageId) return;
+
+    const r = EditorEngine.round1;
+    const scaleX = target.scaleX ?? 1;
+    const scaleY = target.scaleY ?? 1;
+    const updates: Partial<TextLayer> = {
+      x: r(target.left ?? 0),
+      y: r(target.top ?? 0),
+      rotation: r(target.angle ?? 0),
+      width: r((target.width ?? 0) * scaleX),
+      height: r((target.height ?? 0) * scaleY),
+    };
+
+    if (target instanceof Textbox) {
+      const isCornerScaling = scaleX !== 1 || scaleY !== 1;
+      if (isCornerScaling) {
+        const scale = (scaleX + scaleY) / 2;
+        updates.fontSize = r(Math.max((target.fontSize ?? 12) * scale, 1));
+      } else {
+        updates.fontSize = r(target.fontSize ?? 12);
+      }
+    }
+
+    useEditorStore.getState().updateLayer(pageId, target.id, updates);
+  }
+
   /** 将画布对象的变换属性同步到 Store */
   private syncLayerTransform(target: CustomTextbox) {
     const pageId = this.getCurrentPageId();
     if (!pageId) return;
 
+    const r = EditorEngine.round1;
     const updates: Partial<TextLayer> = {
-      x: target.left ?? 0,
-      y: target.top ?? 0,
-      rotation: target.angle ?? 0,
-      width: target.width ?? 0,
-      height: target.height ?? 0,
+      x: r(target.left ?? 0),
+      y: r(target.top ?? 0),
+      rotation: r(target.angle ?? 0),
+      width: r(target.width ?? 0),
+      height: r(target.height ?? 0),
     };
 
     if (target instanceof Textbox) {
-      updates.fontSize = target.fontSize ?? 12;
+      updates.fontSize = r(target.fontSize ?? 12);
     }
 
     useEditorStore.getState().updateLayer(pageId, target.id, updates);

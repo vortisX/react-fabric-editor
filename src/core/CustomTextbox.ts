@@ -120,10 +120,13 @@ export class CustomTextbox extends Textbox {
     const finalW = Math.max(newWidth, newFontSize);
     const finalH = Math.max(newHeight, newFontSize * lineHeight);
 
-    this._manualHeight = undefined;
-    this.set({ fontSize: newFontSize, width: finalW, height: finalH, scaleX: 1, scaleY: 1 });
-
+    // 必须在 set() 之前设置 _manualHeight，因为 Text.set() 在赋值属性后
+    // 会因 fontSize 属于 textLayoutProperties 而触发 initDimensions()，
+    // 如果此时 _manualHeight 为 undefined，height 会被 calcTextHeight() 覆盖为
+    // 错误的值，导致后续拖动时 Y 轴偏移。
     this._manualHeight = finalH;
+    this.set({ fontSize: newFontSize, width: finalW, scaleX: 1, scaleY: 1 });
+
     this.left = left;
     this.top = top;
     this.setCoords();
