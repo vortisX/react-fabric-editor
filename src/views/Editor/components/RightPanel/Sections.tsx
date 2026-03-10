@@ -93,7 +93,7 @@ export function LayoutSection({ layer, isTextLayer, textLayer, onPropChange }: L
           <DesignNumberInput label={t('rightPanel.height')} value={layer.height} onChange={handleHeightChange} />
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <DesignNumberInput label={t('rightPanel.rotation')} value={layer.rotation} onChange={(val) => onPropChange('rotation', val ?? 0)} />
+          <DesignNumberInput label={t('rightPanel.rotation')} value={layer.rotation} onChange={(val) => onPropChange('rotation', Math.round(val ?? 0))} />
           {isTextLayer && (
             <DesignNumberInput label={t('rightPanel.borderRadius')} value={textLayer.borderRadius ?? 0} onChange={(val) => onPropChange('borderRadius', val ?? 0)} />
           )}

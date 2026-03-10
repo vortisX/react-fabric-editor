@@ -209,6 +209,7 @@ export class CustomTextbox extends Textbox {
       fontStyle: layer.fontStyle ?? 'normal',
       underline: layer.underline ?? false,
       splitByGrapheme: true,
+      snapAngle: 1,
       transparentCorners: false,
       cornerColor: '#ffffff',
       cornerStrokeColor: '#18a0fb',

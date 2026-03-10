@@ -115,7 +115,7 @@ export class EditorEngine {
     const updates: Partial<TextLayer> = {
       x: r(target.left ?? 0),
       y: r(target.top ?? 0),
-      rotation: r(target.angle ?? 0),
+      rotation: Math.round(target.angle ?? 0),
       width: r((target.width ?? 0) * scaleX),
       height: r((target.height ?? 0) * scaleY),
     };
@@ -142,7 +142,7 @@ export class EditorEngine {
     const updates: Partial<TextLayer> = {
       x: r(target.left ?? 0),
       y: r(target.top ?? 0),
-      rotation: r(target.angle ?? 0),
+      rotation: Math.round(target.angle ?? 0),
       width: r(target.width ?? 0),
       height: r(target.height ?? 0),
     };
