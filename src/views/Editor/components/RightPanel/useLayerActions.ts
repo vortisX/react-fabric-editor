@@ -46,7 +46,8 @@ export function useLayerActions(activeLayer: Layer | undefined) {
 
     // 映射为 Fabric 属性名并同步画布
     const fabricKey = SCHEMA_TO_FABRIC[key as string] ?? (key as string);
-    engineInstance.updateLayerProps(activeLayer.id, { [fabricKey]: value });
+    const fabricValue = key === 'letterSpacing' ? (value as number) * 10 : value;
+    engineInstance.updateLayerProps(activeLayer.id, { [fabricKey]: fabricValue });
   };
 
   return { handlePropChange };

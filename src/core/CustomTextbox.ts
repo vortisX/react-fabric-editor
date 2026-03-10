@@ -205,7 +205,7 @@ export class CustomTextbox extends Textbox {
       fontWeight: layer.fontWeight,
       textAlign: layer.textAlign,
       lineHeight: layer.lineHeight ?? 1.2,
-      charSpacing: layer.letterSpacing ?? 0,
+      charSpacing: (layer.letterSpacing ?? 0) * 10,
       fontStyle: layer.fontStyle ?? 'normal',
       underline: layer.underline ?? false,
       splitByGrapheme: true,
