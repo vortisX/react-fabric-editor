@@ -13,6 +13,9 @@ const renderVerticalPill = (
 ): void => {
   ctx.save();
   ctx.translate(left, top);
+  // 跟随对象旋转角度
+  const angle = ((fabricObj.angle ?? 0) * Math.PI) / 180;
+  ctx.rotate(angle);
   ctx.fillStyle =
     (styleOverride?.cornerColor as string) || fabricObj.cornerColor || '#ffffff';
   ctx.strokeStyle =

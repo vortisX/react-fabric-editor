@@ -1,4 +1,4 @@
-import { FabricObject, Control } from 'fabric';
+import { FabricObject, Control, controlsUtils } from 'fabric';
 
 // ==================== SVG 光标（Figma 风格：黑色 + 白色描边） ====================
 
@@ -22,6 +22,24 @@ function resizeSvg(angle: number): string {
   );
 }
 
+/** 生成指定角度的旋转光标 — 两个箭头 + 弧线连接 */
+function rotateSvg(angle: number): string {
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24">` +
+    `<g transform="rotate(${angle} 12 12)">` +
+    // 上半弧 + 箭头
+    `<path d="M7 5.5 A7.5 7.5 0 0 1 17 5.5" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round"/>` +
+    `<path d="M7 5.5 A7.5 7.5 0 0 1 17 5.5" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round"/>` +
+    `<path d="M4 5.5 L7.5 2 L7.5 9 Z" fill="black" stroke="white" stroke-width="1.2" stroke-linejoin="round" paint-order="stroke"/>` +
+    // 下半弧 + 箭头
+    `<path d="M17 18.5 A7.5 7.5 0 0 1 7 18.5" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round"/>` +
+    `<path d="M17 18.5 A7.5 7.5 0 0 1 7 18.5" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round"/>` +
+    `<path d="M20 18.5 L16.5 22 L16.5 15 Z" fill="black" stroke="white" stroke-width="1.2" stroke-linejoin="round" paint-order="stroke"/>` +
+    `</g>` +
+    `</svg>`
+  );
+}
+
 const ARROW_SVG =
   `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24">` +
   `<path d="M4.5 2 Q4 1 4 2 L4 16 Q4 17.5 5 16.5 L8 13 Q8.5 12.2 9.5 12.2 L14 12 Q15.5 12 14 11 Z" transform="rotate(-15 4 1)" ` +
@@ -34,20 +52,11 @@ const MOVE_SVG =
   `fill="black" stroke="white" stroke-width="1.3" stroke-linejoin="round" paint-order="stroke"/>` +
   `</svg>`;
 
-const ROTATE_SVG =
-  `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24">` +
-  `<path d="M14.5 4.5 A7.5 7.5 0 1 0 19.5 12" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"/>` +
-  `<path d="M14.5 4.5 A7.5 7.5 0 1 0 19.5 12" fill="none" stroke="black" stroke-width="2" stroke-linecap="round"/>` +
-  `<path d="M14.5 1.5 L14.5 7.5 L19.5 4.5 Z" ` +
-  `fill="black" stroke="white" stroke-width="1.3" stroke-linejoin="round" paint-order="stroke"/>` +
-  `</svg>`;
-
 // ==================== 导出光标值 ====================
 
 export const CURSORS = {
   default: svgCursor(ARROW_SVG, 5, 2, 'default'),
   move: svgCursor(MOVE_SVG, 12, 12, 'move'),
-  rotate: svgCursor(ROTATE_SVG, 12, 12, 'crosshair'),
   /** 按象限 0-8 索引的 resize 光标（8 方向覆盖） */
   resize: [
     svgCursor(resizeSvg(0), 12, 12, 'ew-resize'),      // 0: e
@@ -60,6 +69,11 @@ export const CURSORS = {
     svgCursor(resizeSvg(135), 12, 12, 'nesw-resize'),   // 7: ne
     svgCursor(resizeSvg(0), 12, 12, 'ew-resize'),       // 8: e (wrap)
   ] as const,
+  /** 四角旋转光标：tl=135°, tr=225°, br=315°(≡-45°), bl=45° */
+  rotateTL: svgCursor(rotateSvg(135), 12, 12, 'crosshair'),
+  rotateTR: svgCursor(rotateSvg(225), 12, 12, 'crosshair'),
+  rotateBR: svgCursor(rotateSvg(315), 12, 12, 'crosshair'),
+  rotateBL: svgCursor(rotateSvg(45), 12, 12, 'crosshair'),
 };
 
 // ==================== 象限计算 ====================
@@ -87,12 +101,68 @@ function customCursorHandler(
   return CURSORS.resize[n];
 }
 
-/** 旋转控制点的光标处理器 */
-function customRotateCursorHandler(): string {
-  return CURSORS.rotate;
+/** 四角旋转光标映射 */
+const ROTATE_CORNER_CURSORS: Record<string, string> = {
+  rotTL: CURSORS.rotateTL,
+  rotTR: CURSORS.rotateTR,
+  rotBR: CURSORS.rotateBR,
+  rotBL: CURSORS.rotateBL,
+};
+
+/** 旋转控制点的光标处理器（根据控制点名称返回对应角度的旋转光标） */
+function customRotateCursorHandler(
+  _eventData: Event,
+  control: Control,
+  _fabricObject: FabricObject,
+): string {
+  // 通过在 controls 中查找匹配 control 引用来确定 key
+  const obj = _fabricObject;
+  const controls = obj.controls as Record<string, Control>;
+  for (const key of Object.keys(controls)) {
+    if (controls[key] === control && ROTATE_CORNER_CURSORS[key]) {
+      return ROTATE_CORNER_CURSORS[key];
+    }
+  }
+  return CURSORS.rotateTL;
 }
 
-/** 给控件设置自定义光标处理器 */
+// ==================== Figma 风格四角旋转控制点 ====================
+
+/** 四角旋转配置，dx/dy 是该角落朝外的方向 */
+const ROT_CORNERS = [
+  { key: 'rotTL', x: -0.5, y: -0.5, dx: -1, dy: -1 },
+  { key: 'rotTR', x: 0.5, y: -0.5, dx: 1, dy: -1 },
+  { key: 'rotBR', x: 0.5, y: 0.5, dx: 1, dy: 1 },
+  { key: 'rotBL', x: -0.5, y: 0.5, dx: -1, dy: 1 },
+] as const;
+
+const HIT_CENTER = 9;    // 各轴偏移
+const HIT_SIZE = 8;      // 碰撞区边长
+
+/** 在四角外侧添加旋转控制点 */
+function addCornerRotateControls(obj: FabricObject): void {
+  const controls = obj.controls as Record<string, Control>;
+  if (!controls || controls.rotTL) return;
+
+  const rotHandler = controlsUtils.rotationWithSnapping;
+
+  for (const c of ROT_CORNERS) {
+    controls[c.key] = new Control({
+      x: c.x,
+      y: c.y,
+      offsetX: c.dx * HIT_CENTER,
+      offsetY: c.dy * HIT_CENTER,
+      actionName: 'rotate',
+      actionHandler: rotHandler,
+      cursorStyleHandler: customRotateCursorHandler,
+      render: () => {},
+      sizeX: HIT_SIZE,
+      sizeY: HIT_SIZE,
+    });
+  }
+}
+
+/** 给控件设置自定义光标处理器 + 添加四角旋转 */
 export function applyCursorsToControls(obj: FabricObject): void {
   const controls = obj.controls as Record<string, Control>;
   if (!controls) return;
@@ -104,8 +174,11 @@ export function applyCursorsToControls(obj: FabricObject): void {
     }
   }
 
+  // 隐藏默认 mtr 旋转控制点
   if (controls.mtr) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (controls.mtr as any).cursorStyleHandler = customRotateCursorHandler;
+    controls.mtr.visible = false;
   }
+
+  // 在四角外侧添加 Figma 风格旋转控制点
+  addCornerRotateControls(obj);
 }
