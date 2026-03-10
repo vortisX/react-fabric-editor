@@ -1,5 +1,6 @@
 import { Textbox, FabricObject, Control } from 'fabric';
 import type { TextLayer } from '../types/schema';
+import { applyCursorsToControls } from './cursors';
 
 // ==================== 胶囊控制点渲染 ====================
 
@@ -225,6 +226,7 @@ export class CustomTextbox extends Textbox {
     });
 
     applyCustomControls(textbox as unknown as FabricObject);
+    applyCursorsToControls(textbox as unknown as FabricObject);
     return textbox;
   }
 }

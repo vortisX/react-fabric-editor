@@ -3,6 +3,7 @@ import type { DesignDocument, TextLayer } from '../types/schema';
 import { useEditorStore } from '../store/useEditorStore';
 import { setupGlobalUI } from './EditorUI';
 import { CustomTextbox } from './CustomTextbox';
+import { CURSORS } from './cursors';
 
 const LAYOUT_KEYS = ['text', 'width', 'height', 'textAlign', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'charSpacing', 'fontStyle'] as const;
 
@@ -20,6 +21,9 @@ export class EditorEngine {
       preserveObjectStacking: true,
       selection: true,
       backgroundColor: '#ffffff',
+      defaultCursor: CURSORS.default,
+      hoverCursor: CURSORS.move,
+      moveCursor: CURSORS.move,
     });
 
     setupGlobalUI();
