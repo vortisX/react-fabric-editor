@@ -89,6 +89,8 @@ export class EditorEngine {
     const pageId = this.getCurrentPageId();
     if (!pageId) return;
 
+    tb.autoFitHeight();
+
     const text = tb.text || '';
     const trimmed = text.trim() || '空文本';
     const name = trimmed.length > 15 ? trimmed.slice(0, 15) + '...' : trimmed;
