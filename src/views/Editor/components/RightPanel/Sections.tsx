@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { NumberInput, Select, FontSelect, Slider, ColorPicker, Button, Tooltip } from '../../../../components/ui';
+import { NumberInput, Select, FontSelect, Slider, ColorPicker, FillPicker, Button, Tooltip } from '../../../../components/ui';
 import { TextArea } from '../../../../components/ui/Input';
 import {
   BoldIcon, ItalicIcon, UnderlineIcon,
   AlignLeftIcon, AlignCenterIcon, AlignRightIcon, AlignJustifyIcon,
 } from '../../../../components/ui/Icons';
 import { getSupportedFonts } from '../../../../constants/fonts';
-import type { TextLayer, Layer } from '../../../../types/schema';
+import type { TextLayer, Layer, FillStyle } from '../../../../types/schema';
 import type { PropChangeHandler } from './useLayerActions';
 
 // ─── 共享基础组件 ──────────────────────────────────────────────
@@ -210,12 +210,22 @@ function TextStyleToolbar({ layer, onPropChange }: TextSectionProps) {
 export function ColorFillSection({ layer, onPropChange }: TextSectionProps) {
   const { t } = useTranslation();
 
+  // 将 fill 规范化为 FillStyle 对象
+  const fillValue: FillStyle =
+    typeof layer.fill === 'string'
+      ? { type: 'solid', color: layer.fill || '#000000' }
+      : layer.fill;
+
   return (
     <div className="flex flex-col border-b border-gray-100 pb-3">
       <SectionHeader title={t('rightPanel.colorFill')} />
       <div className="px-4 flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          <ColorPicker value={layer.fill} onChange={(c) => onPropChange('fill', c || '#000000')} size="small" />
+          <FillPicker
+            value={fillValue}
+            onChange={(f) => onPropChange('fill', f as TextLayer['fill'])}
+            size="small"
+          />
           <span className="text-xs text-gray-500">{t('rightPanel.textColor')}</span>
         </div>
         {layer.textBackgroundColor ? (

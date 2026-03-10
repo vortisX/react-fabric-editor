@@ -4,5 +4,6 @@ export { NumberInput, TextArea } from './Input';
 export { Select } from './Select';
 export { FontSelect } from './FontSelect';
 export { ColorPicker } from './ColorPicker';
+export { FillPicker } from './FillPicker';
 export { Slider } from './Slider';
 export { Tabs } from './Tabs';

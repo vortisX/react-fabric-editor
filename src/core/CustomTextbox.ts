@@ -1,5 +1,6 @@
 import { Textbox, FabricObject, Control } from 'fabric';
 import type { TextLayer } from '../types/schema';
+import { fillStyleToFabric } from './engine';
 import { applyCursorsToControls } from './cursors';
 
 // ==================== 胶囊控制点渲染 ====================
@@ -194,12 +195,13 @@ export class CustomTextbox extends Textbox {
   // ---------- 工厂方法 ----------
 
   static fromLayer(layer: TextLayer): CustomTextbox {
+    const fabricFill = fillStyleToFabric(layer.fill, layer.width, layer.height ?? 0);
     const textbox = new CustomTextbox(layer.content, {
       left: layer.x,
       top: layer.y,
       width: layer.width,
       angle: layer.rotation,
-      fill: layer.fill,
+      fill: fabricFill,
       fontSize: layer.fontSize,
       fontFamily: layer.fontFamily,
       fontWeight: layer.fontWeight,

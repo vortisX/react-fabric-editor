@@ -1,9 +1,38 @@
-import { Canvas, FabricObject, Textbox } from 'fabric';
-import type { DesignDocument, TextLayer } from '../types/schema';
+import { Canvas, FabricObject, Textbox, Gradient } from 'fabric';
+import type { DesignDocument, TextLayer, FillStyle } from '../types/schema';
 import { useEditorStore } from '../store/useEditorStore';
 import { setupGlobalUI } from './EditorUI';
 import { CustomTextbox } from './CustomTextbox';
 import { CURSORS } from './cursors';
+
+/**
+ * 将 Schema 的 FillStyle 转换为 Fabric.js 可用的 fill 值。
+ * - SolidFill / 纯色字符串 → 返回颜色字符串
+ * - GradientFill → 返回 Fabric Gradient 实例
+ */
+export function fillStyleToFabric(
+  fill: string | FillStyle,
+  width: number,
+  height: number,
+): string | InstanceType<typeof Gradient<'linear'>> {
+  if (typeof fill === 'string') return fill;
+  if (fill.type === 'solid') return fill.color;
+
+  const isHorizontal = fill.direction === 'horizontal';
+  return new Gradient({
+    type: 'linear',
+    coords: {
+      x1: 0,
+      y1: 0,
+      x2: isHorizontal ? width : 0,
+      y2: isHorizontal ? 0 : height,
+    },
+    colorStops: fill.colorStops.map((s) => ({
+      offset: s.offset,
+      color: s.color,
+    })),
+  });
+}
 
 const LAYOUT_KEYS = ['text', 'width', 'height', 'textAlign', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'charSpacing', 'fontStyle'] as const;
 
@@ -164,6 +193,13 @@ export class EditorEngine {
     if (!target) return;
 
     const finalProps: Record<string, unknown> = { ...props, dirty: true };
+
+    // fill 属性需要将 FillStyle 转换为 Fabric Gradient
+    if (finalProps.fill !== undefined) {
+      const w = (target as CustomTextbox).width ?? 100;
+      const h = (target as CustomTextbox).height ?? 100;
+      finalProps.fill = fillStyleToFabric(finalProps.fill as string | FillStyle, w, h);
+    }
     if (props.height !== undefined) {
       finalProps._manualHeight = props.height;
     }

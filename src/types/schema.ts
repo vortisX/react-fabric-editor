@@ -27,6 +27,27 @@ export interface ImageBackground {
 
 export type PageBackground = ColorBackground | ImageBackground;
 
+// 渐变色标
+export interface GradientColorStop {
+  offset: number;   // 0–1
+  color: string;     // 十六进制颜色
+}
+
+// 线性渐变填充
+export interface GradientFill {
+  type: 'linear';
+  direction: 'horizontal' | 'vertical'; // 水平 / 垂直
+  colorStops: GradientColorStop[];
+}
+
+// 纯色填充
+export interface SolidFill {
+  type: 'solid';
+  color: string;
+}
+
+export type FillStyle = SolidFill | GradientFill;
+
 // 文本图层属性接口
 export interface TextLayer extends BaseLayer {
   type: "text";
@@ -34,7 +55,7 @@ export interface TextLayer extends BaseLayer {
   fontFamily: string; // 字体
   fontSize: number; // 字号
   fontWeight: string | number; // 字重 (normal, bold)
-  fill: string; // 字体颜色
+  fill: string | FillStyle; // 字体颜色（纯色字符串 或 填充对象）
   textAlign: "left" | "center" | "right" | "justify"; // justify 两端对齐
   lineHeight?: number; // 行高
   letterSpacing?: number; // 字间距
