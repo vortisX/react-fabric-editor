@@ -40,7 +40,7 @@ export default function LeftPanel() {
       newTextLayer.width = measured.width;
       newTextLayer.height = measured.height;
     }
-    addLayer('page_01', newTextLayer);
+    addLayer(newTextLayer);
   };
 
   const handleLayerClick = (id: string) => {

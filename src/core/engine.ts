@@ -124,7 +124,7 @@ export class EditorEngine {
     const trimmed = text.trim() || '空文本';
     const name = trimmed.length > 15 ? trimmed.slice(0, 15) + '...' : trimmed;
 
-    useEditorStore.getState().updateLayer(pageId, tb.id, {
+    useEditorStore.getState().updateLayer(tb.id, {
       content: text,
       name,
       width: tb.width ?? 0,
@@ -161,7 +161,7 @@ export class EditorEngine {
       }
     }
 
-    useEditorStore.getState().updateLayer(pageId, target.id, updates);
+    useEditorStore.getState().updateLayer(target.id, updates);
   }
 
   /** 将画布对象的变换属性同步到 Store */
@@ -182,7 +182,7 @@ export class EditorEngine {
       updates.fontSize = r(target.fontSize ?? 12);
     }
 
-    useEditorStore.getState().updateLayer(pageId, target.id, updates);
+    useEditorStore.getState().updateLayer(target.id, updates);
   }
 
   // ==================== 公共 API ====================
@@ -212,10 +212,9 @@ export class EditorEngine {
         target.autoFitHeight();
       }
       setTimeout(() => {
-        const pageId = this.getCurrentPageId();
         const id = (target as CustomTextbox).id;
-        if (pageId && id) {
-          useEditorStore.getState().updateLayer(pageId, id, {
+        if (id) {
+          useEditorStore.getState().updateLayer(id, {
             width: target.width ?? 0,
             height: target.height ?? 0,
           });
@@ -284,7 +283,7 @@ export class EditorEngine {
   // ==================== 内部工具 ====================
 
   private getCurrentPageId(): string | undefined {
-    return useEditorStore.getState().document?.pages[0]?.pageId;
+    return useEditorStore.getState().currentPageId ?? undefined;
   }
 
   private findObjectById(id: string): FabricObject | undefined {

@@ -42,7 +42,7 @@ export function useLayerActions(activeLayer: Layer | undefined) {
     if (key === 'content') {
       storeUpdates.name = buildLayerName((value as string) || '', t('rightPanel.emptyText'));
     }
-    updateLayer('page_01', activeLayer.id, storeUpdates);
+    updateLayer(activeLayer.id, storeUpdates);
 
     // 映射为 Fabric 属性名并同步画布
     const fabricKey = SCHEMA_TO_FABRIC[key as string] ?? (key as string);

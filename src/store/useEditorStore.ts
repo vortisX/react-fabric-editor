@@ -6,16 +6,17 @@ interface EditorState {
   // === 数据状态 (State) ===
   document: DesignDocument | null; // 当前编辑的文档核心数据
   activeLayerId: string | null; // 当前选中的图层 ID
+  currentPageId: string | null; // 当前选中的页面 ID
 
   // === 操作方法 (Actions) ===
   initDocument: (doc: DesignDocument) => void;
   setActiveLayer: (id: string | null) => void;
+  setCurrentPageId: (id: string | null) => void;
   updateLayer: (
-    pageId: string,
     layerId: string,
     payload: Partial<Layer>,
   ) => void;
-  addLayer: (pageId: string, layer: Layer) => void;
+  addLayer: (layer: Layer) => void;
 }
 
 // 预设一个空白的初始模板 (手机竖屏比例)
@@ -43,17 +44,26 @@ const initialDoc: DesignDocument = {
 export const useEditorStore = create<EditorState>((set) => ({
   document: initialDoc,
   activeLayerId: null,
+  currentPageId: initialDoc.pages[0].pageId,
 
   // 1. 初始化/覆盖整个文档 (用于从后端加载数据)
-  initDocument: (doc) => set({ document: doc }),
+  initDocument: (doc) => set({ 
+    document: doc,
+    currentPageId: doc.pages[0]?.pageId ?? null 
+  }),
 
   // 2. 设置当前选中的图层
   setActiveLayer: (id) => set({ activeLayerId: id }),
 
+  // 2.1 设置当前选中的页面
+  setCurrentPageId: (id) => set({ currentPageId: id }),
+
   // 3. 核心：更新某个图层的属性 (严格的不可变数据更新)
-  updateLayer: (pageId, layerId, payload) =>
+  updateLayer: (layerId, payload) =>
     set((state) => {
-      if (!state.document) return state;
+      if (!state.document || !state.currentPageId) return state;
+
+      const pageId = state.currentPageId;
 
       // 遍历 pages，找到目标 page
       const newPages = state.document.pages.map((page) => {
@@ -76,9 +86,11 @@ export const useEditorStore = create<EditorState>((set) => ({
       };
     }),
   // 4. 新增图层
-  addLayer: (pageId, layer) =>
+  addLayer: (layer) =>
     set((state) => {
-      if (!state.document) return state;
+      if (!state.document || !state.currentPageId) return state;
+      
+      const pageId = state.currentPageId;
 
       const newPages = state.document.pages.map((page) => {
         if (page.pageId !== pageId) return page;
