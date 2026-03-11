@@ -3,7 +3,7 @@ import type { DesignDocument, TextLayer, FillStyle } from "../types/schema";
 import { useEditorStore } from "../store/useEditorStore";
 import { setupGlobalUI } from "./EditorUI";
 import { CustomTextbox } from "./CustomTextbox";
-import { CURSORS } from "./cursors";
+import { CURSORS } from "./constants";
 
 /**
  * 将 Schema 的 FillStyle 转换为 Fabric.js 可用的 fill 值。

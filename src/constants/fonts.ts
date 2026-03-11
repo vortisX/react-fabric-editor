@@ -29,5 +29,4 @@ export function getSupportedFonts(): FontOption[] {
   ];
 }
 
-/** @deprecated Use getSupportedFonts() for i18n support */
 export const SUPPORTED_FONTS: FontOption[] = getSupportedFonts();

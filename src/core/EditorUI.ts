@@ -1,5 +1,6 @@
 import { FabricObject, Textbox } from "fabric";
 import { SUPPORTED_FONTS } from "../constants/fonts";
+import { EDITOR_GLOBAL_STYLE } from "./constants";
 
 // ==========================================
 // 字体加载
@@ -26,19 +27,8 @@ async function loadLocalFonts(): Promise<void> {
 // ==========================================
 
 function applyGlobalPrototypeStyle(): void {
-  const style: Partial<FabricObject> = {
-    transparentCorners: false,
-    cornerColor: "#ffffff",
-    cornerStrokeColor: "#18a0fb",
-    borderColor: "#18a0fb",
-    cornerSize: 8,
-    padding: 0,
-    cornerStyle: "circle",
-    borderDashArray: null,
-  };
-
-  Object.assign(FabricObject.prototype, style);
-  Object.assign(Textbox.prototype, style);
+  Object.assign(FabricObject.prototype, EDITOR_GLOBAL_STYLE);
+  Object.assign(Textbox.prototype, EDITOR_GLOBAL_STYLE);
 }
 
 // ==========================================

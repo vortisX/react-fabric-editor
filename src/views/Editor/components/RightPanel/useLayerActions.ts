@@ -1,24 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import { useEditorStore } from '../../../../store/useEditorStore';
 import { engineInstance } from '../../../../core/engine';
+import { SCHEMA_TO_FABRIC } from '../../../../core/constants';
 import type { TextLayer, Layer } from '../../../../types/schema';
 
-/**
- * Schema 属性名 → Fabric 画布属性名的映射表
- * 未列出的属性名会直接透传（key 不变）
- */
-const SCHEMA_TO_FABRIC: Record<string, string> = {
-  x: 'left',
-  y: 'top',
-  rotation: 'angle',
-  content: 'text',
-  letterSpacing: 'charSpacing',
-  textBackgroundColor: 'boxBackgroundColor',
-  stroke: 'boxStroke',
-  strokeWidth: 'boxStrokeWidth',
-  strokeDashArray: 'boxStrokeDashArray',
-  borderRadius: 'boxBorderRadius',
-};
+
 
 function buildLayerName(text: string, fallback: string): string {
   const trimmed = text.trim() || fallback;
