@@ -3,6 +3,7 @@ import { Tooltip } from '../../../components/ui';
 import { GridIcon, TypeIcon, ImageIcon } from '../../../components/ui/Icons';
 import { useEditorStore } from '../../../store/useEditorStore';
 import { engineInstance } from '../../../core/engine';
+import { genId } from '../../../utils/uuid';
 import type { TextLayer } from '../../../types/schema';
 
 export default function LeftPanel() {
@@ -14,7 +15,7 @@ export default function LeftPanel() {
 
   const handleAddText = () => {
     const newTextLayer: TextLayer = {
-      id: `layer_text_${Date.now()}`,
+      id: genId('layer'),
       name: t('leftPanel.defaultTextContent'),
       type: 'text',
       x: 0,
