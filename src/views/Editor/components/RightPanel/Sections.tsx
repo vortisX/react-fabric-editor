@@ -144,70 +144,69 @@ function TextStyleToolbar({ layer, onPropChange }: TextSectionProps) {
   const { t } = useTranslation();
 
   const alignOptions = [
-    { value: 'left' as const, icon: AlignLeftIcon },
-    { value: 'center' as const, icon: AlignCenterIcon },
-    { value: 'right' as const, icon: AlignRightIcon },
+    { value: 'left' as const, icon: AlignLeftIcon, label: t('rightPanel.alignLeft') },
+    { value: 'center' as const, icon: AlignCenterIcon, label: t('rightPanel.alignCenter') },
+    { value: 'right' as const, icon: AlignRightIcon, label: t('rightPanel.alignRight') },
+    { value: 'justify' as const, icon: AlignJustifyIcon, label: t('rightPanel.justifyAlign') },
   ] as const;
 
   return (
-    <div className="flex justify-between items-center bg-[#f5f5f5] rounded p-0.5 mt-1">
-      <div className="flex gap-0.5">
-        {alignOptions.map(({ value, icon: Icon }) => (
-          <Button
-            key={value}
-            variant="text"
-            size="small"
-            className={layer.textAlign === value ? 'bg-white shadow-sm' : 'text-gray-500'}
-            onClick={() => onPropChange('textAlign', value)}
-          >
-            <Icon className="w-3 h-3" />
-          </Button>
+    <div className="flex flex-col gap-0.5 bg-[#f5f5f5] rounded p-0.5 mt-1">
+      <div className="grid grid-cols-4 gap-0.5">
+        {alignOptions.map(({ value, icon: Icon, label }) => (
+          <Tooltip key={value} title={label}>
+            <Button
+              variant="text"
+              size="small"
+              className={`w-full ${layer.textAlign === value ? 'bg-white shadow-sm' : 'text-gray-500'}`}
+              onClick={() => onPropChange('textAlign', value)}
+            >
+              <Icon className="w-3 h-3" />
+            </Button>
+          </Tooltip>
         ))}
-        <Tooltip title={t('rightPanel.justifyAlign')}>
+      </div>
+      <div className="grid grid-cols-4 gap-0.5">
+        <Tooltip title={t('rightPanel.bold')}>
           <Button
             variant="text"
             size="small"
-            className={layer.textAlign === 'justify' ? 'bg-white shadow-sm' : 'text-gray-500'}
-            onClick={() => onPropChange('textAlign', 'justify')}
+            className={layer.fontWeight === 'bold' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}
+            onClick={() => onPropChange('fontWeight', layer.fontWeight === 'bold' ? 'normal' : 'bold')}
           >
-            <AlignJustifyIcon className="w-3 h-3" />
+            <BoldIcon className="w-3 h-3" />
           </Button>
         </Tooltip>
-      </div>
-      <div className="w-px h-3 bg-gray-300 mx-1" />
-      <div className="flex gap-0.5">
-        <Button
-          variant="text"
-          size="small"
-          className={layer.fontWeight === 'bold' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}
-          onClick={() => onPropChange('fontWeight', layer.fontWeight === 'bold' ? 'normal' : 'bold')}
-        >
-          <BoldIcon className="w-3 h-3" />
-        </Button>
-        <Button
-          variant="text"
-          size="small"
-          className={layer.fontStyle === 'italic' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}
-          onClick={() => onPropChange('fontStyle', layer.fontStyle === 'italic' ? 'normal' : 'italic')}
-        >
-          <ItalicIcon className="w-3 h-3" />
-        </Button>
-        <Button
-          variant="text"
-          size="small"
-          className={layer.underline ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}
-          onClick={() => onPropChange('underline', !layer.underline)}
-        >
-          <UnderlineIcon className="w-3 h-3" />
-        </Button>
-        <Button
-          variant="text"
-          size="small"
-          className={layer.linethrough ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}
-          onClick={() => onPropChange('linethrough', !layer.linethrough)}
-        >
-          <StrikethroughIcon className="w-3 h-3" />
-        </Button>
+        <Tooltip title={t('rightPanel.italic')}>
+          <Button
+            variant="text"
+            size="small"
+            className={layer.fontStyle === 'italic' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}
+            onClick={() => onPropChange('fontStyle', layer.fontStyle === 'italic' ? 'normal' : 'italic')}
+          >
+            <ItalicIcon className="w-3 h-3" />
+          </Button>
+        </Tooltip>
+        <Tooltip title={t('rightPanel.underline')}>
+          <Button
+            variant="text"
+            size="small"
+            className={layer.underline ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}
+            onClick={() => onPropChange('underline', !layer.underline)}
+          >
+            <UnderlineIcon className="w-3 h-3" />
+          </Button>
+        </Tooltip>
+        <Tooltip title={t('rightPanel.strikethrough')}>
+          <Button
+            variant="text"
+            size="small"
+            className={layer.linethrough ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}
+            onClick={() => onPropChange('linethrough', !layer.linethrough)}
+          >
+            <StrikethroughIcon className="w-3 h-3" />
+          </Button>
+        </Tooltip>
       </div>
     </div>
   );
