@@ -1,9 +1,9 @@
-import { Canvas, FabricObject, Textbox, Gradient } from 'fabric';
-import type { DesignDocument, TextLayer, FillStyle } from '../types/schema';
-import { useEditorStore } from '../store/useEditorStore';
-import { setupGlobalUI } from './EditorUI';
-import { CustomTextbox } from './CustomTextbox';
-import { CURSORS } from './cursors';
+import { Canvas, FabricObject, Textbox, Gradient } from "fabric";
+import type { DesignDocument, TextLayer, FillStyle } from "../types/schema";
+import { useEditorStore } from "../store/useEditorStore";
+import { setupGlobalUI } from "./EditorUI";
+import { CustomTextbox } from "./CustomTextbox";
+import { CURSORS } from "./cursors";
 
 /**
  * 将 Schema 的 FillStyle 转换为 Fabric.js 可用的 fill 值。
@@ -13,14 +13,14 @@ import { CURSORS } from './cursors';
 export function fillStyleToFabric(
   fill: string | FillStyle,
   width: number,
-  height: number,
-): string | InstanceType<typeof Gradient<'linear'>> {
-  if (typeof fill === 'string') return fill;
-  if (fill.type === 'solid') return fill.color;
+  height: number
+): string | InstanceType<typeof Gradient<"linear">> {
+  if (typeof fill === "string") return fill;
+  if (fill.type === "solid") return fill.color;
 
-  const isHorizontal = fill.direction === 'horizontal';
+  const isHorizontal = fill.direction === "horizontal";
   return new Gradient({
-    type: 'linear',
+    type: "linear",
     coords: {
       x1: 0,
       y1: 0,
@@ -34,11 +34,29 @@ export function fillStyleToFabric(
   });
 }
 
-const LAYOUT_KEYS = ['text', 'width', 'height', 'textAlign', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'charSpacing', 'fontStyle'] as const;
+const LAYOUT_KEYS = [
+  "text",
+  "width",
+  "height",
+  "textAlign",
+  "fontFamily",
+  "fontSize",
+  "fontWeight",
+  "lineHeight",
+  "charSpacing",
+  "fontStyle",
+] as const;
 
 type FabricSelectionEvent = { selected?: FabricObject[] };
 type FabricObjectEvent = { target: FabricObject };
-type FabricModifiedEvent = { target: FabricObject; transform?: { corner?: string } };
+type FabricScalingEvent = {
+  target: FabricObject;
+  transform?: { corner?: string; action?: string };
+};
+type FabricModifiedEvent = {
+  target: FabricObject;
+  transform?: { corner?: string };
+};
 
 export class EditorEngine {
   public canvas: Canvas | null = null;
@@ -53,7 +71,7 @@ export class EditorEngine {
       height,
       preserveObjectStacking: true,
       selection: true,
-      backgroundColor: '#ffffff',
+      backgroundColor: "#ffffff",
       defaultCursor: CURSORS.default,
       hoverCursor: CURSORS.move,
       moveCursor: CURSORS.move,
@@ -73,18 +91,37 @@ export class EditorEngine {
   // ==================== 事件绑定 ====================
 
   private bindEvents() {
+    // !的意思时断言canvas不为空
     const c = this.canvas!;
-
-    c.on('selection:created', (e: FabricSelectionEvent) => this.onSelectionChanged(e.selected?.[0]));
-    c.on('selection:updated', (e: FabricSelectionEvent) => this.onSelectionChanged(e.selected?.[0]));
-    c.on('selection:cleared', () => this.onSelectionChanged(undefined));
-
-    c.on('object:scaling', (e: FabricObjectEvent) => this.onScaling(e.target));
-    c.on('object:resizing', (e: FabricObjectEvent) => this.onResizing(e.target));
-    c.on('object:moving', (e: FabricObjectEvent) => this.syncLiveTransform(e.target as CustomTextbox));
-    c.on('object:rotating', (e: FabricObjectEvent) => this.syncLiveTransform(e.target as CustomTextbox));
-    c.on('object:modified', (e: FabricModifiedEvent) => this.onModified(e));
-    c.on('text:changed', (e: FabricObjectEvent) => this.onTextChanged(e.target));
+    // 绑定 Fabric.js 事件
+    //created 事件：当用户创建新对象（如文本框）时触发
+    c.on("selection:created", (e: FabricSelectionEvent) =>
+      this.onSelectionChanged(e.selected?.[0])
+    );
+    // updated 事件：当用户更新选中对象（如改变文本内容）时触发
+    c.on("selection:updated", (e: FabricSelectionEvent) =>
+      this.onSelectionChanged(e.selected?.[0])
+    );
+    // cleared 事件：当用户清除选中对象（如点击空白区域）时触发
+    c.on("selection:cleared", () => this.onSelectionChanged(undefined));
+    // scaling 事件：当用户缩放选中对象（如拖动缩放框）时触发
+    c.on("object:scaling", (e: FabricScalingEvent) => this.onScaling(e));
+    // resizing 事件：当用户调整选中对象的大小（如拖动调整框）时触发
+    c.on("object:resizing", (e: FabricObjectEvent) => this.onResizing(e.target));
+    // moving 事件：当用户拖动选中对象（如移动文本框）时触发
+    c.on("object:moving", (e: FabricObjectEvent) =>
+      this.syncLiveTransform(e.target as CustomTextbox)
+    );
+    // rotating 事件：当用户旋转选中对象（如拖动旋转框）时触发
+    c.on("object:rotating", (e: FabricObjectEvent) =>
+      this.syncLiveTransform(e.target as CustomTextbox)
+    );
+    // modified 事件：当用户修改选中对象（如改变旋转角度）时触发
+    c.on("object:modified", (e: FabricModifiedEvent) => this.onModified(e));
+    // text:changed 事件：当用户改变文本内容时触发
+    c.on("text:changed", (e: FabricObjectEvent) =>
+      this.onTextChanged(e.target)
+    );
   }
 
   private onSelectionChanged(target?: FabricObject) {
@@ -92,13 +129,37 @@ export class EditorEngine {
     useEditorStore.getState().setActiveLayer(id ?? null);
   }
 
-  private onScaling(target: FabricObject) {
-    if (target instanceof CustomTextbox) target.constrainScaling();
-    this.syncLiveTransform(target as CustomTextbox);
+  private onScaling(e: FabricScalingEvent) {
+    const target = e.target;
+    if (!(target instanceof CustomTextbox)) {
+      this.syncLiveTransform(target as CustomTextbox);
+      return;
+    }
+
+    target.constrainScaling();
+
+    const corner = e.transform?.corner ?? "";
+    const scaleX = target.scaleX ?? 1;
+    const scaleY = target.scaleY ?? 1;
+    const isSideResize =
+      corner === "ml" ||
+      corner === "mr" ||
+      e.transform?.action === "scaleX" ||
+      (Math.abs(scaleX - 1) > 1e-3 && Math.abs(scaleY - 1) < 1e-3);
+    if (isSideResize) {
+      const center = target.getCenterPoint();
+      const newWidth = Math.max((target.width ?? 0) * scaleX, 1);
+      target.set({ width: newWidth, scaleX: 1 });
+      target.setPositionByOrigin(center, "center", "center");
+      target.initDimensions();
+      target.autoFitHeight();
+      this.canvas?.requestRenderAll();
+    }
+
+    this.syncLiveTransform(target);
   }
 
   private onResizing(target: FabricObject) {
-    if (target instanceof CustomTextbox) target.autoFitHeight();
     this.syncLiveTransform(target as CustomTextbox);
   }
 
@@ -107,7 +168,12 @@ export class EditorEngine {
     if (!target?.id) return;
 
     if (target instanceof CustomTextbox) {
-      target.finalizeScaling(e.transform?.corner ?? '');
+      const corner = e.transform?.corner ?? "";
+      target.finalizeScaling(corner);
+      if (corner === "ml" || corner === "mr") {
+        target.initDimensions();
+        target.autoFitHeight();
+      }
     }
 
     this.syncLayerTransform(target);
@@ -122,9 +188,9 @@ export class EditorEngine {
 
     tb.autoFitHeight();
 
-    const text = tb.text || '';
-    const trimmed = text.trim() || '空文本';
-    const name = trimmed.length > 15 ? trimmed.slice(0, 15) + '...' : trimmed;
+    const text = tb.text || "";
+    const trimmed = text.trim() || "空文本";
+    const name = trimmed.length > 15 ? trimmed.slice(0, 15) + "..." : trimmed;
 
     useEditorStore.getState().updateLayer(tb.id, {
       content: text,
@@ -134,7 +200,9 @@ export class EditorEngine {
     });
   }
 
-  private static round1(n: number) { return Math.round(n * 10) / 10; }
+  private static round1(n: number) {
+    return Math.round(n * 10) / 10;
+  }
 
   /** 拖动/旋转/缩放过程中实时同步视觉属性到 Store（不做 scale 转换） */
   private syncLiveTransform(target: CustomTextbox) {
@@ -200,7 +268,11 @@ export class EditorEngine {
     if (finalProps.fill !== undefined) {
       const w = (target as CustomTextbox).width ?? 100;
       const h = (target as CustomTextbox).height ?? 100;
-      finalProps.fill = fillStyleToFabric(finalProps.fill as string | FillStyle, w, h);
+      finalProps.fill = fillStyleToFabric(
+        finalProps.fill as string | FillStyle,
+        w,
+        h
+      );
     }
     if (props.height !== undefined) {
       finalProps._manualHeight = props.height;
@@ -208,12 +280,15 @@ export class EditorEngine {
 
     target.set(finalProps);
 
-    if (LAYOUT_KEYS.some((k) => props[k] !== undefined) && target instanceof Textbox) {
+    if (
+      LAYOUT_KEYS.some((k) => props[k] !== undefined) &&
+      target instanceof Textbox
+    ) {
       target.initDimensions();
       if (target instanceof CustomTextbox && props.height === undefined) {
         target.autoFitHeight();
       }
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         const id = (target as CustomTextbox).id;
         if (id) {
           useEditorStore.getState().updateLayer(id, {
@@ -221,7 +296,7 @@ export class EditorEngine {
             height: target.height ?? 0,
           });
         }
-      }, 0);
+      });
     }
 
     this.canvas.renderAll();
@@ -235,7 +310,9 @@ export class EditorEngine {
     this.canvas.renderAll();
   }
 
-  public addTextLayer(layer: TextLayer): { x: number; y: number; width: number; height: number } | undefined {
+  public addTextLayer(
+    layer: TextLayer
+  ): { x: number; y: number; width: number; height: number } | undefined {
     if (!this.canvas) return;
 
     const canvasW = this.canvas.getWidth();
@@ -268,15 +345,23 @@ export class EditorEngine {
     this.canvas.setActiveObject(node as unknown as FabricObject);
     this.canvas.renderAll();
 
-    return { x: node.left ?? 0, y: node.top ?? 0, width: finalW, height: finalH };
+    return {
+      x: node.left ?? 0,
+      y: node.top ?? 0,
+      width: finalW,
+      height: finalH,
+    };
   }
 
   public loadDocument(doc: DesignDocument) {
     if (!this.canvas) return;
     this.canvas.clear();
-    this.canvas.setDimensions({ width: doc.global.width, height: doc.global.height });
+    this.canvas.setDimensions({
+      width: doc.global.width,
+      height: doc.global.height,
+    });
     const page = doc.pages[0];
-    if (page?.background.type === 'color') {
+    if (page?.background.type === "color") {
       this.canvas.backgroundColor = page.background.value;
     }
     this.canvas.renderAll();
@@ -289,7 +374,9 @@ export class EditorEngine {
   }
 
   private findObjectById(id: string): FabricObject | undefined {
-    return this.canvas?.getObjects().find((obj) => (obj as CustomTextbox).id === id);
+    return this.canvas
+      ?.getObjects()
+      .find((obj) => (obj as CustomTextbox).id === id);
   }
 }
 

@@ -1,4 +1,4 @@
-import { Textbox, FabricObject, Control } from 'fabric';
+import { Textbox, FabricObject, Control, controlsUtils } from 'fabric';
 import type { TextLayer } from '../types/schema';
 import { fillStyleToFabric } from './engine';
 import { applyCursorsToControls } from './cursors';
@@ -35,16 +35,36 @@ function applyCustomControls(obj: FabricObject): void {
   const controls = obj.controls as Record<string, Control & { _isEnhanced?: boolean }>;
   if (!controls) return;
 
+  const handleWidth = (eventData: unknown, transform: unknown, x: number, y: number) => {
+    const changed = (controlsUtils.changeWidth as unknown as (a: unknown, b: unknown, c: number, d: number) => boolean)(
+      eventData,
+      transform,
+      x,
+      y,
+    );
+    const t = (transform as { target?: unknown })?.target;
+    if (changed && t instanceof CustomTextbox) {
+      t.initDimensions();
+      t.autoFitHeight();
+      t.canvas?.requestRenderAll();
+    }
+    return changed;
+  };
+
   if (controls.mtr) controls.mtr.visible = false;
   if (controls.mt) controls.mt.visible = false;
   if (controls.mb) controls.mb.visible = false;
 
   if (controls.ml && !controls.ml._isEnhanced) {
     controls.ml.render = renderVerticalPill;
+    controls.ml.actionHandler = handleWidth as unknown as Control['actionHandler'];
+    controls.ml.actionName = 'resizing';
     controls.ml._isEnhanced = true;
   }
   if (controls.mr && !controls.mr._isEnhanced) {
     controls.mr.render = renderVerticalPill;
+    controls.mr.actionHandler = handleWidth as unknown as Control['actionHandler'];
+    controls.mr.actionName = 'resizing';
     controls.mr._isEnhanced = true;
   }
 }
