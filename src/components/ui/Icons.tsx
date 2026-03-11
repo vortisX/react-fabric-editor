@@ -52,6 +52,14 @@ export const UnderlineIcon: React.FC<IconProps> = (props) => (
     <path d="M6 3v7a6 6 0 006 6 6 6 0 006-6V3" /><line x1="4" y1="21" x2="20" y2="21" />
   </svg>
 );
+export const StrikethroughIcon: React.FC<IconProps> = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+    className={cn('w-4 h-4', props.className)} {...props}>
+    <line x1="4" y1="12" x2="20" y2="12" />
+    <path d="M17.5 7.5c-1.26-1.12-3.13-1.5-5.5-1.5-2.19 0-3.88.46-4.94 1.27A3.3 3.3 0 005.75 10" />
+    <path d="M6.5 16.5c1.26 1.12 3.13 1.5 5.5 1.5 2.19 0 3.88-.46 4.94-1.27A3.3 3.3 0 0018.25 14" />
+  </svg>
+);
 export const AlignLeftIcon: React.FC<IconProps> = (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
     className={cn('w-4 h-4', props.className)} {...props}>

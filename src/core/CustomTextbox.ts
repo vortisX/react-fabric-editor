@@ -210,6 +210,7 @@ export class CustomTextbox extends Textbox {
       charSpacing: (layer.letterSpacing ?? 0) * 10,
       fontStyle: layer.fontStyle ?? 'normal',
       underline: layer.underline ?? false,
+      linethrough: layer.linethrough ?? false,
       splitByGrapheme: true,
       snapAngle: 1,
       transparentCorners: false,

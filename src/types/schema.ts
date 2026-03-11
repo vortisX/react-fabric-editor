@@ -61,6 +61,7 @@ export interface TextLayer extends BaseLayer {
   letterSpacing?: number; // 字间距
   fontStyle?: "normal" | "italic"; // 斜体
   underline?: boolean; // 下划线
+  linethrough?: boolean; // 删除线
   textBackgroundColor?: string; // 文字背景色(作为外框背景色)
   stroke?: string; // 描边颜色
   strokeWidth?: number; // 描边粗细

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { NumberInput, Select, FontSelect, Slider, ColorPicker, FillPicker, Button, Tooltip } from '../../../../components/ui';
 import { TextArea } from '../../../../components/ui/Input';
 import {
-  BoldIcon, ItalicIcon, UnderlineIcon,
+  BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon,
   AlignLeftIcon, AlignCenterIcon, AlignRightIcon, AlignJustifyIcon,
 } from '../../../../components/ui/Icons';
 import { getSupportedFonts } from '../../../../constants/fonts';
@@ -199,6 +199,14 @@ function TextStyleToolbar({ layer, onPropChange }: TextSectionProps) {
           onClick={() => onPropChange('underline', !layer.underline)}
         >
           <UnderlineIcon className="w-3 h-3" />
+        </Button>
+        <Button
+          variant="text"
+          size="small"
+          className={layer.linethrough ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}
+          onClick={() => onPropChange('linethrough', !layer.linethrough)}
+        >
+          <StrikethroughIcon className="w-3 h-3" />
         </Button>
       </div>
     </div>
