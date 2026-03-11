@@ -19,13 +19,20 @@ export interface ColorBackground {
   value: string; // 十六进制颜色
 }
 
+// 渐变背景
+export interface GradientBackground {
+  type: "gradient";
+  value: GradientFill;
+}
+
 // 图片背景
 export interface ImageBackground {
   type: "image";
   url: string;
+  fit?: "none" | "tile" | "stretch" | "cover";
 }
 
-export type PageBackground = ColorBackground | ImageBackground;
+export type PageBackground = ColorBackground | GradientBackground | ImageBackground;
 
 // 渐变色标
 export interface GradientColorStop {

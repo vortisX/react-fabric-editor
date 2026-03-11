@@ -1,5 +1,5 @@
-import { Canvas, FabricObject, Textbox, Gradient } from "fabric";
-import type { DesignDocument, TextLayer, FillStyle } from "../types/schema";
+import { Canvas, FabricObject, Textbox, Gradient, FabricImage, Pattern } from "fabric";
+import type { DesignDocument, TextLayer, FillStyle, PageBackground } from "../types/schema";
 import { useEditorStore } from "../store/useEditorStore";
 import { setupGlobalUI } from "./EditorUI";
 import { CustomTextbox } from "./CustomTextbox";
@@ -60,6 +60,7 @@ type FabricModifiedEvent = {
 
 export class EditorEngine {
   public canvas: Canvas | null = null;
+  private backgroundAbort: AbortController | null = null;
 
   // ==================== 生命周期 ====================
 
@@ -356,15 +357,113 @@ export class EditorEngine {
   public loadDocument(doc: DesignDocument) {
     if (!this.canvas) return;
     this.canvas.clear();
-    this.canvas.setDimensions({
-      width: doc.global.width,
-      height: doc.global.height,
-    });
+    this.resizeCanvas(doc.global.width, doc.global.height);
     const page = doc.pages[0];
-    if (page?.background.type === "color") {
-      this.canvas.backgroundColor = page.background.value;
+    if (page?.background) {
+      this.setBackground(page.background, doc.global.width, doc.global.height);
     }
     this.canvas.renderAll();
+  }
+
+  public resizeCanvas(width: number, height: number) {
+    if (!this.canvas) return;
+    this.canvas.setDimensions({ width, height });
+    this.canvas.calcOffset();
+    this.canvas.requestRenderAll();
+  }
+
+  public setBackground(background: PageBackground, width: number, height: number) {
+    if (!this.canvas) return;
+    const c = this.canvas;
+
+    this.backgroundAbort?.abort();
+    this.backgroundAbort = new AbortController();
+    const { signal } = this.backgroundAbort;
+
+    if (background.type === "color") {
+      c.backgroundImage = undefined;
+      c.backgroundColor = background.value;
+      c.requestRenderAll();
+      return;
+    }
+
+    if (background.type === "gradient") {
+      c.backgroundImage = undefined;
+      c.backgroundColor = fillStyleToFabric(background.value, width, height);
+      c.requestRenderAll();
+      return;
+    }
+
+    const fit = background.fit ?? "cover";
+    const url = background.url;
+
+    if (!url) {
+      c.backgroundImage = undefined;
+      c.backgroundColor = "#ffffff";
+      c.requestRenderAll();
+      return;
+    }
+
+    FabricImage.fromURL(url, { signal })
+      .then((img) => {
+        if (signal.aborted || !this.canvas) return;
+
+        img.set({ selectable: false, evented: false });
+
+        const iw = img.width ?? 1;
+        const ih = img.height ?? 1;
+
+        if (fit === "tile") {
+          c.backgroundImage = undefined;
+          c.backgroundColor = new Pattern({
+            source: img.getElement(),
+            repeat: "repeat",
+          });
+          c.requestRenderAll();
+          return;
+        }
+
+        if (fit === "stretch") {
+          const scaleX = width / iw;
+          const scaleY = height / ih;
+          img.set({ originX: "left", originY: "top", left: 0, top: 0, scaleX, scaleY });
+          c.backgroundImage = img;
+          c.backgroundColor = "#ffffff";
+          c.requestRenderAll();
+          return;
+        }
+
+        if (fit === "none") {
+          img.set({
+            originX: "center",
+            originY: "center",
+            left: width / 2,
+            top: height / 2,
+            scaleX: 1,
+            scaleY: 1,
+          });
+          c.backgroundImage = img;
+          c.backgroundColor = "#ffffff";
+          c.requestRenderAll();
+          return;
+        }
+
+        const scale = Math.max(width / iw, height / ih);
+        const scaledW = iw * scale;
+        const scaledH = ih * scale;
+        img.set({
+          originX: "left",
+          originY: "top",
+          left: (width - scaledW) / 2,
+          top: (height - scaledH) / 2,
+          scaleX: scale,
+          scaleY: scale,
+        });
+        c.backgroundImage = img;
+        c.backgroundColor = "#ffffff";
+        c.requestRenderAll();
+      })
+      .catch(() => {});
   }
 
   // ==================== 内部工具 ====================
