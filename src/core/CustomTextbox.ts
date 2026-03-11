@@ -84,6 +84,81 @@ export class CustomTextbox extends Textbox {
     }
   }
 
+  /**
+   * 重写两端对齐逻辑：
+   * 原版只拉伸空格、且跳过硬换行行。
+   * 这里对所有行生效，无空格时将多余宽度均分到字符间隙，
+   * 实现「第一个字贴左、最后一个字贴右、中间均匀分布」。
+   */
+  enlargeSpaces() {
+    if (!this.textAlign.includes('justify')) return;
+    for (let i = 0, len = this._textLines.length; i < len; i++) {
+      const line = this._textLines[i];
+      const currentLineWidth = this.getLineWidth(i);
+      if (currentLineWidth >= this.width || line.length <= 1) continue;
+
+      const diff = this.width - currentLineWidth;
+      const spaces = this.textLines[i].match(this._reSpacesAndTabs);
+
+      if (spaces) {
+        // 有空格：拉伸空格字符（原版逻辑）
+        const diffSpace = diff / spaces.length;
+        let acc = 0;
+        for (let j = 0; j <= line.length; j++) {
+          const cb = this.__charBounds[i][j];
+          if (this._reSpaceAndTab.test(line[j])) {
+            cb.width += diffSpace;
+            cb.kernedWidth += diffSpace;
+            cb.left += acc;
+            acc += diffSpace;
+          } else {
+            cb.left += acc;
+          }
+        }
+      } else {
+        // 无空格（中文等 CJK）：均分到字符间隙
+        // 第一个字符不加间距（贴左边），后续字符各加 perGap
+        const gaps = line.length - 1;
+        const perGap = diff / gaps;
+        let acc = 0;
+        for (let j = 0; j < line.length; j++) {
+          const cb = this.__charBounds[i][j];
+          cb.left += acc;
+          if (j > 0) {
+            cb.kernedWidth += perGap;
+            acc += perGap;
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * 重写渲染方法：对 justify + 无空格的行强制逐字渲染。
+   * 原版会把无空格的整行合成一个字符串一次性绘制，
+   * 导致 __charBounds 的间距修改不生效。
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  _renderChars(method: string, ctx: CanvasRenderingContext2D, line: string[], left: number, top: number, lineIndex: number): any {
+    const isJustifyNoSpaces =
+      this.textAlign.includes('justify') &&
+      !this.charSpacing &&
+      line.length > 1 &&
+      !this.textLines[lineIndex]?.match(this._reSpacesAndTabs);
+
+    if (isJustifyNoSpaces) {
+      // 临时设置 charSpacing 使 _renderChars 逐字渲染
+      const saved = this.charSpacing;
+      this.charSpacing = 1e-8;
+      // @ts-expect-error calling parent's protected method
+      super._renderChars(method, ctx, line, left, top, lineIndex);
+      this.charSpacing = saved;
+    } else {
+      // @ts-expect-error calling parent's protected method
+      super._renderChars(method, ctx, line, left, top, lineIndex);
+    }
+  }
+
   /** 拖动中约束最小尺寸，不修改 fontSize / 不重置 scale */
   constrainScaling() {
     const fontSize = this.fontSize ?? 12;
