@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NumberInput, Select, FontSelect, Slider, ColorPicker, FillPicker, Button, Tooltip } from '../../../../components/ui';
-import { TextArea } from '../../../../components/ui/Input';
 import {
   BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon,
   AlignLeftIcon, AlignCenterIcon, AlignRightIcon, AlignJustifyIcon,
@@ -45,26 +44,6 @@ interface LayoutSectionProps {
   isTextLayer: boolean;
   textLayer: TextLayer;
   onPropChange: PropChangeHandler;
-}
-
-// ─── 文本内容区 ───────────────────────────────────────────────
-
-export function TextContentSection({ layer, onPropChange }: TextSectionProps) {
-  const { t } = useTranslation();
-
-  return (
-    <div className="flex flex-col border-b border-gray-100 pb-3 pt-1">
-      <div className="px-4">
-        <TextArea
-          value={layer.content}
-          onChange={(val) => onPropChange('content', val)}
-          placeholder={t('rightPanel.textPlaceholder')}
-          minRows={2}
-          maxRows={6}
-        />
-      </div>
-    </div>
-  );
 }
 
 // ─── 布局配置区 ───────────────────────────────────────────────
@@ -158,7 +137,7 @@ function TextStyleToolbar({ layer, onPropChange }: TextSectionProps) {
             <Button
               variant="text"
               size="small"
-              className={`w-full ${layer.textAlign === value ? 'bg-white shadow-sm' : 'text-gray-500'}`}
+              className={`w-full ${layer.textAlign === value ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}`}
               onClick={() => onPropChange('textAlign', value)}
             >
               <Icon className="w-3 h-3" />
@@ -171,7 +150,7 @@ function TextStyleToolbar({ layer, onPropChange }: TextSectionProps) {
           <Button
             variant="text"
             size="small"
-            className={layer.fontWeight === 'bold' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}
+            className={`w-full ${layer.fontWeight === 'bold' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}`}
             onClick={() => onPropChange('fontWeight', layer.fontWeight === 'bold' ? 'normal' : 'bold')}
           >
             <BoldIcon className="w-3 h-3" />
@@ -181,7 +160,7 @@ function TextStyleToolbar({ layer, onPropChange }: TextSectionProps) {
           <Button
             variant="text"
             size="small"
-            className={layer.fontStyle === 'italic' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}
+            className={`w-full ${layer.fontStyle === 'italic' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}`}
             onClick={() => onPropChange('fontStyle', layer.fontStyle === 'italic' ? 'normal' : 'italic')}
           >
             <ItalicIcon className="w-3 h-3" />
@@ -191,7 +170,7 @@ function TextStyleToolbar({ layer, onPropChange }: TextSectionProps) {
           <Button
             variant="text"
             size="small"
-            className={layer.underline ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}
+            className={`w-full ${layer.underline ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}`}
             onClick={() => onPropChange('underline', !layer.underline)}
           >
             <UnderlineIcon className="w-3 h-3" />
@@ -201,7 +180,7 @@ function TextStyleToolbar({ layer, onPropChange }: TextSectionProps) {
           <Button
             variant="text"
             size="small"
-            className={layer.linethrough ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}
+            className={`w-full ${layer.linethrough ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}`}
             onClick={() => onPropChange('linethrough', !layer.linethrough)}
           >
             <StrikethroughIcon className="w-3 h-3" />

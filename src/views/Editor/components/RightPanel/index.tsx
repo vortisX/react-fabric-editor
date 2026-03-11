@@ -3,7 +3,6 @@ import { Tabs } from '../../../../components/ui';
 import { useEditorStore } from '../../../../store/useEditorStore';
 import { useLayerActions } from './useLayerActions';
 import {
-  TextContentSection,
   LayoutSection,
   TypographySection,
   ColorFillSection,
@@ -51,7 +50,6 @@ export default function RightPanel() {
             label: <span className="text-[11px] font-medium">{t('rightPanel.propertiesConfig')}</span>,
             children: (
               <div className="overflow-y-auto h-[calc(100vh-40px)] pb-10 flex flex-col">
-                {isTextLayer && <TextContentSection layer={textLayer} onPropChange={handlePropChange} />}
                 <LayoutSection layer={activeLayer} isTextLayer={isTextLayer} textLayer={textLayer} onPropChange={handlePropChange} />
                 {isTextLayer && <TypographySection layer={textLayer} onPropChange={handlePropChange} />}
                 <ColorFillSection layer={textLayer} onPropChange={handlePropChange} />
