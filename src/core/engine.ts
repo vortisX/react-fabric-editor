@@ -36,6 +36,10 @@ export function fillStyleToFabric(
 
 const LAYOUT_KEYS = ['text', 'width', 'height', 'textAlign', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'charSpacing', 'fontStyle'] as const;
 
+type FabricSelectionEvent = { selected?: FabricObject[] };
+type FabricObjectEvent = { target: FabricObject };
+type FabricModifiedEvent = { target: FabricObject; transform?: { corner?: string } };
+
 export class EditorEngine {
   public canvas: Canvas | null = null;
 
@@ -71,17 +75,16 @@ export class EditorEngine {
   private bindEvents() {
     const c = this.canvas!;
 
-    c.on('selection:created', (e) => this.onSelectionChanged(e.selected?.[0]));
-    c.on('selection:updated', (e) => this.onSelectionChanged(e.selected?.[0]));
+    c.on('selection:created', (e: FabricSelectionEvent) => this.onSelectionChanged(e.selected?.[0]));
+    c.on('selection:updated', (e: FabricSelectionEvent) => this.onSelectionChanged(e.selected?.[0]));
     c.on('selection:cleared', () => this.onSelectionChanged(undefined));
 
-    c.on('object:scaling', (e) => this.onScaling(e.target));
-    c.on('object:resizing', (e) => this.onResizing(e.target));
-    c.on('object:moving', (e) => this.syncLiveTransform(e.target as CustomTextbox));
-    c.on('object:rotating', (e) => this.syncLiveTransform(e.target as CustomTextbox));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    c.on('object:modified', (e: any) => this.onModified(e));
-    c.on('text:changed', (e) => this.onTextChanged(e.target));
+    c.on('object:scaling', (e: FabricObjectEvent) => this.onScaling(e.target));
+    c.on('object:resizing', (e: FabricObjectEvent) => this.onResizing(e.target));
+    c.on('object:moving', (e: FabricObjectEvent) => this.syncLiveTransform(e.target as CustomTextbox));
+    c.on('object:rotating', (e: FabricObjectEvent) => this.syncLiveTransform(e.target as CustomTextbox));
+    c.on('object:modified', (e: FabricModifiedEvent) => this.onModified(e));
+    c.on('text:changed', (e: FabricObjectEvent) => this.onTextChanged(e.target));
   }
 
   private onSelectionChanged(target?: FabricObject) {
@@ -99,8 +102,7 @@ export class EditorEngine {
     this.syncLiveTransform(target as CustomTextbox);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private onModified(e: any) {
+  private onModified(e: FabricModifiedEvent) {
     const target = e.target as CustomTextbox;
     if (!target?.id) return;
 

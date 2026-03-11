@@ -138,8 +138,7 @@ export class CustomTextbox extends Textbox {
    * 原版会把无空格的整行合成一个字符串一次性绘制，
    * 导致 __charBounds 的间距修改不生效。
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  _renderChars(method: string, ctx: CanvasRenderingContext2D, line: string[], left: number, top: number, lineIndex: number): any {
+  _renderChars(method: string, ctx: CanvasRenderingContext2D, line: string[], left: number, top: number, lineIndex: number): void {
     const isJustifyNoSpaces =
       this.textAlign.includes('justify') &&
       !this.charSpacing &&

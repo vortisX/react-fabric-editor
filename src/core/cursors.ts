@@ -175,8 +175,8 @@ export function applyCursorsToControls(obj: FabricObject): void {
 
   for (const key of ['tl', 'tr', 'bl', 'br', 'ml', 'mr', 'mt', 'mb']) {
     if (controls[key]) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (controls[key] as any).cursorStyleHandler = customCursorHandler;
+      const control = controls[key] as Control & { cursorStyleHandler?: typeof customCursorHandler };
+      control.cursorStyleHandler = customCursorHandler;
     }
   }
 
