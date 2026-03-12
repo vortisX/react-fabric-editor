@@ -67,13 +67,11 @@ export const FillPicker: React.FC<FillPickerProps> = ({ value, onChange, size = 
                     <div
                         ref={panelRef}
                         style={{
-                            position: 'fixed',
                             top: pos.top,
                             left: pos.left,
-                            zIndex: 99999,
                             animation: 'tooltip-in-bottom 0.15s cubic-bezier(0.16,1,0.3,1) both',
                         }}
-                        className="bg-white rounded-xl shadow-2xl border border-gray-200/80 p-3 w-62"
+                        className="fixed z-50 bg-white rounded-xl shadow-2xl border border-gray-200/80 p-3 w-62"
                     >
                         <FillPanel value={value} onChange={onChange} />
                     </div>,

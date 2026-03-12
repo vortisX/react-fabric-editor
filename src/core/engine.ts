@@ -1,5 +1,5 @@
 import { Canvas, FabricObject, Textbox, Gradient, FabricImage, Pattern } from "fabric";
-import i18n from '../locales';
+import { i18n } from '../locales';
 import type { DesignDocument, TextLayer, FillStyle, PageBackground } from "../types/schema";
 import { useEditorStore } from "../store/useEditorStore";
 import { setupGlobalUI } from "./EditorUI";
@@ -311,7 +311,7 @@ export class EditorEngine {
       });
     }
 
-    this.canvas.renderAll();
+    this.canvas.requestRenderAll();
   }
 
   public selectLayer(layerId: string) {
@@ -319,7 +319,7 @@ export class EditorEngine {
     const target = this.findObjectById(layerId);
     if (target) this.canvas.setActiveObject(target);
     else this.canvas.discardActiveObject();
-    this.canvas.renderAll();
+    this.canvas.requestRenderAll();
   }
 
   public addTextLayer(
@@ -355,7 +355,7 @@ export class EditorEngine {
     node.setCoords();
 
     this.canvas.setActiveObject(node as unknown as FabricObject);
-    this.canvas.renderAll();
+    this.canvas.requestRenderAll();
 
     return {
       x: node.left ?? 0,
@@ -373,7 +373,7 @@ export class EditorEngine {
     if (page?.background) {
       this.setBackground(page.background, doc.global.width, doc.global.height);
     }
-    this.canvas.renderAll();
+    this.canvas.requestRenderAll();
   }
 
   public resizeCanvas(width: number, height: number) {

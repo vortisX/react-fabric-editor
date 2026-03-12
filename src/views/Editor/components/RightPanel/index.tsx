@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Tabs } from '../../../../components/ui';
 import { useEditorStore } from '../../../../store/useEditorStore';
-import { handlePropChange } from './Layer.handlers';
+import { handlePropChange, type PropChangeHandler } from './Layer.handlers';
 import {
   LayoutSection,
   TypographySection,
@@ -21,7 +21,7 @@ export const RightPanel = () => {
     (layer) => layer.id === activeLayerId,
   );
 
-  const onPropChange = (key: any, value: any) => {
+  const onPropChange: PropChangeHandler = (key, value) => {
     if (activeLayer) {
       handlePropChange(activeLayer.id, key, value);
     }

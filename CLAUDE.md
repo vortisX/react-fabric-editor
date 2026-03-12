@@ -127,3 +127,5 @@ src/
 生成 Commit Message 时，强制使用 Conventional Commits 标准：
 * `feat:` 新增功能 / `fix:` 修复缺陷 / `refactor:` 代码重构 / `style:` 样式调整 / `docs:` 文档更新。
 * 格式：`前缀: 英文简短描述 (不超过50字符)`。
+
+## 12. 使用中文与我对话

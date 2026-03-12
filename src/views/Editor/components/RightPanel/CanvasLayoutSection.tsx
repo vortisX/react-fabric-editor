@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, FillPicker, Select } from '../../../../components/ui';
 import type { FillStyle, PageBackground } from '../../../../types/schema';
 import { CANVAS_MAX_PX, CANVAS_MIN_PX, CANVAS_PRESETS, type CanvasUnit } from '../../../../core/constants';
@@ -73,6 +74,7 @@ function RealtimeNumberInput(props: {
 }
 
 export function CanvasLayoutSection() {
+  const { t } = useTranslation();
   const document = useEditorStore((s) => s.document);
   const widthPx = useEditorStore((s) => s.document?.global.width ?? 0);
   const heightPx = useEditorStore((s) => s.document?.global.height ?? 0);
@@ -132,11 +134,11 @@ export function CanvasLayoutSection() {
     const valid = nextPx >= CANVAS_MIN_PX && nextPx <= CANVAS_MAX_PX;
 
     if (kind === 'width') {
-      setWidthError(valid ? null : `宽度需在 ${CANVAS_MIN_PX}–${CANVAS_MAX_PX} px`);
+      setWidthError(valid ? null : t('rightPanel.canvasWidthError', { min: CANVAS_MIN_PX, max: CANVAS_MAX_PX }));
       if (!valid) return;
       setCanvasSizePx(nextPx, heightPx);
     } else {
-      setHeightError(valid ? null : `高度需在 ${CANVAS_MIN_PX}–${CANVAS_MAX_PX} px`);
+      setHeightError(valid ? null : t('rightPanel.canvasHeightError', { min: CANVAS_MIN_PX, max: CANVAS_MAX_PX }));
       if (!valid) return;
       setCanvasSizePx(widthPx, nextPx);
     }
@@ -146,7 +148,7 @@ export function CanvasLayoutSection() {
 
   return (
     <div className="flex flex-col border-b border-gray-100 pb-3">
-      <SectionHeader title="画布布局" />
+      <SectionHeader title={t('rightPanel.canvasLayout')} />
       <div className="px-4 flex flex-col gap-2">
         <Select
           value={selectedPresetId}
@@ -188,13 +190,13 @@ export function CanvasLayoutSection() {
 
         <div className="flex flex-col gap-2 pt-1">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-gray-500 font-medium">背景</span>
+            <span className="text-[10px] text-gray-500 font-medium">{t('rightPanel.backgroundColor')}</span>
             <div className="flex items-center gap-1">
               <Button variant="text" size="small" className="text-gray-600" onClick={undoBackground} disabled={!canUndo}>
-                撤销
+                {t('rightPanel.undoAction')}
               </Button>
               <Button variant="text" size="small" className="text-gray-600" onClick={redoBackground} disabled={!canRedo}>
-                重做
+                {t('rightPanel.redoAction')}
               </Button>
             </div>
           </div>
@@ -212,8 +214,8 @@ export function CanvasLayoutSection() {
               }
             }}
             options={[
-              { value: 'image', label: '图片' },
-              { value: 'fill', label: '颜色/渐变' },
+              { value: 'image', label: t('rightPanel.bgImage') },
+              { value: 'fill', label: t('rightPanel.bgColorGradient') },
             ]}
           />
 
@@ -238,10 +240,10 @@ export function CanvasLayoutSection() {
                 value={safeBackground.fit ?? 'cover'}
                 onChange={(fit) => setPageBackground({ ...safeBackground, fit } as PageBackground)}
                 options={[
-                  { value: 'none', label: '无' },
-                  { value: 'tile', label: '平铺' },
-                  { value: 'stretch', label: '拉伸' },
-                  { value: 'cover', label: '覆盖' },
+                  { value: 'none', label: t('rightPanel.none') },
+                  { value: 'tile', label: t('rightPanel.bgFitTile') },
+                  { value: 'stretch', label: t('rightPanel.bgFitStretch') },
+                  { value: 'cover', label: t('rightPanel.bgFitCover') },
                 ]}
               />
             </div>
@@ -252,7 +254,7 @@ export function CanvasLayoutSection() {
                 onChange={(fill) => setPageBackground(nextBackgroundFromFill(fill))}
                 size="small"
               />
-              <span className="text-xs text-gray-500">填充</span>
+              <span className="text-xs text-gray-500">{t('rightPanel.fill')}</span>
             </div>
           )}
         </div>

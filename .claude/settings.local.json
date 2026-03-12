@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l D:/Project/Personal/react-fabric-editor/src/components/ui/*.tsx D:/Project/Personal/react-fabric-editor/src/components/ui/FillPicker/*.tsx)"
+    ]
+  }
+}

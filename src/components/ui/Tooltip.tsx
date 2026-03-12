@@ -68,12 +68,11 @@ export const Tooltip: React.FC<TooltipProps> = ({ title, placement = 'top', chil
       {visible && ReactDOM.createPortal(
         <div
           style={{
-            position: 'fixed',
             top: position.top,
             left: position.left,
-            zIndex: 99999,
             animation: `tooltip-in-${placement} 0.18s cubic-bezier(0.16,1,0.3,1) both`,
           }}
+          className="fixed z-50"
         >
           <div
             className="relative px-3 py-1.5 text-xs font-medium text-white rounded-lg shadow-xl whitespace-nowrap pointer-events-none"

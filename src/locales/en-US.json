@@ -62,7 +62,21 @@
     "searchFont": "Search fonts...",
     "noFontFound": "No fonts found",
     "licenseFree": "Free",
-    "licenseVip": "VIP"
+    "licenseVip": "VIP",
+    "canvasLayout": "Canvas Layout",
+    "undoAction": "Undo",
+    "redoAction": "Redo",
+    "bgImage": "Image",
+    "bgColorGradient": "Color/Gradient",
+    "bgFitTile": "Tile",
+    "bgFitStretch": "Stretch",
+    "bgFitCover": "Cover",
+    "fill": "Fill",
+    "canvasWidthError": "Width must be {{min}}–{{max}} px",
+    "canvasHeightError": "Height must be {{min}}–{{max}} px"
+  },
+  "common": {
+    "clear": "Clear"
   },
   "editor": {
     "loading": "Loading..."

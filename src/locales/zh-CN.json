@@ -62,7 +62,21 @@
     "searchFont": "搜索字体...",
     "noFontFound": "未找到匹配字体",
     "licenseFree": "商用免费",
-    "licenseVip": "会员免费"
+    "licenseVip": "会员免费",
+    "canvasLayout": "画布布局",
+    "undoAction": "撤销",
+    "redoAction": "重做",
+    "bgImage": "图片",
+    "bgColorGradient": "颜色/渐变",
+    "bgFitTile": "平铺",
+    "bgFitStretch": "拉伸",
+    "bgFitCover": "覆盖",
+    "fill": "填充",
+    "canvasWidthError": "宽度需在 {{min}}–{{max}} px",
+    "canvasHeightError": "高度需在 {{min}}–{{max}} px"
+  },
+  "common": {
+    "clear": "清除"
   },
   "editor": {
     "loading": "加载中..."

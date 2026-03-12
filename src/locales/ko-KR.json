@@ -62,7 +62,21 @@
     "searchFont": "글꼴 검색...",
     "noFontFound": "글꼴을 찾을 수 없습니다",
     "licenseFree": "상업용 무료",
-    "licenseVip": "회원 무료"
+    "licenseVip": "회원 무료",
+    "canvasLayout": "캔버스 레이아웃",
+    "undoAction": "되돌리기",
+    "redoAction": "다시 실행",
+    "bgImage": "이미지",
+    "bgColorGradient": "색상/그라데이션",
+    "bgFitTile": "타일",
+    "bgFitStretch": "늘이기",
+    "bgFitCover": "덮기",
+    "fill": "채우기",
+    "canvasWidthError": "너비는 {{min}}–{{max}} px여야 합니다",
+    "canvasHeightError": "높이는 {{min}}–{{max}} px여야 합니다"
+  },
+  "common": {
+    "clear": "지우기"
   },
   "editor": {
     "loading": "로딩 중..."

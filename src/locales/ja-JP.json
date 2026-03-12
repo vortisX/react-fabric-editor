@@ -62,7 +62,21 @@
     "searchFont": "フォントを検索...",
     "noFontFound": "フォントが見つかりません",
     "licenseFree": "商用無料",
-    "licenseVip": "会員無料"
+    "licenseVip": "会員無料",
+    "canvasLayout": "キャンバスレイアウト",
+    "undoAction": "元に戻す",
+    "redoAction": "やり直し",
+    "bgImage": "画像",
+    "bgColorGradient": "カラー/グラデーション",
+    "bgFitTile": "タイル",
+    "bgFitStretch": "ストレッチ",
+    "bgFitCover": "カバー",
+    "fill": "フィル",
+    "canvasWidthError": "幅は{{min}}〜{{max}}pxである必要があります",
+    "canvasHeightError": "高さは{{min}}〜{{max}}pxである必要があります"
+  },
+  "common": {
+    "clear": "クリア"
   },
   "editor": {
     "loading": "読み込み中..."

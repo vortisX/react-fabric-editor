@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../utils/cn';
 
 interface ColorPickerProps {
@@ -18,6 +19,7 @@ const PRESET_COLORS = [
 export const ColorPicker: React.FC<ColorPickerProps> = ({
   value, onChange, size = 'medium', allowClear = false,
 }) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [hex, setHex] = useState(value || '#000000');
   const [prevValue, setPrevValue] = useState(value);
@@ -92,13 +94,11 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
         <div
           ref={panelRef}
           style={{
-            position: 'fixed',
             top: pos.top,
             left: pos.left,
-            zIndex: 99999,
             animation: 'tooltip-in-bottom 0.15s cubic-bezier(0.16,1,0.3,1) both',
           }}
-          className="bg-white rounded-xl shadow-2xl border border-gray-200/80 p-3 w-58"
+          className="fixed z-50 bg-white rounded-xl shadow-2xl border border-gray-200/80 p-3 w-58"
         >
           {/* Color swatches */}
           <div className="grid grid-cols-8 gap-1.5 mb-3">
@@ -154,7 +154,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                 onClick={() => { commit(''); setOpen(false); }}
                 className="h-8 px-2 text-[11px] text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
               >
-                清除
+                {t('common.clear')}
               </button>
             )}
           </div>
