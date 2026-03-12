@@ -4,7 +4,7 @@ import { Button, Tooltip, Select } from '../../../components/ui';
 import { UndoIcon, RedoIcon, PlayIcon } from '../../../components/ui/Icons';
 import { LANGUAGES } from '../../../locales';
 
-export default function Header() {
+export const Header = () => {
   const { t, i18n } = useTranslation();
   const title = useEditorStore((state) => state.document?.title);
 

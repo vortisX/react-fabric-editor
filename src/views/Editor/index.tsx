@@ -1,12 +1,12 @@
 import { useTranslation } from 'react-i18next';
 import { useEditorStore } from '../../store/useEditorStore';
 
-import Header from './components/Header';
-import LeftPanel from './components/LeftPanel';
-import Workspace from './components/Workspace';
-import RightPanel from './components/RightPanel';
+import { Header } from './components/Header';
+import { LeftPanel } from './components/LeftPanel';
+import { Workspace } from './components/Workspace';
+import { RightPanel } from './components/RightPanel';
 
-export default function EditorView() {
+export const EditorView = () => {
   const { t } = useTranslation();
   const isReady = useEditorStore((state) => state.document !== null);
 

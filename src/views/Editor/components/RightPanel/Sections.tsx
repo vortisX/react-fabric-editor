@@ -7,7 +7,7 @@ import {
 } from '../../../../components/ui/Icons';
 import { getSupportedFonts } from '../../../../constants/fonts';
 import type { TextLayer, Layer, FillStyle } from '../../../../types/schema';
-import type { PropChangeHandler } from './useLayerActions';
+import type { PropChangeHandler } from './Layer.handlers';
 
 // ─── 共享基础组件 ──────────────────────────────────────────────
 

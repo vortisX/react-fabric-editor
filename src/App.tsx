@@ -1,9 +1,7 @@
-import EditorView from './views/Editor';
+import { EditorView } from './views/Editor';
 
-function App() {
+export const App = () => {
   return (
     <EditorView />
   );
-}
-
-export default App;
+};

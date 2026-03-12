@@ -1,4 +1,5 @@
 import { Canvas, FabricObject, Textbox, Gradient, FabricImage, Pattern } from "fabric";
+import i18n from '../locales';
 import type { DesignDocument, TextLayer, FillStyle, PageBackground } from "../types/schema";
 import { useEditorStore } from "../store/useEditorStore";
 import { setupGlobalUI } from "./EditorUI";
@@ -61,6 +62,7 @@ type FabricModifiedEvent = {
 export class EditorEngine {
   public canvas: Canvas | null = null;
   private backgroundAbort: AbortController | null = null;
+  private syncTransformRaf: number | null = null;
 
   // ==================== 生命周期 ====================
 
@@ -83,6 +85,10 @@ export class EditorEngine {
   }
 
   public dispose() {
+    if (this.syncTransformRaf !== null) {
+      cancelAnimationFrame(this.syncTransformRaf);
+      this.syncTransformRaf = null;
+    }
     if (!this.canvas) return;
     this.canvas.off();
     this.canvas.dispose();
@@ -190,7 +196,7 @@ export class EditorEngine {
     tb.autoFitHeight();
 
     const text = tb.text || "";
-    const trimmed = text.trim() || "空文本";
+    const trimmed = text.trim() || i18n.t('rightPanel.emptyText');
     const name = trimmed.length > 15 ? trimmed.slice(0, 15) + "..." : trimmed;
 
     useEditorStore.getState().updateLayer(tb.id, {
@@ -207,32 +213,37 @@ export class EditorEngine {
 
   /** 拖动/旋转/缩放过程中实时同步视觉属性到 Store（不做 scale 转换） */
   private syncLiveTransform(target: CustomTextbox) {
-    if (!target?.id) return;
-    const pageId = this.getCurrentPageId();
-    if (!pageId) return;
+    if (this.syncTransformRaf !== null) return;
 
-    const r = EditorEngine.round1;
-    const scaleX = target.scaleX ?? 1;
-    const scaleY = target.scaleY ?? 1;
-    const updates: Partial<TextLayer> = {
-      x: r(target.left ?? 0),
-      y: r(target.top ?? 0),
-      rotation: Math.round(target.angle ?? 0),
-      width: r((target.width ?? 0) * scaleX),
-      height: r((target.height ?? 0) * scaleY),
-    };
+    this.syncTransformRaf = requestAnimationFrame(() => {
+      this.syncTransformRaf = null;
+      if (!target?.id) return;
+      const pageId = this.getCurrentPageId();
+      if (!pageId) return;
 
-    if (target instanceof Textbox) {
-      const isCornerScaling = scaleX !== 1 || scaleY !== 1;
-      if (isCornerScaling) {
-        const scale = (scaleX + scaleY) / 2;
-        updates.fontSize = r(Math.max((target.fontSize ?? 12) * scale, 1));
-      } else {
-        updates.fontSize = r(target.fontSize ?? 12);
+      const r = EditorEngine.round1;
+      const scaleX = target.scaleX ?? 1;
+      const scaleY = target.scaleY ?? 1;
+      const updates: Partial<TextLayer> = {
+        x: r(target.left ?? 0),
+        y: r(target.top ?? 0),
+        rotation: Math.round(target.angle ?? 0),
+        width: r((target.width ?? 0) * scaleX),
+        height: r((target.height ?? 0) * scaleY),
+      };
+
+      if (target instanceof Textbox) {
+        const isCornerScaling = scaleX !== 1 || scaleY !== 1;
+        if (isCornerScaling) {
+          const scale = (scaleX + scaleY) / 2;
+          updates.fontSize = r(Math.max((target.fontSize ?? 12) * scale, 1));
+        } else {
+          updates.fontSize = r(target.fontSize ?? 12);
+        }
       }
-    }
 
-    useEditorStore.getState().updateLayer(target.id, updates);
+      useEditorStore.getState().updateLayer(target.id, updates);
+    });
   }
 
   /** 将画布对象的变换属性同步到 Store */

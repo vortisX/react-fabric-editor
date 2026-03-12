@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Tabs } from '../../../../components/ui';
 import { useEditorStore } from '../../../../store/useEditorStore';
-import { useLayerActions } from './useLayerActions';
+import { handlePropChange } from './Layer.handlers';
 import {
   LayoutSection,
   TypographySection,
@@ -12,7 +12,7 @@ import {
 import { CanvasLayoutSection } from './CanvasLayoutSection';
 import type { TextLayer } from '../../../../types/schema';
 
-export default function RightPanel() {
+export const RightPanel = () => {
   const activeLayerId = useEditorStore((state) => state.activeLayerId);
   const document = useEditorStore((state) => state.document);
   const { t } = useTranslation();
@@ -21,7 +21,11 @@ export default function RightPanel() {
     (layer) => layer.id === activeLayerId,
   );
 
-  const { handlePropChange } = useLayerActions(activeLayer);
+  const onPropChange = (key: any, value: any) => {
+    if (activeLayer) {
+      handlePropChange(activeLayer.id, key, value);
+    }
+  };
 
   const isTextLayer = activeLayer?.type === 'text';
   const textLayer = activeLayer as TextLayer;
@@ -40,11 +44,11 @@ export default function RightPanel() {
                 <CanvasLayoutSection />
                 {activeLayer ? (
                   <>
-                    <LayoutSection layer={activeLayer} isTextLayer={isTextLayer} textLayer={textLayer} onPropChange={handlePropChange} />
-                    {isTextLayer && <TypographySection layer={textLayer} onPropChange={handlePropChange} />}
-                    <ColorFillSection layer={textLayer} onPropChange={handlePropChange} />
-                    <BorderStyleSection layer={textLayer} onPropChange={handlePropChange} />
-                    <LayerPropertiesSection layer={activeLayer} onPropChange={handlePropChange} />
+                    <LayoutSection layer={activeLayer} isTextLayer={isTextLayer} textLayer={textLayer} onPropChange={onPropChange} />
+                    {isTextLayer && <TypographySection layer={textLayer} onPropChange={onPropChange} />}
+                    <ColorFillSection layer={textLayer} onPropChange={onPropChange} />
+                    <BorderStyleSection layer={textLayer} onPropChange={onPropChange} />
+                    <LayerPropertiesSection layer={activeLayer} onPropChange={onPropChange} />
                   </>
                 ) : (
                   <div className="px-4 py-6 text-gray-400 text-xs">{t('rightPanel.selectLayer')}</div>

@@ -6,7 +6,7 @@ import { engineInstance } from '../../../core/engine';
 import { genId } from '../../../utils/uuid';
 import type { TextLayer } from '../../../types/schema';
 
-export default function LeftPanel() {
+export const LeftPanel = () => {
   const { t } = useTranslation();
   const addLayer = useEditorStore((state) => state.addLayer);
   const document = useEditorStore((state) => state.document);
