@@ -378,9 +378,15 @@ export class EditorEngine {
 
   public resizeCanvas(width: number, height: number) {
     if (!this.canvas) return;
+    // 尺寸未变则跳过：setDimensions 即使尺寸相同也会重置 canvas context，
+    // 这会在 mount 时产生不必要的清空（useLayoutEffect 初次运行时 init 已完成）。
+    if (this.canvas.getWidth() === width && this.canvas.getHeight() === height) return;
     this.canvas.setDimensions({ width, height });
     this.canvas.calcOffset();
-    this.canvas.requestRenderAll();
+    // 必须同步 renderAll 而非 requestRenderAll：
+    // setDimensions 清空了 canvas context，requestRenderAll 是异步 RAF，
+    // 二者之间有一帧空白 → 文字闪烁。同步 renderAll 在清空后立即填充内容。
+    this.canvas.renderAll();
   }
 
   public setBackground(background: PageBackground, width: number, height: number) {

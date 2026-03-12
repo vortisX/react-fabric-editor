@@ -2,14 +2,19 @@ import { create } from "zustand";
 import type { DesignDocument, Layer, PageBackground } from "../types/schema";
 import { clampCanvasPx } from "../core/canvasMath";
 
+interface BackgroundHistory {
+  past: PageBackground[];
+  future: PageBackground[];
+}
+
 // 定义 Store 的类型接口
 interface EditorState {
   // === 数据状态 (State) ===
   document: DesignDocument | null; // 当前编辑的文档核心数据
   activeLayerId: string | null; // 当前选中的图层 ID
   currentPageId: string | null; // 当前选中的页面 ID
-  backgroundPast: DesignDocument[];
-  backgroundFuture: DesignDocument[];
+  /** 只存背景快照，不存整个文档，避免撤销背景时意外回滚图层变更 */
+  backgroundHistory: BackgroundHistory;
 
   // === 操作方法 (Actions) ===
   initDocument: (doc: DesignDocument) => void;
@@ -48,20 +53,35 @@ const initialDoc: DesignDocument = {
   ],
 };
 
+/** 从 document 中取出当前页面的背景，用于存入历史记录 */
+function getCurrentBackground(doc: DesignDocument, pageId: string): PageBackground | null {
+  const page = doc.pages.find((p) => p.pageId === pageId);
+  return page?.background ?? null;
+}
+
+/** 将背景值写入指定页面，返回新的 pages 数组（不可变更新） */
+function applyBackgroundToPages(
+  doc: DesignDocument,
+  pageId: string,
+  background: PageBackground,
+) {
+  return doc.pages.map((page) =>
+    page.pageId === pageId ? { ...page, background } : page,
+  );
+}
+
 // 创建并导出全局 Store
 export const useEditorStore = create<EditorState>((set) => ({
   document: initialDoc,
   activeLayerId: null,
   currentPageId: initialDoc.pages[0].pageId,
-  backgroundPast: [],
-  backgroundFuture: [],
+  backgroundHistory: { past: [], future: [] },
 
   // 1. 初始化/覆盖整个文档 (用于从后端加载数据)
-  initDocument: (doc) => set({ 
+  initDocument: (doc) => set({
     document: doc,
     currentPageId: doc.pages[0]?.pageId ?? null,
-    backgroundPast: [],
-    backgroundFuture: [],
+    backgroundHistory: { past: [], future: [] },
   }),
 
   // 2. 设置当前选中的图层
@@ -99,42 +119,60 @@ export const useEditorStore = create<EditorState>((set) => ({
       if (!state.document || !state.currentPageId) return state;
 
       const pageId = state.currentPageId;
-      const newPages = state.document.pages.map((page) =>
-        page.pageId === pageId ? { ...page, background } : page,
-      );
+      // 将当前背景快照 push 到历史栈（只存背景，不存整个文档）
+      const currentBg = getCurrentBackground(state.document, pageId);
+      const newPast = currentBg
+        ? [...state.backgroundHistory.past, currentBg]
+        : state.backgroundHistory.past;
 
-      const nextDoc: DesignDocument = { ...state.document, pages: newPages };
       return {
-        document: nextDoc,
-        backgroundPast: [...state.backgroundPast, state.document],
-        backgroundFuture: [],
+        document: {
+          ...state.document,
+          pages: applyBackgroundToPages(state.document, pageId, background),
+        },
+        backgroundHistory: { past: newPast, future: [] },
       };
     }),
 
   undoBackground: () =>
     set((state) => {
-      if (!state.document) return state;
-      const prev = state.backgroundPast[state.backgroundPast.length - 1];
+      if (!state.document || !state.currentPageId) return state;
+      const { past, future } = state.backgroundHistory;
+      const prev = past[past.length - 1];
       if (!prev) return state;
-      const nextPast = state.backgroundPast.slice(0, -1);
+
+      const pageId = state.currentPageId;
+      // 将当前背景推入 future，从 past 取出上一个背景恢复
+      const currentBg = getCurrentBackground(state.document, pageId);
+      const newFuture = currentBg ? [currentBg, ...future] : future;
+
       return {
-        document: prev,
-        backgroundPast: nextPast,
-        backgroundFuture: [state.document, ...state.backgroundFuture],
-        currentPageId: prev.pages[0]?.pageId ?? null,
+        document: {
+          ...state.document,
+          pages: applyBackgroundToPages(state.document, pageId, prev),
+        },
+        backgroundHistory: { past: past.slice(0, -1), future: newFuture },
       };
     }),
 
   redoBackground: () =>
     set((state) => {
-      if (!state.document) return state;
-      const next = state.backgroundFuture[0];
+      if (!state.document || !state.currentPageId) return state;
+      const { past, future } = state.backgroundHistory;
+      const next = future[0];
       if (!next) return state;
+
+      const pageId = state.currentPageId;
+      // 将当前背景推入 past，从 future 取出下一个背景恢复
+      const currentBg = getCurrentBackground(state.document, pageId);
+      const newPast = currentBg ? [...past, currentBg] : past;
+
       return {
-        document: next,
-        backgroundPast: [...state.backgroundPast, state.document],
-        backgroundFuture: state.backgroundFuture.slice(1),
-        currentPageId: next.pages[0]?.pageId ?? null,
+        document: {
+          ...state.document,
+          pages: applyBackgroundToPages(state.document, pageId, next),
+        },
+        backgroundHistory: { past: newPast, future: future.slice(1) },
       };
     }),
 
@@ -165,11 +203,12 @@ export const useEditorStore = create<EditorState>((set) => ({
         },
       };
     }),
+
   // 4. 新增图层
   addLayer: (layer) =>
     set((state) => {
       if (!state.document || !state.currentPageId) return state;
-      
+
       const pageId = state.currentPageId;
 
       const newPages = state.document.pages.map((page) => {

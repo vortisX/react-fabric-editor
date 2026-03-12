@@ -1,10 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, FillPicker, Select } from '../../../../components/ui';
-import type { FillStyle, PageBackground } from '../../../../types/schema';
-import { CANVAS_MAX_PX, CANVAS_MIN_PX, CANVAS_PRESETS, type CanvasUnit } from '../../../../core/constants';
-import { convertPxToUnit, convertUnitToPx, matchCanvasPresetId, presetToPx } from '../../../../core/canvasMath';
+import type { PageBackground } from '../../../../types/schema';
+import { CANVAS_MAX_PX, CANVAS_MIN_PX, type CanvasUnit } from '../../../../core/constants';
+import { CANVAS_PRESETS } from '../../../../core/canvasPresets';
+import { convertPxToUnit, matchCanvasPresetId } from '../../../../core/canvasMath';
 import { useEditorStore } from '../../../../store/useEditorStore';
+import {
+  normalizeFillFromBackground,
+  nextBackgroundFromFill,
+  handlePresetChange,
+  applyDimensionChange,
+} from './CanvasLayout.handlers';
 
 const UNIT_OPTIONS = [
   { value: 'px', label: 'px' },
@@ -16,17 +23,6 @@ const UNIT_OPTIONS = [
 function roundTo(n: number, digits: number) {
   const m = Math.pow(10, digits);
   return Math.round(n * m) / m;
-}
-
-function normalizeFillFromBackground(bg: PageBackground): FillStyle {
-  if (bg.type === 'color') return { type: 'solid', color: bg.value };
-  if (bg.type === 'gradient') return bg.value;
-  return { type: 'solid', color: '#ffffff' };
-}
-
-function nextBackgroundFromFill(fill: FillStyle): PageBackground {
-  if (fill.type === 'solid') return { type: 'color', value: fill.color };
-  return { type: 'gradient', value: fill };
 }
 
 function SectionHeader({ title }: { title: string }) {
@@ -75,7 +71,7 @@ function RealtimeNumberInput(props: {
 
 export function CanvasLayoutSection() {
   const { t } = useTranslation();
-  const document = useEditorStore((s) => s.document);
+  const hasDocument = useEditorStore((s) => s.document !== null);
   const widthPx = useEditorStore((s) => s.document?.global.width ?? 0);
   const heightPx = useEditorStore((s) => s.document?.global.height ?? 0);
   const unit = useEditorStore((s) => (s.document?.global.unit ?? 'px') as CanvasUnit);
@@ -85,10 +81,9 @@ export function CanvasLayoutSection() {
     const page = doc.pages.find((p) => p.pageId === s.currentPageId) ?? doc.pages[0];
     return page?.background ?? null;
   });
-  const canUndo = useEditorStore((s) => s.backgroundPast.length > 0);
-  const canRedo = useEditorStore((s) => s.backgroundFuture.length > 0);
+  const canUndo = useEditorStore((s) => s.backgroundHistory.past.length > 0);
+  const canRedo = useEditorStore((s) => s.backgroundHistory.future.length > 0);
 
-  const setCanvasSizePx = useEditorStore((s) => s.setCanvasSizePx);
   const setCanvasUnit = useEditorStore((s) => s.setCanvasUnit);
   const setPageBackground = useEditorStore((s) => s.setPageBackground);
   const undoBackground = useEditorStore((s) => s.undoBackground);
@@ -109,39 +104,23 @@ export function CanvasLayoutSection() {
   const [widthError, setWidthError] = useState<string | null>(null);
   const [heightError, setHeightError] = useState<string | null>(null);
 
-  if (!document) return null;
+  if (!hasDocument) return null;
   const safeBackground: PageBackground = background ?? { type: 'color', value: '#ffffff' };
 
-  const handlePresetChange = (presetId: string) => {
-    const preset = CANVAS_PRESETS.find((p) => p.id === presetId);
-    if (!preset) return;
-    if (preset.id === 'custom') return;
-
-    const next = presetToPx(preset.id);
-    if (!next) return;
-    const nextW = next.widthPx;
-    const nextH = next.heightPx;
-    setWidthError(null);
-    setHeightError(null);
-    setCanvasUnit(preset.unit);
-    setCanvasSizePx(nextW, nextH);
+  const handleWidthChange = (v: number | null) => {
+    const errKey = applyDimensionChange('width', v, unit);
+    setWidthError(errKey ? t(errKey, { min: CANVAS_MIN_PX, max: CANVAS_MAX_PX }) : null);
   };
 
-  const applyDimensionChange = (kind: 'width' | 'height', valueInUnit: number | null) => {
-    if (valueInUnit === null) return;
+  const handleHeightChange = (v: number | null) => {
+    const errKey = applyDimensionChange('height', v, unit);
+    setHeightError(errKey ? t(errKey, { min: CANVAS_MIN_PX, max: CANVAS_MAX_PX }) : null);
+  };
 
-    const nextPx = Math.round(convertUnitToPx(valueInUnit, unit));
-    const valid = nextPx >= CANVAS_MIN_PX && nextPx <= CANVAS_MAX_PX;
-
-    if (kind === 'width') {
-      setWidthError(valid ? null : t('rightPanel.canvasWidthError', { min: CANVAS_MIN_PX, max: CANVAS_MAX_PX }));
-      if (!valid) return;
-      setCanvasSizePx(nextPx, heightPx);
-    } else {
-      setHeightError(valid ? null : t('rightPanel.canvasHeightError', { min: CANVAS_MIN_PX, max: CANVAS_MAX_PX }));
-      if (!valid) return;
-      setCanvasSizePx(widthPx, nextPx);
-    }
+  const handleUnitChange = (val: string) => {
+    setWidthError(null);
+    setHeightError(null);
+    setCanvasUnit(val);
   };
 
   const backgroundMode = safeBackground.type === 'image' ? 'image' : 'fill';
@@ -152,37 +131,21 @@ export function CanvasLayoutSection() {
       <div className="px-4 flex flex-col gap-2">
         <Select
           value={selectedPresetId}
-          onChange={handlePresetChange}
+          onChange={(id) => handlePresetChange(id as Parameters<typeof handlePresetChange>[0])}
           options={CANVAS_PRESETS.map((p) => ({ value: p.id, label: p.label }))}
         />
 
         <div className="grid grid-cols-2 gap-2">
           <div className="flex items-center bg-[#f5f5f5] rounded px-2 py-0.5 border border-transparent hover:border-gray-300 transition-colors">
             <span className="text-[10px] text-gray-400 font-medium w-8 select-none flex items-center justify-center">W</span>
-            <RealtimeNumberInput value={widthDisplay} onChange={(v) => applyDimensionChange('width', v)} invalid={!!widthError} />
+            <RealtimeNumberInput value={widthDisplay} onChange={handleWidthChange} invalid={!!widthError} />
           </div>
-          <Select
-            value={unit}
-            onChange={(val) => {
-              setWidthError(null);
-              setHeightError(null);
-              setCanvasUnit(val);
-            }}
-            options={UNIT_OPTIONS}
-          />
+          <Select value={unit} onChange={handleUnitChange} options={UNIT_OPTIONS} />
           <div className="flex items-center bg-[#f5f5f5] rounded px-2 py-0.5 border border-transparent hover:border-gray-300 transition-colors">
             <span className="text-[10px] text-gray-400 font-medium w-8 select-none flex items-center justify-center">H</span>
-            <RealtimeNumberInput value={heightDisplay} onChange={(v) => applyDimensionChange('height', v)} invalid={!!heightError} />
+            <RealtimeNumberInput value={heightDisplay} onChange={handleHeightChange} invalid={!!heightError} />
           </div>
-          <Select
-            value={unit}
-            onChange={(val) => {
-              setWidthError(null);
-              setHeightError(null);
-              setCanvasUnit(val);
-            }}
-            options={UNIT_OPTIONS}
-          />
+          <Select value={unit} onChange={handleUnitChange} options={UNIT_OPTIONS} />
         </div>
         {widthError || heightError ? (
           <div className="text-[10px] text-red-600 font-medium">{widthError ?? heightError}</div>

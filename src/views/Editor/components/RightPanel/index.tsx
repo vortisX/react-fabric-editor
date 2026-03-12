@@ -13,13 +13,18 @@ import { CanvasLayoutSection } from './CanvasLayoutSection';
 import type { TextLayer } from '../../../../types/schema';
 
 export const RightPanel = () => {
-  const activeLayerId = useEditorStore((state) => state.activeLayerId);
-  const document = useEditorStore((state) => state.document);
   const { t } = useTranslation();
 
-  const activeLayer = document?.pages[0]?.layers.find(
-    (layer) => layer.id === activeLayerId,
-  );
+  // 只订阅当前激活图层，而非整个 document：
+  // updateLayer 每次都创建新的 document 引用，若订阅 document 则文字拖动时面板以 60fps 重渲染；
+  // 改为精确订阅 activeLayer 后，canvas resize / background 变更不会触发面板重渲染。
+  const activeLayer = useEditorStore((state) => {
+    if (!state.activeLayerId || !state.document) return null;
+    const page =
+      state.document.pages.find((p) => p.pageId === state.currentPageId) ??
+      state.document.pages[0];
+    return (page?.layers.find((l) => l.id === state.activeLayerId) ?? null) as TextLayer | null;
+  });
 
   const onPropChange: PropChangeHandler = (key, value) => {
     if (activeLayer) {

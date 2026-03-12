@@ -1,4 +1,5 @@
-import { CANVAS_MAX_PX, CANVAS_MIN_PX, CANVAS_PRESETS, type CanvasPresetId, MM_PER_CM, MM_PER_IN, PX_TO_MM, type CanvasUnit } from './constants';
+import { CANVAS_MAX_PX, CANVAS_MIN_PX, MM_PER_CM, MM_PER_IN, PX_TO_MM, type CanvasUnit } from './constants';
+import { CANVAS_PRESETS, type CanvasPresetId } from './canvasPresets';
 
 export function clampCanvasPx(value: number): number {
   return Math.min(CANVAS_MAX_PX, Math.max(CANVAS_MIN_PX, value));
@@ -30,16 +31,19 @@ export function computeCanvasSizeFromDrag(params: {
 }): { widthPx: number; heightPx: number } {
   const { edge, startWidthPx, startHeightPx, deltaX, deltaY } = params;
 
-  if (edge === 'left') {
-    return { widthPx: clampCanvasPx(startWidthPx - deltaX), heightPx: clampCanvasPx(startHeightPx) };
-  }
-  if (edge === 'right') {
-    return { widthPx: clampCanvasPx(startWidthPx + deltaX), heightPx: clampCanvasPx(startHeightPx) };
-  }
-  if (edge === 'top') {
-    return { widthPx: clampCanvasPx(startWidthPx), heightPx: clampCanvasPx(startHeightPx - deltaY) };
-  }
-  return { widthPx: clampCanvasPx(startWidthPx), heightPx: clampCanvasPx(startHeightPx + deltaY) };
+  // 左边向左拉(deltaX<0)→变宽；右边向右拉(deltaX>0)→变宽；上下边不影响宽度
+  const newWidth =
+    edge === 'left'  ? startWidthPx  - deltaX :
+    edge === 'right' ? startWidthPx  + deltaX :
+    startWidthPx;
+
+  // 上边向上拉(deltaY<0)→变高；下边向下拉(deltaY>0)→变高；左右边不影响高度
+  const newHeight =
+    edge === 'top'    ? startHeightPx - deltaY :
+    edge === 'bottom' ? startHeightPx + deltaY :
+    startHeightPx;
+
+  return { widthPx: clampCanvasPx(newWidth), heightPx: clampCanvasPx(newHeight) };
 }
 
 export function presetToPx(presetId: CanvasPresetId): { widthPx: number; heightPx: number } | null {
