@@ -75,6 +75,11 @@
     "canvasWidthError": "幅は{{min}}〜{{max}}pxである必要があります",
     "canvasHeightError": "高さは{{min}}〜{{max}}pxである必要があります"
   },
+  "zoom": {
+    "zoomIn": "拡大",
+    "zoomOut": "縮小",
+    "fitCanvas": "画面に合わせる"
+  },
   "common": {
     "clear": "クリア"
   },

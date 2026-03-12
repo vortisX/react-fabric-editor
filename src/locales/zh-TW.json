@@ -75,6 +75,11 @@
     "canvasWidthError": "寬度需在 {{min}}–{{max}} px",
     "canvasHeightError": "高度需在 {{min}}–{{max}} px"
   },
+  "zoom": {
+    "zoomIn": "放大",
+    "zoomOut": "縮小",
+    "fitCanvas": "適應畫布"
+  },
   "common": {
     "clear": "清除"
   },

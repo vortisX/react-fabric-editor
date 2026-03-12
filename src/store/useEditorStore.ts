@@ -15,6 +15,10 @@ interface EditorState {
   currentPageId: string | null; // 当前选中的页面 ID
   /** 只存背景快照，不存整个文档，避免撤销背景时意外回滚图层变更 */
   backgroundHistory: BackgroundHistory;
+  /** 视口缩放比例，1 = 100%，范围 0.1–2.0 */
+  zoom: number;
+  /** 每次递增触发 Workspace 重新计算适应画布缩放；0 为初始值不触发 */
+  fitRequest: number;
 
   // === 操作方法 (Actions) ===
   initDocument: (doc: DesignDocument) => void;
@@ -30,6 +34,8 @@ interface EditorState {
     payload: Partial<Layer>,
   ) => void;
   addLayer: (layer: Layer) => void;
+  setZoom: (zoom: number) => void;
+  requestFit: () => void;
 }
 
 // 预设一个空白的初始模板 (手机竖屏比例)
@@ -76,6 +82,8 @@ export const useEditorStore = create<EditorState>((set) => ({
   activeLayerId: null,
   currentPageId: initialDoc.pages[0].pageId,
   backgroundHistory: { past: [], future: [] },
+  zoom: 1,
+  fitRequest: 0,
 
   // 1. 初始化/覆盖整个文档 (用于从后端加载数据)
   initDocument: (doc) => set({
@@ -222,4 +230,8 @@ export const useEditorStore = create<EditorState>((set) => ({
         activeLayerId: layer.id, // 自动选中新加的图层
       };
     }),
+
+  setZoom: (zoom) => set({ zoom }),
+
+  requestFit: () => set((state) => ({ fitRequest: state.fitRequest + 1 })),
 }));

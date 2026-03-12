@@ -34,9 +34,11 @@ export function handlePresetChange(presetId: CanvasPresetId): void {
   const next = presetToPx(preset.id);
   if (!next) return;
 
-  const { setCanvasUnit, setCanvasSizePx } = useEditorStore.getState();
+  const { setCanvasUnit, setCanvasSizePx, requestFit } = useEditorStore.getState();
   setCanvasUnit(preset.unit);
   setCanvasSizePx(next.widthPx, next.heightPx);
+  // 切换预设后自动适应画布，防止画布过大或过小
+  requestFit();
 }
 
 /**

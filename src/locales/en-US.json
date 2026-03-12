@@ -75,6 +75,11 @@
     "canvasWidthError": "Width must be {{min}}–{{max}} px",
     "canvasHeightError": "Height must be {{min}}–{{max}} px"
   },
+  "zoom": {
+    "zoomIn": "Zoom In",
+    "zoomOut": "Zoom Out",
+    "fitCanvas": "Fit Canvas"
+  },
   "common": {
     "clear": "Clear"
   },

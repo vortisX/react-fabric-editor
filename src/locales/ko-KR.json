@@ -75,6 +75,11 @@
     "canvasWidthError": "너비는 {{min}}–{{max}} px여야 합니다",
     "canvasHeightError": "높이는 {{min}}–{{max}} px여야 합니다"
   },
+  "zoom": {
+    "zoomIn": "확대",
+    "zoomOut": "축소",
+    "fitCanvas": "캔버스에 맞추기"
+  },
   "common": {
     "clear": "지우기"
   },
