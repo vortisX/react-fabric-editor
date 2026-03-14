@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { NumberInput, Select, FontSelect, Slider, ColorPicker, FillPicker, Button, Tooltip } from '../../../../components/ui';
+import { NumberInput, Select, FontSelect, Slider, ColorPicker, FillPicker, Button, Tooltip } from '../../../../../components/ui';
 import {
   BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon,
   AlignLeftIcon, AlignCenterIcon, AlignRightIcon, AlignJustifyIcon,
-} from '../../../../components/ui/Icons';
-import { getSupportedFonts } from '../../../../constants/fonts';
-import type { TextLayer, Layer, FillStyle } from '../../../../types/schema';
+} from '../../../../../components/ui/Icons';
+import { getSupportedFonts } from '../../../../../constants/fonts';
+import type { TextLayer, Layer, FillStyle } from '../../../../../types/schema';
 import type { PropChangeHandler } from './Layer.handlers';
 
 // ─── 共享基础组件 ──────────────────────────────────────────────

@@ -1,8 +1,8 @@
-import { useEditorStore } from '../../../../store/useEditorStore';
-import { CANVAS_PRESETS, type CanvasPresetId } from '../../../../core/canvasPresets';
-import { presetToPx, convertUnitToPx } from '../../../../core/canvasMath';
-import { CANVAS_MIN_PX, CANVAS_MAX_PX, type CanvasUnit } from '../../../../core/constants';
-import type { FillStyle, GradientFill, PageBackground } from '../../../../types/schema';
+import { useEditorStore } from '../../../../../store/useEditorStore';
+import { CANVAS_PRESETS, type CanvasPresetId } from '../../../../../core/canvasPresets';
+import { presetToPx, convertUnitToPx } from '../../../../../core/canvasMath';
+import { CANVAS_MIN_PX, CANVAS_MAX_PX, type CanvasUnit } from '../../../../../core/constants';
+import type { FillStyle, GradientFill, PageBackground } from '../../../../../types/schema';
 
 /**
  * Converts a PageBackground to a FillStyle for use with FillPicker.

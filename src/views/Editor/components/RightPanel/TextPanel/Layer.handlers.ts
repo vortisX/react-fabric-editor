@@ -1,8 +1,8 @@
 import { t } from 'i18next';
-import { useEditorStore } from '../../../../store/useEditorStore';
-import { engineInstance } from '../../../../core/engine';
-import { SCHEMA_TO_FABRIC } from '../../../../core/constants';
-import type { TextLayer } from '../../../../types/schema';
+import { useEditorStore } from '../../../../../store/useEditorStore';
+import { engineInstance } from '../../../../../core/engine';
+import { SCHEMA_TO_FABRIC } from '../../../../../core/constants';
+import type { TextLayer } from '../../../../../types/schema';
 
 function buildLayerName(text: string, fallback: string): string {
   const trimmed = text.trim() || fallback;

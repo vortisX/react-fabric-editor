@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, FillPicker, Select } from '../../../../components/ui';
-import type { PageBackground } from '../../../../types/schema';
-import { CANVAS_MAX_PX, CANVAS_MIN_PX, type CanvasUnit } from '../../../../core/constants';
-import { CANVAS_PRESETS } from '../../../../core/canvasPresets';
-import { convertPxToUnit, matchCanvasPresetId } from '../../../../core/canvasMath';
-import { useEditorStore } from '../../../../store/useEditorStore';
+import { Button, FillPicker, Select } from '../../../../../components/ui';
+import type { PageBackground } from '../../../../../types/schema';
+import { CANVAS_MAX_PX, CANVAS_MIN_PX, type CanvasUnit } from '../../../../../core/constants';
+import { CANVAS_PRESETS } from '../../../../../core/canvasPresets';
+import { convertPxToUnit, matchCanvasPresetId } from '../../../../../core/canvasMath';
+import { useEditorStore } from '../../../../../store/useEditorStore';
 import {
   normalizeFillFromBackground,
   nextBackgroundFromFill,
