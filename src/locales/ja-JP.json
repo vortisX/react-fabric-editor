@@ -11,7 +11,8 @@
     "addImage": "画像追加",
     "layerTree": "レイヤー",
     "emptyCanvas": "キャンバスは空です",
-    "defaultTextContent": "ダブルクリックで編集"
+    "defaultTextContent": "ダブルクリックで編集",
+    "defaultImageName": "画像レイヤー"
   },
   "rightPanel": {
     "propertiesPanel": "プロパティ",
@@ -73,7 +74,16 @@
     "bgFitCover": "カバー",
     "fill": "フィル",
     "canvasWidthError": "幅は{{min}}〜{{max}}pxである必要があります",
-    "canvasHeightError": "高さは{{min}}〜{{max}}pxである必要があります"
+    "canvasHeightError": "高さは{{min}}〜{{max}}pxである必要があります",
+    "imageTransform": "変換",
+    "flipHorizontal": "水平反転",
+    "flipVertical": "垂直反転",
+    "imageFilters": "フィルター",
+    "brightness": "明るさ",
+    "contrast": "コントラスト",
+    "saturation": "彩度",
+    "resetFilters": "リセット",
+    "imageAppearance": "外観"
   },
   "zoom": {
     "zoomIn": "拡大",

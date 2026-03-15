@@ -76,8 +76,23 @@ export interface TextLayer extends BaseLayer {
   borderRadius?: number; // 弧度 (边框圆角)
 }
 
-// 图层联合类型 (未来扩展图片图层等)
-export type Layer = TextLayer;
+// 图片图层属性接口
+export interface ImageLayer extends BaseLayer {
+  type: "image";
+  url: string;               // Data URL (base64，本地上传后的结果)
+  flipX?: boolean;           // 水平翻转，默认 false
+  flipY?: boolean;           // 垂直翻转，默认 false
+  borderRadius?: number;     // 圆角半径 (px)，默认 0
+  stroke?: string;           // 边框颜色
+  strokeWidth?: number;      // 边框粗细
+  strokeDashArray?: number[]; // 虚线样式 [5,5]
+  brightness?: number;       // 亮度 [-1, 1]，默认 0
+  contrast?: number;         // 对比度 [-1, 1]，默认 0
+  saturation?: number;       // 饱和度 [-2, 2]，默认 0
+}
+
+// 图层联合类型
+export type Layer = TextLayer | ImageLayer;
 
 // 页面结构
 export interface Page {

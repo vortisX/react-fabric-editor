@@ -11,7 +11,8 @@
     "addImage": "Add Image",
     "layerTree": "Layers",
     "emptyCanvas": "Canvas is empty",
-    "defaultTextContent": "Double-click to edit"
+    "defaultTextContent": "Double-click to edit",
+    "defaultImageName": "Image Layer"
   },
   "rightPanel": {
     "propertiesPanel": "Properties",
@@ -73,7 +74,16 @@
     "bgFitCover": "Cover",
     "fill": "Fill",
     "canvasWidthError": "Width must be {{min}}–{{max}} px",
-    "canvasHeightError": "Height must be {{min}}–{{max}} px"
+    "canvasHeightError": "Height must be {{min}}–{{max}} px",
+    "imageTransform": "Transform",
+    "flipHorizontal": "Flip H",
+    "flipVertical": "Flip V",
+    "imageFilters": "Filters",
+    "brightness": "Bright",
+    "contrast": "Contrast",
+    "saturation": "Saturate",
+    "resetFilters": "Reset",
+    "imageAppearance": "Appearance"
   },
   "zoom": {
     "zoomIn": "Zoom In",

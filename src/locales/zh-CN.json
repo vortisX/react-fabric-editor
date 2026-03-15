@@ -11,7 +11,8 @@
     "addImage": "添加图片",
     "layerTree": "图层树",
     "emptyCanvas": "画布空空如也",
-    "defaultTextContent": "双击修改文字"
+    "defaultTextContent": "双击修改文字",
+    "defaultImageName": "图片图层"
   },
   "rightPanel": {
     "propertiesPanel": "属性面板",
@@ -73,7 +74,16 @@
     "bgFitCover": "覆盖",
     "fill": "填充",
     "canvasWidthError": "宽度需在 {{min}}–{{max}} px",
-    "canvasHeightError": "高度需在 {{min}}–{{max}} px"
+    "canvasHeightError": "高度需在 {{min}}–{{max}} px",
+    "imageTransform": "图片变换",
+    "flipHorizontal": "水平翻转",
+    "flipVertical": "垂直翻转",
+    "imageFilters": "滤镜调节",
+    "brightness": "亮度",
+    "contrast": "对比度",
+    "saturation": "饱和度",
+    "resetFilters": "重置",
+    "imageAppearance": "外观样式"
   },
   "zoom": {
     "zoomIn": "放大",

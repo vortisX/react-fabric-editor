@@ -4,7 +4,7 @@ import { GridIcon, TypeIcon, ImageIcon } from '../../../components/ui/Icons';
 import { useEditorStore } from '../../../store/useEditorStore';
 import { engineInstance } from '../../../core/engine';
 import { genId } from '../../../utils/uuid';
-import type { TextLayer } from '../../../types/schema';
+import type { TextLayer, ImageLayer } from '../../../types/schema';
 
 export const LeftPanel = () => {
   const { t } = useTranslation();
@@ -53,6 +53,50 @@ export const LeftPanel = () => {
     addLayer(newTextLayer);
   };
 
+  const handleAddImage = () => {
+    const input = window.document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/png,image/jpeg,image/webp,image/svg+xml';
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        const url = evt.target?.result;
+        if (typeof url !== 'string') return;
+
+        // 去掉文件扩展名作为图层名
+        const name = file.name.replace(/\.[^.]+$/, '') || t('leftPanel.defaultImageName');
+        const newImageLayer: ImageLayer = {
+          id: genId('layer'),
+          name,
+          type: 'image',
+          url,
+          x: 0,
+          y: 0,
+          width: 0,
+          height: 0,
+          rotation: 0,
+          opacity: 1,
+          locked: false,
+          lockMovement: false,
+        };
+
+        const measured = await engineInstance.addImageLayer(newImageLayer);
+        if (measured) {
+          newImageLayer.x = measured.x;
+          newImageLayer.y = measured.y;
+          newImageLayer.width = measured.width;
+          newImageLayer.height = measured.height;
+        }
+        addLayer(newImageLayer);
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  };
+
   const handleLayerClick = (id: string) => {
     setActiveLayer(id);
     engineInstance.selectLayer(id);
@@ -78,7 +122,7 @@ export const LeftPanel = () => {
           </div>
         </Tooltip>
         <Tooltip title={t('leftPanel.addImage')} placement="right">
-          <div className="w-10 h-10 rounded-md text-gray-500 hover:bg-gray-100 flex items-center justify-center text-lg cursor-pointer transition-colors">
+          <div onClick={handleAddImage} className="w-10 h-10 rounded-md text-gray-500 hover:bg-gray-100 flex items-center justify-center text-lg cursor-pointer transition-colors">
             <ImageIcon />
           </div>
         </Tooltip>

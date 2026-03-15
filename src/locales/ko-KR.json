@@ -11,7 +11,8 @@
     "addImage": "이미지 추가",
     "layerTree": "레이어",
     "emptyCanvas": "캔버스가 비어 있습니다",
-    "defaultTextContent": "더블클릭하여 편집"
+    "defaultTextContent": "더블클릭하여 편집",
+    "defaultImageName": "이미지 레이어"
   },
   "rightPanel": {
     "propertiesPanel": "속성",
@@ -73,7 +74,16 @@
     "bgFitCover": "덮기",
     "fill": "채우기",
     "canvasWidthError": "너비는 {{min}}–{{max}} px여야 합니다",
-    "canvasHeightError": "높이는 {{min}}–{{max}} px여야 합니다"
+    "canvasHeightError": "높이는 {{min}}–{{max}} px여야 합니다",
+    "imageTransform": "변환",
+    "flipHorizontal": "수평 뒤집기",
+    "flipVertical": "수직 뒤집기",
+    "imageFilters": "필터",
+    "brightness": "밝기",
+    "contrast": "대비",
+    "saturation": "채도",
+    "resetFilters": "초기화",
+    "imageAppearance": "외관"
   },
   "zoom": {
     "zoomIn": "확대",
