@@ -14,6 +14,15 @@ export const LeftPanel = () => {
   const setActiveLayer = useEditorStore((state) => state.setActiveLayer);
 
   const handleAddText = () => {
+    // 根据画布短边的 5% 动态计算字体大小，限制在 [12, 200] 范围内
+    const canvasShortSide = Math.min(
+      document?.global.width ?? 500,
+      document?.global.height ?? 500
+    );
+    const fontSize = Math.round(
+      Math.max(12, Math.min(200, canvasShortSide * 0.05))
+    );
+
     const newTextLayer: TextLayer = {
       id: genId('layer'),
       name: t('leftPanel.defaultTextContent'),
@@ -28,7 +37,7 @@ export const LeftPanel = () => {
       lockMovement: false,
       content: t('leftPanel.defaultTextContent'),
       fontFamily: 'AaKuangPaiShouShu-2',
-      fontSize: 36,
+      fontSize,
       fontWeight: 'normal',
       fill: '#333333',
       textAlign: 'left'
