@@ -63,11 +63,20 @@ export class EditorEngine {
   public canvas: Canvas | null = null;
   private backgroundAbort: AbortController | null = null;
   private syncTransformRaf: number | null = null;
+  /** 文档原始尺寸（不含 zoom） */
+  private docWidth = 0;
+  private docHeight = 0;
+  /** 当前显示缩放比例，由 setDisplayZoom 维护 */
+  private displayZoom = 1;
 
   // ==================== 生命周期 ====================
 
   public init(canvasEl: HTMLCanvasElement, width: number, height: number) {
     if (this.canvas) this.dispose();
+
+    this.docWidth = width;
+    this.docHeight = height;
+    this.displayZoom = 1;
 
     this.canvas = new Canvas(canvasEl, {
       width,
@@ -327,8 +336,9 @@ export class EditorEngine {
   ): { x: number; y: number; width: number; height: number } | undefined {
     if (!this.canvas) return;
 
-    const canvasW = this.canvas.getWidth();
-    const maxTextW = canvasW * 0.9;
+    // 必须使用文档原始宽度（不含 displayZoom），因为 Fabric 对象坐标始终在文档空间，
+    // canvas.getWidth() 返回的是 docWidth * displayZoom，会污染文本宽度计算
+    const maxTextW = this.docWidth * 0.9;
 
     // 先用足够大的宽度创建，让文字排成一行以便测量
     const node = CustomTextbox.fromLayer({ ...layer, width: maxTextW });
@@ -349,9 +359,11 @@ export class EditorEngine {
     node.set({ height: finalH });
     node._manualHeight = finalH;
 
-    // 居中放置（使用 Fabric 内置方法，确保水平和垂直都居中）
+    // 必须用 viewportCenterObject 而非 centerObject：
+    // centerObject 使用 CSS 像素坐标（docWidth * zoom / 2），zoom != 1 时会偏移；
+    // viewportCenterObject 会通过逆视口变换还原为文档坐标（docWidth / 2），始终居中
     this.canvas.add(node as unknown as FabricObject);
-    this.canvas.centerObject(node as unknown as FabricObject);
+    this.canvas.viewportCenterObject(node as unknown as FabricObject);
     node.setCoords();
 
     this.canvas.setActiveObject(node as unknown as FabricObject);
@@ -378,15 +390,38 @@ export class EditorEngine {
 
   public resizeCanvas(width: number, height: number) {
     if (!this.canvas) return;
-    // 尺寸未变则跳过：setDimensions 即使尺寸相同也会重置 canvas context，
-    // 这会在 mount 时产生不必要的清空（useLayoutEffect 初次运行时 init 已完成）。
-    if (this.canvas.getWidth() === width && this.canvas.getHeight() === height) return;
-    this.canvas.setDimensions({ width, height });
-    this.canvas.calcOffset();
-    // 必须同步 renderAll 而非 requestRenderAll：
-    // setDimensions 清空了 canvas context，requestRenderAll 是异步 RAF，
-    // 二者之间有一帧空白 → 文字闪烁。同步 renderAll 在清空后立即填充内容。
-    this.canvas.renderAll();
+    this.docWidth = width;
+    this.docHeight = height;
+    this._applyCanvasSize();
+  }
+
+  /**
+   * 设置画布的显示缩放比例。
+   * 通过 Fabric 原生 setZoom + setDimensions 实现，确保 canvas buffer 以实际显示分辨率渲染，
+   * 避免 CSS transform: scale 导致的字体模糊问题。
+   */
+  public setDisplayZoom(zoom: number) {
+    if (!this.canvas) return;
+    this.displayZoom = zoom;
+    this._applyCanvasSize();
+  }
+
+  /**
+   * 内部：根据当前 docWidth/docHeight/displayZoom 计算实际 canvas 尺寸并应用。
+   * 使用 Fabric setZoom + setDimensions 保证 buffer 精确对应显示像素。
+   */
+  private _applyCanvasSize() {
+    const c = this.canvas!;
+    const w = Math.round(this.docWidth * this.displayZoom);
+    const h = Math.round(this.docHeight * this.displayZoom);
+    // 尺寸未变则跳过，避免 setDimensions 清空 context 导致不必要的闪烁
+    if (c.getWidth() === w && c.getHeight() === h) return;
+    c.setZoom(this.displayZoom);
+    c.setDimensions({ width: w, height: h });
+    c.calcOffset();
+    // 必须同步 renderAll：setDimensions 已清空 context，requestRenderAll 是异步 RAF，
+    // 二者之间有一帧空白 → 文字闪烁
+    c.renderAll();
   }
 
   public setBackground(background: PageBackground, width: number, height: number) {

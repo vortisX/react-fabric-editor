@@ -116,8 +116,13 @@ export const Workspace = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
 
+  // 提前计算，供 containerStyle useMemo 和 JSX 共用
+  const zoomedW = width * zoom;
+  const zoomedH = height * zoom;
+
   const containerStyle = useMemo(() => {
-    const baseStyle = { width: `${width}px`, height: `${height}px` };
+    // 容器尺寸使用缩放后的实际像素（不再依赖 CSS transform scale）
+    const baseStyle = { width: `${zoomedW}px`, height: `${zoomedH}px` };
     if (!background) return { ...baseStyle, background: '#ffffff' };
     if (background.type === 'color') {
       return { ...baseStyle, background: background.value };
@@ -131,7 +136,7 @@ export const Workspace = () => {
       return { ...baseStyle, background: `linear-gradient(${angle}, ${stops})` };
     }
     return { ...baseStyle, background: '#ffffff' };
-  }, [width, height, background]);
+  }, [zoomedW, zoomedH, background]);
 
   // 引擎初始化，只在挂载时执行一次
   useEffect(() => {
@@ -158,9 +163,9 @@ export const Workspace = () => {
     engineInstance.setBackground(background, width, height);
   }, [background, width, height]);
 
-  // zoom 变化后重新计算 Fabric 内部坐标偏移（CSS transform 改变了元素在视口中的位置）
+  // zoom 变化时通知引擎使用 Fabric 原生 zoom 重绘，canvas buffer 精确对应显示像素，避免字体发虚
   useLayoutEffect(() => {
-    engineInstance.canvas?.calcOffset();
+    engineInstance.setDisplayZoom(zoom);
   }, [zoom]);
 
   // 首次挂载时自动适应画布
@@ -226,9 +231,6 @@ export const Workspace = () => {
 
   if (!hasDocument) return null;
 
-  const zoomedW = width * zoom;
-  const zoomedH = height * zoom;
-
   return (
     <main className="flex-1 relative flex flex-col overflow-hidden">
       {/* 可滚动视口 */}
@@ -257,7 +259,7 @@ export const Workspace = () => {
               flexShrink: 0,
             }}
           >
-            {/* 画布容器：保持文档原始尺寸，通过 CSS scale 放大/缩小显示 */}
+          {/* 画布容器：尺寸已是缩放后实际像素，Fabric 内部通过 setZoom 渲染，无需 CSS transform */}
             <div
               className="shadow-xl relative"
               style={{
@@ -265,15 +267,14 @@ export const Workspace = () => {
                 position: 'absolute',
                 top: 0,
                 left: 0,
-                transform: `scale(${zoom})`,
-                transformOrigin: 'top left',
               }}
             >
               <ResizeHandle edge="top" zoom={zoom} />
               <ResizeHandle edge="right" zoom={zoom} />
               <ResizeHandle edge="bottom" zoom={zoom} />
               <ResizeHandle edge="left" zoom={zoom} />
-              <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" />
+              {/* canvas 元素由 Fabric 自行控制 CSS 尺寸，不加 w-full h-full 避免干扰 */}
+              <canvas ref={canvasRef} className="absolute top-0 left-0" />
             </div>
           </div>
         </div>

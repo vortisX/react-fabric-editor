@@ -3,7 +3,8 @@
     "allow": [
       "Bash(wc -l D:/Project/Personal/react-fabric-editor/src/components/ui/*.tsx D:/Project/Personal/react-fabric-editor/src/components/ui/FillPicker/*.tsx)",
       "Bash(find /d/Project/Personal/react-fabric-editor/src -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) | xargs grep -l \"setCanvasSizePx\\\\|resizeCanvas\\\\|CanvasResizeHandles\" 2>/dev/null | head -20)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(node -e \":*)"
     ]
   }
 }
