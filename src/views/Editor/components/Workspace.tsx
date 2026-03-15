@@ -185,6 +185,26 @@ export const Workspace = () => {
     setZoom(fit);
   }, [fitRequest, setZoom]);
 
+  // 点击工作区灰色背景时清除图层选中，让 RightPanel 切回 CanvasPanel
+  useEffect(() => {
+    const vp = viewportRef.current;
+    if (!vp) return;
+
+    const onPointerDown = (e: PointerEvent) => {
+      const canvasEl = canvasRef.current;
+      if (!canvasEl) return;
+      // 只有点击到画布元素之外的区域才清除选中
+      if (!canvasEl.contains(e.target as Node)) {
+        engineInstance.canvas?.discardActiveObject();
+        engineInstance.canvas?.requestRenderAll();
+        useEditorStore.getState().setActiveLayer(null);
+      }
+    };
+
+    vp.addEventListener('pointerdown', onPointerDown);
+    return () => vp.removeEventListener('pointerdown', onPointerDown);
+  }, []);
+
   // Ctrl + 滚轮缩放
   useEffect(() => {
     const vp = viewportRef.current;
