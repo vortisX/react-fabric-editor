@@ -1,87 +1,7 @@
-import { Textbox, FabricObject, Control, controlsUtils } from 'fabric';
+import { Textbox, FabricObject } from 'fabric';
 import type { TextLayer } from '../types/schema';
 import { fillStyleToFabric } from './engine';
-import { applyCursorsToControls } from './cursors';
-
-// ==================== 胶囊控制点渲染 ====================
-
-const renderVerticalPill = (
-  ctx: CanvasRenderingContext2D,
-  left: number,
-  top: number,
-  styleOverride: Record<string, unknown>,
-  fabricObj: FabricObject,
-): void => {
-  ctx.save();
-  ctx.translate(left, top);
-  // 跟随对象旋转角度
-  const angle = ((fabricObj.angle ?? 0) * Math.PI) / 180;
-  ctx.rotate(angle);
-  ctx.fillStyle =
-    (styleOverride?.cornerColor as string) || fabricObj.cornerColor || '#ffffff';
-  ctx.strokeStyle =
-    (styleOverride?.cornerStrokeColor as string) || fabricObj.cornerStrokeColor || '#18a0fb';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  drawRoundedRect(ctx, -3, -7, 6, 14, 3);
-  ctx.fill();
-  ctx.stroke();
-  ctx.restore();
-};
-
-// ==================== 控制点增强 ====================
-
-function applyCustomControls(obj: FabricObject): void {
-  const controls = obj.controls as Record<string, Control & { _isEnhanced?: boolean }>;
-  if (!controls) return;
-
-  const handleWidth = (eventData: unknown, transform: unknown, x: number, y: number) => {
-    const changed = (controlsUtils.changeWidth as unknown as (a: unknown, b: unknown, c: number, d: number) => boolean)(
-      eventData,
-      transform,
-      x,
-      y,
-    );
-    const t = (transform as { target?: unknown })?.target;
-    if (changed && t instanceof CustomTextbox) {
-      t.initDimensions();
-      t.autoFitHeight();
-      t.canvas?.requestRenderAll();
-    }
-    return changed;
-  };
-
-  if (controls.mtr) controls.mtr.visible = false;
-  if (controls.mt) controls.mt.visible = false;
-  if (controls.mb) controls.mb.visible = false;
-
-  if (controls.ml && !controls.ml._isEnhanced) {
-    controls.ml.render = renderVerticalPill;
-    controls.ml.actionHandler = handleWidth as unknown as Control['actionHandler'];
-    controls.ml.actionName = 'resizing';
-    controls.ml._isEnhanced = true;
-  }
-  if (controls.mr && !controls.mr._isEnhanced) {
-    controls.mr.render = renderVerticalPill;
-    controls.mr.actionHandler = handleWidth as unknown as Control['actionHandler'];
-    controls.mr.actionName = 'resizing';
-    controls.mr._isEnhanced = true;
-  }
-}
-
-// ==================== 圆角矩形路径工具 ====================
-
-function drawRoundedRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number,
-) {
-  if (ctx.roundRect) ctx.roundRect(x, y, w, h, r);
-  else ctx.rect(x, y, w, h);
-}
+import { applyLayerControls, drawRoundedRect } from './layerControls';
 
 // ==================== 自定义文本框 ====================
 
@@ -326,8 +246,7 @@ export class CustomTextbox extends Textbox {
       _manualHeight: layer.height,
     });
 
-    applyCustomControls(textbox as unknown as FabricObject);
-    applyCursorsToControls(textbox as unknown as FabricObject);
+    applyLayerControls(textbox as unknown as FabricObject);
     return textbox;
   }
 }

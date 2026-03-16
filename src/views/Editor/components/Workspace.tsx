@@ -196,10 +196,11 @@ export const Workspace = () => {
     if (!vp) return;
 
     const onPointerDown = (e: PointerEvent) => {
-      const canvasEl = canvasRef.current;
-      if (!canvasEl) return;
-      // 只有点击到画布元素之外的区域才清除选中
-      if (!canvasEl.contains(e.target as Node)) {
+      // Fabric v7 会创建 upper-canvas（接收鼠标事件）和 lower-canvas（canvasRef）两个兄弟节点。
+      // 必须用 wrapperEl（两者共同的父容器 div）来判断点击是否在画布区域内，
+      // 而不能用 canvasRef（lower-canvas），否则所有 upper-canvas 上的点击都会被误判为"画布外"。
+      const wrapperEl = engineInstance.canvas?.wrapperEl as HTMLElement | undefined;
+      if (!wrapperEl || !wrapperEl.contains(e.target as Node)) {
         engineInstance.canvas?.discardActiveObject();
         engineInstance.canvas?.requestRenderAll();
         useEditorStore.getState().setActiveLayer(null);

@@ -4,7 +4,8 @@ import type { DesignDocument, TextLayer, ImageLayer, BaseLayer, FillStyle, PageB
 import { useEditorStore } from "../store/useEditorStore";
 import { setupGlobalUI } from "./EditorUI";
 import { CustomTextbox } from "./CustomTextbox";
-import { CURSORS } from "./constants";
+import { applyLayerControls } from "./layerControls";
+import { CURSORS, EDITOR_GLOBAL_STYLE } from "./constants";
 
 /** FabricImage 对象附加 id 字段，用于与 Store 中的图层 ID 对应 */
 type FabricImageLayer = FabricImage & { id: string };
@@ -348,6 +349,9 @@ export class EditorEngine {
     imgWithId.id = layer.id;
 
     img.set({
+      // Fabric v7 构造时 ownDefaults 会以实例属性覆盖原型，
+      // 必须在此处显式重新应用全局控件皮肤，确保与文字图层外观一致
+      ...EDITOR_GLOBAL_STYLE,
       width: finalW,
       height: finalH,
       scaleX: 1,
@@ -377,6 +381,9 @@ export class EditorEngine {
     }
 
     this.applyImageFilters(img, layer);
+
+    // 应用与文字图层完全一致的控制点：隐藏上下、胶囊左右、圆点四角、Figma 旋转区
+    applyLayerControls(img);
 
     this.canvas.add(img);
     // 必须用 viewportCenterObject：当 displayZoom != 1 时，centerObject 坐标会偏移
