@@ -43,7 +43,36 @@ const renderVerticalPill = (
     (styleOverride?.cornerStrokeColor as string) || fabricObj.cornerStrokeColor || '#18a0fb';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
-  drawRoundedRect(ctx, -3, -7, 6, 14, 3);
+  // 胶囊尺寸：宽 6 (半径3)，高 28 (长度翻倍) -> -3, -14, 6, 28, 3
+  drawRoundedRect(ctx, -3, -14, 6, 28, 3);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+};
+
+/**
+ * Custom render function for mt/mb top/bottom handles.
+ * Draws a horizontal pill (capsule) shape that follows the object's rotation.
+ */
+const renderHorizontalPill = (
+  ctx: CanvasRenderingContext2D,
+  left: number,
+  top: number,
+  styleOverride: Record<string, unknown>,
+  fabricObj: FabricObject,
+): void => {
+  ctx.save();
+  ctx.translate(left, top);
+  const angle = ((fabricObj.angle ?? 0) * Math.PI) / 180;
+  ctx.rotate(angle);
+  ctx.fillStyle =
+    (styleOverride?.cornerColor as string) || fabricObj.cornerColor || '#ffffff';
+  ctx.strokeStyle =
+    (styleOverride?.cornerStrokeColor as string) || fabricObj.cornerStrokeColor || '#18a0fb';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  // 横向胶囊：宽 28，高 6 -> -14, -3, 28, 6, 3
+  drawRoundedRect(ctx, -14, -3, 28, 6, 3);
   ctx.fill();
   ctx.stroke();
   ctx.restore();
@@ -132,6 +161,18 @@ export function applyLayerControls(obj: FabricObject): void {
       controls.mr.actionName = 'resizing';
     }
     controls.mr._isEnhanced = true;
+  }
+
+  // 图片对象：上下手柄也使用胶囊形状（横向胶囊）
+  if (isImage) {
+    if (controls.mt && !controls.mt._isEnhanced) {
+      controls.mt.render = renderHorizontalPill;
+      controls.mt._isEnhanced = true;
+    }
+    if (controls.mb && !controls.mb._isEnhanced) {
+      controls.mb.render = renderHorizontalPill;
+      controls.mb._isEnhanced = true;
+    }
   }
 
   // 应用自定义 SVG 光标 + Figma 风格四角透明旋转热区
