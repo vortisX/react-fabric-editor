@@ -1,12 +1,14 @@
 import { useEditorStore } from '../../../../../store/useEditorStore';
 import { handleImagePropChange, type ImagePropChangeHandler } from './Layer.handlers';
 import {
+  ImageNameSection,
   ImageLayoutSection,
   ImageTransformSection,
   ImageBorderSection,
   ImageFiltersSection,
   ImageLayerPropertiesSection,
 } from './Sections';
+
 import type { ImageLayer } from '../../../../../types/schema';
 
 /** 图片图层属性面板：点击图片图层时展示 */
@@ -28,6 +30,7 @@ export const ImagePanel = () => {
 
   return (
     <div className="overflow-y-auto h-[calc(100vh-40px)] pb-10 flex flex-col">
+      <ImageNameSection layer={activeLayer} onPropChange={onPropChange} />
       <ImageLayoutSection layer={activeLayer} onPropChange={onPropChange} />
       <ImageTransformSection layer={activeLayer} onPropChange={onPropChange} />
       <ImageBorderSection layer={activeLayer} onPropChange={onPropChange} />
@@ -36,3 +39,4 @@ export const ImagePanel = () => {
     </div>
   );
 };
+

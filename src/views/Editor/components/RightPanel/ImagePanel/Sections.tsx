@@ -32,6 +32,27 @@ interface ImageSectionProps {
   onPropChange: ImagePropChangeHandler;
 }
 
+// ─── 图层名称区 ───────────────────────────────────────────────
+
+export function ImageNameSection({ layer, onPropChange }: ImageSectionProps) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="flex flex-col border-b border-gray-100 pb-3">
+      <SectionHeader title={t('rightPanel.layerName', '图层名称')} />
+      <div className="px-4">
+        <input
+          type="text"
+          value={layer.name}
+          onChange={(e) => onPropChange('name', e.target.value)}
+          className="w-full text-[11px] px-2 py-1.5 bg-[#f5f5f5] border border-transparent hover:border-gray-300 focus:border-blue-500 focus:bg-white rounded outline-none transition-colors"
+          placeholder={t('rightPanel.layerNamePlaceholder', '请输入图层名称')}
+        />
+      </div>
+    </div>
+  );
+}
+
 // ─── 布局配置区 ───────────────────────────────────────────────
 
 export function ImageLayoutSection({ layer, onPropChange }: ImageSectionProps) {
