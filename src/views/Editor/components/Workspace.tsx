@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useEditorStore } from '../../../store/useEditorStore';
 import { engineInstance } from '../../../core/engine';
 import { computeCanvasSizeFromDrag, type DragEdge } from '../../../core/canvasMath';
@@ -21,21 +21,25 @@ function calcFitZoom(canvasW: number, canvasH: number, vpW: number, vpH: number)
 }
 
 /** 根据拖拽边方向返回对应的 Tailwind 定位 + 游标类名 */
-function edgeToClassName(edge: DragEdge): string {
+function edgeToClassName(edge: DragEdge, isActive: boolean): string {
+  const colorClass = isActive ? 'bg-[#18a0fb]' : 'bg-gray-400 hover:bg-[#18a0fb]';
+  const common = `absolute rounded-full opacity-90 shadow-[0_4px_12px_rgba(0,0,0,0.18)] transition-colors duration-200 ${colorClass}`;
+
   if (edge === 'left') {
-    return 'absolute top-1/2 -left-3 w-2 h-10 rounded-full cursor-ew-resize -translate-y-1/2 bg-[#18a0fb] opacity-90 shadow-[0_4px_12px_rgba(0,0,0,0.18)]';
+    return `${common} top-1/2 -left-3 w-2 h-10 cursor-ew-resize -translate-y-1/2`;
   }
   if (edge === 'right') {
-    return 'absolute top-1/2 -right-3 w-2 h-10 rounded-full cursor-ew-resize -translate-y-1/2 bg-[#18a0fb] opacity-90 shadow-[0_4px_12px_rgba(0,0,0,0.18)]';
+    return `${common} top-1/2 -right-3 w-2 h-10 cursor-ew-resize -translate-y-1/2`;
   }
   if (edge === 'top') {
-    return 'absolute left-1/2 -top-3 w-10 h-2 rounded-full cursor-ns-resize -translate-x-1/2 bg-[#18a0fb] opacity-90 shadow-[0_4px_12px_rgba(0,0,0,0.18)]';
+    return `${common} left-1/2 -top-3 w-10 h-2 cursor-ns-resize -translate-x-1/2`;
   }
   // bottom
-  return 'absolute left-1/2 -bottom-3 w-10 h-2 rounded-full cursor-ns-resize -translate-x-1/2 bg-[#18a0fb] opacity-90 shadow-[0_4px_12px_rgba(0,0,0,0.18)]';
+  return `${common} left-1/2 -bottom-3 w-10 h-2 cursor-ns-resize -translate-x-1/2`;
 }
 
 function ResizeHandle({ edge, zoom }: { edge: DragEdge; zoom: number }) {
+  const [isActive, setIsActive] = useState(false);
   const pointerIdRef = useRef<number | null>(null);
   const startXRef = useRef(0);
   const startYRef = useRef(0);
@@ -47,7 +51,7 @@ function ResizeHandle({ edge, zoom }: { edge: DragEdge; zoom: number }) {
 
   return (
     <div
-      className={edgeToClassName(edge)}
+      className={edgeToClassName(edge, isActive)}
       role="slider"
       aria-label={`canvas-resize-${edge}`}
       onPointerDown={(e) => {
@@ -58,6 +62,7 @@ function ResizeHandle({ edge, zoom }: { edge: DragEdge; zoom: number }) {
         const doc = useEditorStore.getState().document;
         if (!doc) return;
 
+        setIsActive(true);
         pointerIdRef.current = e.pointerId;
         startXRef.current = e.clientX;
         startYRef.current = e.clientY;
@@ -88,12 +93,14 @@ function ResizeHandle({ edge, zoom }: { edge: DragEdge; zoom: number }) {
         e.preventDefault();
         e.stopPropagation();
         pointerIdRef.current = null;
+        setIsActive(false);
       }}
       onPointerCancel={(e) => {
         if (pointerIdRef.current !== e.pointerId) return;
         e.preventDefault();
         e.stopPropagation();
         pointerIdRef.current = null;
+        setIsActive(false);
       }}
     />
   );
