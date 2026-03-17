@@ -1,4 +1,4 @@
-import { FabricObject, Control, controlsUtils } from 'fabric';
+import { FabricObject, Control, controlsUtils, FabricImage } from 'fabric';
 import { applyCursorsToControls } from './cursors';
 
 // ==================== 圆角矩形路径工具 ====================
@@ -105,20 +105,32 @@ export function applyLayerControls(obj: FabricObject): void {
 
   // 隐藏上下拉伸手柄和原始旋转手柄
   if (controls.mtr) controls.mtr.visible = false;
-  if (controls.mt) controls.mt.visible = false;
-  if (controls.mb) controls.mb.visible = false;
+  
+  // 对于非图片对象（如文本），隐藏上下手柄；图片对象保留以便调整高度/拉伸
+  const isImage = obj instanceof FabricImage;
+  if (!isImage) {
+    if (controls.mt) controls.mt.visible = false;
+    if (controls.mb) controls.mb.visible = false;
+  }
 
-  // 将左右手柄替换为胶囊形状，复用统一的宽度调整处理器
+  // 将左右手柄替换为胶囊形状
+  // 对于非图片对象（如文本），使用 handleWidth (changeWidth) 以改变 width 属性（重排文字）
+  // 对于图片对象，保留默认的 scalingX 行为（改变 scaleX），但应用自定义渲染
+
   if (controls.ml && !controls.ml._isEnhanced) {
     controls.ml.render = renderVerticalPill;
-    controls.ml.actionHandler = handleWidth as unknown as Control['actionHandler'];
-    controls.ml.actionName = 'resizing';
+    if (!isImage) {
+      controls.ml.actionHandler = handleWidth as unknown as Control['actionHandler'];
+      controls.ml.actionName = 'resizing';
+    }
     controls.ml._isEnhanced = true;
   }
   if (controls.mr && !controls.mr._isEnhanced) {
     controls.mr.render = renderVerticalPill;
-    controls.mr.actionHandler = handleWidth as unknown as Control['actionHandler'];
-    controls.mr.actionName = 'resizing';
+    if (!isImage) {
+      controls.mr.actionHandler = handleWidth as unknown as Control['actionHandler'];
+      controls.mr.actionName = 'resizing';
+    }
     controls.mr._isEnhanced = true;
   }
 

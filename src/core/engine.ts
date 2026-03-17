@@ -205,18 +205,9 @@ export class EditorEngine {
 
   /** 将图片图层的 scaleX/scaleY 转换为实际 width/height，确保导出 JSON 中 scale 始终为 1 */
   private finalizeImageScaling(img: FabricImageLayer) {
-    const scaleX = img.scaleX ?? 1;
-    const scaleY = img.scaleY ?? 1;
-    if (Math.abs(scaleX - 1) < 1e-4 && Math.abs(scaleY - 1) < 1e-4) return;
-
-    const newW = Math.max((img.width ?? 0) * scaleX, 1);
-    const newH = Math.max((img.height ?? 0) * scaleY, 1);
-    img.set({ width: newW, height: newH, scaleX: 1, scaleY: 1 });
-
-    // 同步更新 clipPath 尺寸（圆角遮罩）
-    if (img.clipPath instanceof Rect) {
-      img.clipPath.set({ width: newW, height: newH });
-    }
+    // 图片图层不再强制将 scale 重置为 1，
+    // 因为修改 FabricImage.width 会导致裁剪。
+    // 我们仅需确保同步到 Store 时计算正确即可 (syncLayerTransform 已处理)。
     img.setCoords();
   }
 
@@ -288,12 +279,15 @@ export class EditorEngine {
     if (!pageId) return;
 
     const r = EditorEngine.round1;
+    const scaleX = target.scaleX ?? 1;
+    const scaleY = target.scaleY ?? 1;
     const updates: Partial<BaseLayer> = {
       x: r(target.left ?? 0),
       y: r(target.top ?? 0),
       rotation: Math.round(target.angle ?? 0),
-      width: r(target.width ?? 0),
-      height: r(target.height ?? 0),
+      // 必须乘上 scaleX/scaleY，因为图片图层可能 scale != 1
+      width: r((target.width ?? 0) * scaleX),
+      height: r((target.height ?? 0) * scaleY),
     };
 
     // 文本图层额外同步 fontSize
@@ -337,14 +331,19 @@ export class EditorEngine {
     const naturalW = img.width ?? 1;
     const naturalH = img.height ?? 1;
 
+    // 确保 docWidth/docHeight 有效，如果未初始化则尝试从 canvas 获取（需除以 zoom）
+    const docW = this.docWidth || (this.canvas.width / this.displayZoom) || 800;
+    const docH = this.docHeight || (this.canvas.height / this.displayZoom) || 600;
+
     // 按比例缩放：确保宽高均不超过画布的 80%
-    const maxW = this.docWidth * 0.8;
-    const maxH = this.docHeight * 0.8;
+    const maxW = docW * 0.8;
+    const maxH = docH * 0.8;
     const scale = Math.min(1, maxW / naturalW, maxH / naturalH);
     const finalW = Math.round(naturalW * scale);
     const finalH = Math.round(naturalH * scale);
 
-    // 直接设置实际宽高，scaleX/scaleY 保持 1
+    // 图片图层：使用 scaleX/scaleY 进行缩放，width/height 保持自然尺寸
+    // 这样避免了 FabricImage 在 width 变化时发生裁剪
     const imgWithId = img as FabricImageLayer;
     imgWithId.id = layer.id;
 
@@ -352,10 +351,10 @@ export class EditorEngine {
       // Fabric v7 构造时 ownDefaults 会以实例属性覆盖原型，
       // 必须在此处显式重新应用全局控件皮肤，确保与文字图层外观一致
       ...EDITOR_GLOBAL_STYLE,
-      width: finalW,
-      height: finalH,
-      scaleX: 1,
-      scaleY: 1,
+      width: naturalW,
+      height: naturalH,
+      scaleX: scale,
+      scaleY: scale,
       angle: layer.rotation ?? 0,
       opacity: layer.opacity ?? 1,
       flipX: layer.flipX ?? false,
@@ -463,9 +462,22 @@ export class EditorEngine {
     const target = this.findObjectById(layerId);
     if (!target) return;
 
-    // 图片图层：特殊属性单独处理
     if (target instanceof FabricImage) {
-      this.updateImageLayerProps(target as FabricImageLayer, props);
+      // 拦截 width/height 更新，转换为 scaleX/scaleY
+      const newProps = { ...props };
+      if (newProps.width !== undefined) {
+        newProps.scaleX = (newProps.width as number) / (target.width ?? 1);
+        delete newProps.width;
+      }
+      if (newProps.height !== undefined) {
+        newProps.scaleY = (newProps.height as number) / (target.height ?? 1);
+        delete newProps.height;
+      }
+      if (newProps.rotation !== undefined) {
+        newProps.angle = newProps.rotation;
+        delete newProps.rotation;
+      }
+      this.updateImageLayerProps(target as FabricImageLayer, newProps);
       this.canvas.requestRenderAll();
       return;
     }
