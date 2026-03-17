@@ -69,8 +69,7 @@ export function ImageLayoutSection({ layer, onPropChange }: ImageSectionProps) {
           <DesignNumberInput label={t('rightPanel.height')} value={layer.height} onChange={(val) => onPropChange('height', Math.max(val ?? 10, 10))} />
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <DesignNumberInput label={t('rightPanel.rotation')} value={layer.rotation} onChange={(val) => onPropChange('rotation', Math.round(val ?? 0))} />
-          <DesignNumberInput label={t('rightPanel.borderRadius')} value={layer.borderRadius ?? 0} onChange={(val) => onPropChange('borderRadius', Math.max(val ?? 0, 0))} />
+          <DesignNumberInput label={t('rightPanel.rotation')} value={layer.rotation} onChange={(val) => onPropChange('rotation', val ?? 0)} />
         </div>
       </div>
     </div>
@@ -127,15 +126,8 @@ export function ImageBorderSection({ layer, onPropChange }: ImageSectionProps) {
             size="small"
             allowClear
           />
-          <span className="text-xs text-gray-500">{t('rightPanel.borderStyle')}</span>
-        </div>
-        <div className="grid grid-cols-2 gap-2 mt-1">
-          <DesignNumberInput
-            label={t('rightPanel.strokeWidth')}
-            value={layer.strokeWidth ?? 0}
-            onChange={(val) => onPropChange('strokeWidth', val ?? 0)}
-          />
           <Select
+            className="flex-1"
             value={layer.strokeDashArray ? 'dashed' : 'solid'}
             onChange={(val) => onPropChange('strokeDashArray', val === 'dashed' ? [5, 5] : undefined)}
             options={[
@@ -143,6 +135,30 @@ export function ImageBorderSection({ layer, onPropChange }: ImageSectionProps) {
               { value: 'dashed', label: t('rightPanel.dashed') },
             ]}
           />
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] text-gray-400 font-medium shrink-0">{t('rightPanel.strokeWidth')}</span>
+          <Slider
+            className="flex-1"
+            value={layer.strokeWidth ?? 0}
+            min={0}
+            max={50}
+            step={1}
+            onChange={(val) => onPropChange('strokeWidth', val)}
+          />
+          <span className="text-[10px] text-gray-600 w-6 text-right">{Math.round(layer.strokeWidth ?? 0)}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] text-gray-400 font-medium shrink-0">{t('rightPanel.borderRadius')}</span>
+          <Slider
+            className="flex-1"
+            value={layer.borderRadius ?? 0}
+            min={0}
+            max={100}
+            step={1}
+            onChange={(val) => onPropChange('borderRadius', val)}
+          />
+          <span className="text-[10px] text-gray-600 w-6 text-right">{Math.round(layer.borderRadius ?? 0)}</span>
         </div>
       </div>
     </div>

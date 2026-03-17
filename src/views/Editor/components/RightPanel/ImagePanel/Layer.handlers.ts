@@ -1,6 +1,5 @@
 import { useEditorStore } from '../../../../../store/useEditorStore';
 import { engineInstance } from '../../../../../core/engine';
-import { SCHEMA_TO_FABRIC } from '../../../../../core/constants';
 import type { ImageLayer } from '../../../../../types/schema';
 
 export type ImagePropChangeHandler = <K extends keyof ImageLayer>(key: K, value: ImageLayer[K]) => void;
@@ -17,8 +16,14 @@ export const handleImagePropChange = <K extends keyof ImageLayer>(
   useEditorStore.getState().updateLayer(layerId, { [key]: value } as Partial<ImageLayer>);
 
   // 2. 同步到 Fabric 画布
-  // borderRadius 通过 clipPath 处理，交由 engine.updateLayerProps 内部分支处理
-  // 滤镜属性直接以原 key 传递，engine 内部会从 store 读取完整状态后全量应用
-  const fabricKey = SCHEMA_TO_FABRIC[key as string] ?? (key as string);
+  // 图片图层不需要映射 stroke -> boxStroke 等（这是 Textbox 专用逻辑）
+  // 仅需映射基础变换属性：x->left, y->top, rotation->angle
+  const IMAGE_SCHEMA_MAP: Record<string, string> = {
+    x: 'left',
+    y: 'top',
+    rotation: 'angle',
+  };
+  const fabricKey = IMAGE_SCHEMA_MAP[key as string] ?? (key as string);
+  
   engineInstance.updateLayerProps(layerId, { [fabricKey]: value });
 };
