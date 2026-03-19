@@ -1,4 +1,4 @@
-import { FabricObject, Textbox } from "fabric";
+import { config, FabricObject, Textbox } from "fabric";
 import { SUPPORTED_FONTS } from "../constants/fonts";
 import { EDITOR_GLOBAL_STYLE } from "./constants";
 
@@ -9,9 +9,14 @@ import { EDITOR_GLOBAL_STYLE } from "./constants";
 async function loadLocalFonts(): Promise<void> {
   const registeredFamilies = new Set<string>();
   document.fonts.forEach((face) => registeredFamilies.add(face.family));
+  const fontPaths: Record<string, string> = {};
 
   for (const font of SUPPORTED_FONTS) {
-    if (!font.path || registeredFamilies.has(font.value)) continue;
+    if (!font.path) continue;
+
+    fontPaths[font.value] = font.path;
+    if (registeredFamilies.has(font.value)) continue;
+
     try {
       const fontFace = new FontFace(font.value, `url(${font.path})`);
       const loadedFace = await fontFace.load();
@@ -20,6 +25,8 @@ async function loadLocalFonts(): Promise<void> {
       console.error(`[FontLoader] 加载失败: ${font.label}`, err);
     }
   }
+
+  config.addFonts(fontPaths);
 }
 
 // ==========================================

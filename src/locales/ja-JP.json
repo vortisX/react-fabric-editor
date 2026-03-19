@@ -5,6 +5,62 @@
     "preview": "プレビュー",
     "export": "エクスポート"
   },
+  "exportDialog": {
+    "title": "デザインを書き出す",
+    "subtitle": "用途に合った形式を選び、現在の作品を直接ダウンロードします。",
+    "close": "閉じる",
+    "cancel": "キャンセル",
+    "confirm": "書き出す",
+    "exporting": "書き出し中...",
+    "detailLabel": "形式の説明",
+    "purposeLabel": "用途",
+    "advantageLabel": "利点",
+    "filenameLabel": "ファイル名",
+    "filenamePlaceholder": "書き出しファイル名を入力",
+    "filenameFallback": "Untitled Design",
+    "scaleLabel": "書き出し倍率",
+    "scaleValue": "{{value}}x",
+    "estimatedSizeLabel": "想定解像度",
+    "estimatedSizeValue": "{{width}} × {{height}} px",
+    "estimatedSizeOriginal": "元データ / {{width}} × {{height}}",
+    "estimatedSizeHintScaled": "倍率が高いほどピクセル数が増え、通常はファイルサイズも大きくなります。",
+    "estimatedSizeHintOriginal": "この形式はビットマップ拡大ではなく、元の構造化コンテンツを書き出します。",
+    "scaleHintEnabled": "ビットマップの解像度と出力サイズに影響します",
+    "scaleHintDisabled": "この形式は元の構造データをそのまま書き出します",
+    "error": "書き出しに失敗しました。外部画像リソースにアクセスできるか確認して再試行してください。",
+    "formats": {
+      "png": {
+        "title": "PNG 画像",
+        "summary": "高品質なビットマップ出力や透過背景に適しています。",
+        "purpose": "SNS 投稿、商品画像、デザイン確認、透過が必要な最終素材に使います。",
+        "advantage": "可逆圧縮で輪郭がきれいなまま保たれ、透過背景にも対応します。"
+      },
+      "jpeg": {
+        "title": "JPEG 画像",
+        "summary": "軽量なビットマップ配布に適しています。",
+        "purpose": "Web 掲載、配信用素材、メール添付、容量を抑えたい場面に使います。",
+        "advantage": "圧縮率が高く互換性も高いため、読み込みが速く配布しやすい形式です。"
+      },
+      "svg": {
+        "title": "SVG ベクター",
+        "summary": "拡大縮小に強い図形や Web 埋め込みに適しています。",
+        "purpose": "ロゴ、アイコン、シンプルな図形素材、レスポンシブなフロントエンド素材に使います。",
+        "advantage": "拡大しても劣化せず、ベクターワークフローで再編集しやすいです。"
+      },
+      "pdf": {
+        "title": "PDF ドキュメント",
+        "summary": "印刷納品、保管、安定した閲覧に適しています。",
+        "purpose": "印刷確認、顧客納品、アーカイブ、レイアウトを固定した正式資料に使います。",
+        "advantage": "レイアウトが崩れにくく、印刷・共有・保管に向いた安定した形式です。"
+      },
+      "json": {
+        "title": "JSON ソース",
+        "summary": "編集可能な設計データをそのまま保存するのに適しています。",
+        "purpose": "バックアップ、共同作業の受け渡し、プログラム生成、エディターへの再読込に使います。",
+        "advantage": "構造化されたレイヤーデータを保持でき、復元や差分管理、拡張に向いています。"
+      }
+    }
+  },
   "leftPanel": {
     "layerManagement": "レイヤー管理",
     "addText": "テキスト追加",

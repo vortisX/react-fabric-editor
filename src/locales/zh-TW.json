@@ -5,6 +5,62 @@
     "preview": "預覽",
     "export": "匯出作品"
   },
+  "exportDialog": {
+    "title": "匯出設計檔",
+    "subtitle": "選擇最適合交付場景的格式，並直接下載目前作品。",
+    "close": "關閉",
+    "cancel": "取消",
+    "confirm": "開始匯出",
+    "exporting": "匯出中...",
+    "detailLabel": "格式說明",
+    "purposeLabel": "作用",
+    "advantageLabel": "優點",
+    "filenameLabel": "檔案名稱",
+    "filenamePlaceholder": "請輸入匯出檔名",
+    "filenameFallback": "未命名設計",
+    "scaleLabel": "匯出倍率",
+    "scaleValue": "{{value}}x",
+    "estimatedSizeLabel": "預計解析度",
+    "estimatedSizeValue": "{{width}} × {{height}} px",
+    "estimatedSizeOriginal": "原始結構 / {{width}} × {{height}}",
+    "estimatedSizeHintScaled": "倍率越高，匯出像素越大，檔案體積通常也會更高。",
+    "estimatedSizeHintOriginal": "此格式匯出的是原始結構內容，不會按點陣像素放大。",
+    "scaleHintEnabled": "會影響點陣清晰度與輸出尺寸",
+    "scaleHintDisabled": "目前格式會以原始結構匯出",
+    "error": "匯出失敗，請確認圖片資源可存取後再試一次。",
+    "formats": {
+      "png": {
+        "title": "PNG 圖片",
+        "summary": "適合高保真位圖輸出與透明背景需求。",
+        "purpose": "用於社群貼文、商品視覺、設計校稿，以及需要透明背景的場景。",
+        "advantage": "無損壓縮、邊緣清晰且支援透明背景，適合高品質成品交付。"
+      },
+      "jpeg": {
+        "title": "JPEG 圖片",
+        "summary": "適合較小檔案體積與日常位圖交付。",
+        "purpose": "用於網頁展示、內容投放、郵件附件，以及對檔案大小更敏感的場景。",
+        "advantage": "壓縮率高、相容性強，適合快速載入與大量分發。"
+      },
+      "svg": {
+        "title": "SVG 向量",
+        "summary": "適合可縮放圖形、網頁嵌入與後續向量編輯。",
+        "purpose": "用於 Logo、圖示、簡單海報圖形，以及前端介面中的可縮放資產。",
+        "advantage": "放大不失真，且便於再次編輯，適合多尺寸與響應式投放。"
+      },
+      "pdf": {
+        "title": "PDF 文件",
+        "summary": "適合列印交付、存檔與跨裝置穩定檢視。",
+        "purpose": "用於列印打樣、客戶交付、方案存檔，以及需要固定版面的正式文件。",
+        "advantage": "版面穩定、跨平台一致，方便列印、分享與正式歸檔。"
+      },
+      "json": {
+        "title": "JSON 原始檔",
+        "summary": "適合保存目前設計資料，便於版本管理與二次編輯。",
+        "purpose": "用於專案備份、協作傳遞、程式化生成，以及重新載入編輯器。",
+        "advantage": "完整保留結構化圖層資料，便於還原、比對差異與持續擴充。"
+      }
+    }
+  },
   "leftPanel": {
     "layerManagement": "圖層管理",
     "addText": "新增文字",

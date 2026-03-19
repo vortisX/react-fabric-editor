@@ -5,6 +5,62 @@
     "preview": "Preview",
     "export": "Export"
   },
+  "exportDialog": {
+    "title": "Export Design",
+    "subtitle": "Choose the best delivery format and download the current artwork.",
+    "close": "Close",
+    "cancel": "Cancel",
+    "confirm": "Export File",
+    "exporting": "Exporting...",
+    "detailLabel": "Format Details",
+    "purposeLabel": "Purpose",
+    "advantageLabel": "Advantages",
+    "filenameLabel": "Filename",
+    "filenamePlaceholder": "Enter export filename",
+    "filenameFallback": "Untitled Design",
+    "scaleLabel": "Export Scale",
+    "scaleValue": "{{value}}x",
+    "estimatedSizeLabel": "Estimated Resolution",
+    "estimatedSizeValue": "{{width}} × {{height}} px",
+    "estimatedSizeOriginal": "Structured Output / {{width}} × {{height}}",
+    "estimatedSizeHintScaled": "Higher scale produces more pixels and usually a larger file size.",
+    "estimatedSizeHintOriginal": "This format exports the original structured content instead of scaling bitmap pixels.",
+    "scaleHintEnabled": "Affects bitmap resolution and output size",
+    "scaleHintDisabled": "This format exports the original structured data",
+    "error": "Export failed. Please check whether external image resources are accessible and try again.",
+    "formats": {
+      "png": {
+        "title": "PNG Image",
+        "summary": "Best for high-fidelity raster output and transparent backgrounds.",
+        "purpose": "Use it for social posts, product visuals, design reviews, and assets that need transparency.",
+        "advantage": "Lossless compression keeps edges crisp and supports transparency for polished final delivery."
+      },
+      "jpeg": {
+        "title": "JPEG Image",
+        "summary": "Best for smaller file sizes and everyday bitmap delivery.",
+        "purpose": "Use it for web publishing, marketing distribution, email attachments, and lighter-weight downloads.",
+        "advantage": "High compatibility and strong compression make it ideal for faster loading and large-scale sharing."
+      },
+      "svg": {
+        "title": "SVG Vector",
+        "summary": "Best for scalable graphics, web embedding, and vector-friendly workflows.",
+        "purpose": "Use it for logos, icons, simple poster graphics, and responsive front-end assets.",
+        "advantage": "Scales without quality loss and remains easy to edit in vector-based design or engineering workflows."
+      },
+      "pdf": {
+        "title": "PDF Document",
+        "summary": "Best for print delivery, archiving, and stable cross-device viewing.",
+        "purpose": "Use it for print proofs, client handoff, archives, and layouts that must stay fixed.",
+        "advantage": "Keeps layout consistent across platforms and is easy to print, share, and archive formally."
+      },
+      "json": {
+        "title": "JSON Source",
+        "summary": "Best for preserving the editable design data behind the canvas.",
+        "purpose": "Use it for backups, collaboration handoff, programmatic generation, and reloading into the editor.",
+        "advantage": "Retains structured layer data for restoration, diffing, and future feature expansion."
+      }
+    }
+  },
   "leftPanel": {
     "layerManagement": "Layers",
     "addText": "Add Text",

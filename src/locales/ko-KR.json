@@ -5,6 +5,62 @@
     "preview": "미리보기",
     "export": "내보내기"
   },
+  "exportDialog": {
+    "title": "디자인 내보내기",
+    "subtitle": "전달 목적에 맞는 형식을 선택해 현재 작업물을 바로 다운로드합니다.",
+    "close": "닫기",
+    "cancel": "취소",
+    "confirm": "내보내기",
+    "exporting": "내보내는 중...",
+    "detailLabel": "형식 설명",
+    "purposeLabel": "용도",
+    "advantageLabel": "장점",
+    "filenameLabel": "파일 이름",
+    "filenamePlaceholder": "내보낼 파일 이름을 입력하세요",
+    "filenameFallback": "Untitled Design",
+    "scaleLabel": "내보내기 배율",
+    "scaleValue": "{{value}}x",
+    "estimatedSizeLabel": "예상 해상도",
+    "estimatedSizeValue": "{{width}} × {{height}} px",
+    "estimatedSizeOriginal": "원본 구조 / {{width}} × {{height}}",
+    "estimatedSizeHintScaled": "배율이 높을수록 픽셀 수가 늘고 일반적으로 파일 크기도 커집니다.",
+    "estimatedSizeHintOriginal": "이 형식은 비트맵 확대가 아니라 원본 구조화 콘텐츠를 그대로 내보냅니다.",
+    "scaleHintEnabled": "비트맵 해상도와 출력 크기에 영향을 줍니다",
+    "scaleHintDisabled": "이 형식은 원본 구조 데이터를 그대로 내보냅니다",
+    "error": "내보내기에 실패했습니다. 외부 이미지 리소스 접근 가능 여부를 확인한 뒤 다시 시도해 주세요.",
+    "formats": {
+      "png": {
+        "title": "PNG 이미지",
+        "summary": "고품질 비트맵 출력과 투명 배경에 적합합니다.",
+        "purpose": "SNS 게시물, 상품 이미지, 디자인 검수, 투명 배경이 필요한 결과물에 사용합니다.",
+        "advantage": "무손실 압축과 투명 배경 지원으로 선명한 최종 산출물을 만들 수 있습니다."
+      },
+      "jpeg": {
+        "title": "JPEG 이미지",
+        "summary": "더 작은 파일 크기의 비트맵 전달에 적합합니다.",
+        "purpose": "웹 게시, 콘텐츠 배포, 이메일 첨부, 용량이 중요한 장면에 사용합니다.",
+        "advantage": "압축 효율과 호환성이 좋아 빠른 로딩과 대량 배포에 유리합니다."
+      },
+      "svg": {
+        "title": "SVG 벡터",
+        "summary": "확대 축소 가능한 그래픽과 웹 임베드에 적합합니다.",
+        "purpose": "로고, 아이콘, 단순 그래픽, 반응형 프런트엔드 자산에 사용합니다.",
+        "advantage": "확대해도 깨지지 않고 벡터 기반 워크플로에서 다시 편집하기 쉽습니다."
+      },
+      "pdf": {
+        "title": "PDF 문서",
+        "summary": "인쇄 전달, 보관, 안정적인 열람에 적합합니다.",
+        "purpose": "인쇄 시안, 고객 전달, 아카이브, 고정 레이아웃 문서에 사용합니다.",
+        "advantage": "플랫폼이 달라도 레이아웃이 안정적으로 유지되어 인쇄와 공유에 적합합니다."
+      },
+      "json": {
+        "title": "JSON 소스",
+        "summary": "편집 가능한 디자인 데이터를 그대로 보존하는 데 적합합니다.",
+        "purpose": "백업, 협업 전달, 프로그램 생성, 에디터 재로딩에 사용합니다.",
+        "advantage": "구조화된 레이어 데이터를 유지해 복원, diff 비교, 기능 확장에 유리합니다."
+      }
+    }
+  },
   "leftPanel": {
     "layerManagement": "레이어 관리",
     "addText": "텍스트 추가",

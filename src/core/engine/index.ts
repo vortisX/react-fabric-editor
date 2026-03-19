@@ -146,6 +146,61 @@ export class EditorEngine {
     this.canvas.requestRenderAll();
   }
 
+  public exportSceneDataUrl(
+    format: "png" | "jpeg",
+    quality = 1,
+    multiplier = 1,
+  ): string | undefined {
+    return this.withExportScene((canvas) => {
+      const exportCanvas = document.createElement("canvas");
+      const exportWidth = Math.max(Math.round(this.docWidth * multiplier), 1);
+      const exportHeight = Math.max(Math.round(this.docHeight * multiplier), 1);
+
+      exportCanvas.width = exportWidth;
+      exportCanvas.height = exportHeight;
+
+      const context = exportCanvas.getContext("2d");
+      if (!context) return undefined;
+
+      const originalWidth = canvas.width;
+      const originalHeight = canvas.height;
+      const originalViewportTransform = [
+        ...canvas.viewportTransform,
+      ] as typeof canvas.viewportTransform;
+
+      try {
+        canvas.width = exportWidth;
+        canvas.height = exportHeight;
+        canvas.viewportTransform = [
+          multiplier,
+          0,
+          0,
+          multiplier,
+          0,
+          0,
+        ];
+        canvas.calcViewportBoundaries();
+        canvas.renderCanvas(context, canvas.getObjects());
+      } finally {
+        canvas.width = originalWidth;
+        canvas.height = originalHeight;
+        canvas.viewportTransform = originalViewportTransform;
+        canvas.calcViewportBoundaries();
+      }
+
+      return exportCanvas.toDataURL(`image/${format}`, quality);
+    });
+  }
+
+  public exportSceneSvg(): string | undefined {
+    return this.withExportScene((canvas) =>
+      canvas.toSVG({
+        width: `${Math.max(Math.round(this.docWidth), 1)}`,
+        height: `${Math.max(Math.round(this.docHeight), 1)}`,
+      }),
+    );
+  }
+
   public onNextRender(callback: () => void): void {
     const canvas = this.canvas;
     if (!canvas) {
@@ -335,6 +390,42 @@ export class EditorEngine {
       displayZoom: this.displayZoom,
       shouldRender,
     });
+  }
+
+  private withExportScene<T>(callback: (canvas: Canvas) => T): T | undefined {
+    const canvas = this.canvas;
+    if (!canvas) return undefined;
+
+    const originalWidth = canvas.width;
+    const originalHeight = canvas.height;
+    const originalViewportTransform = [
+      ...canvas.viewportTransform,
+    ] as typeof canvas.viewportTransform;
+    const originalSkipControlsDrawing = (canvas as Canvas & {
+      skipControlsDrawing: boolean;
+    }).skipControlsDrawing;
+    const originalActiveObject = canvas.getActiveObject();
+
+    try {
+      canvas.discardActiveObject();
+      canvas.viewportTransform = [1, 0, 0, 1, 0, 0];
+      canvas.width = Math.max(Math.round(this.docWidth), 1);
+      canvas.height = Math.max(Math.round(this.docHeight), 1);
+      (canvas as Canvas & { skipControlsDrawing: boolean }).skipControlsDrawing =
+        true;
+      canvas.calcViewportBoundaries();
+      return callback(canvas);
+    } finally {
+      canvas.viewportTransform = originalViewportTransform;
+      canvas.width = originalWidth;
+      canvas.height = originalHeight;
+      (canvas as Canvas & { skipControlsDrawing: boolean }).skipControlsDrawing =
+        originalSkipControlsDrawing;
+      canvas.calcViewportBoundaries();
+      if (originalActiveObject) {
+        canvas.setActiveObject(originalActiveObject);
+      }
+    }
   }
 }
 

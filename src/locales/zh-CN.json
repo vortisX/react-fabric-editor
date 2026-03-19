@@ -5,6 +5,62 @@
     "preview": "预览",
     "export": "导出作品"
   },
+  "exportDialog": {
+    "title": "导出设计文件",
+    "subtitle": "选择最适合交付场景的格式，并直接下载当前作品。",
+    "close": "关闭",
+    "cancel": "取消",
+    "confirm": "开始导出",
+    "exporting": "导出中...",
+    "detailLabel": "格式说明",
+    "purposeLabel": "作用",
+    "advantageLabel": "优点",
+    "filenameLabel": "文件名",
+    "filenamePlaceholder": "请输入导出文件名",
+    "filenameFallback": "未命名设计",
+    "scaleLabel": "导出倍率",
+    "scaleValue": "{{value}}x",
+    "estimatedSizeLabel": "预计分辨率",
+    "estimatedSizeValue": "{{width}} × {{height}} px",
+    "estimatedSizeOriginal": "原始结构 / {{width}} × {{height}}",
+    "estimatedSizeHintScaled": "倍率越高，导出像素越大，文件体积通常也会更高。",
+    "estimatedSizeHintOriginal": "该格式导出的是原始结构化内容，不按位图像素放大。",
+    "scaleHintEnabled": "影响位图清晰度与尺寸",
+    "scaleHintDisabled": "当前格式使用原始结构导出",
+    "error": "导出失败，请检查图片资源是否可访问后重试。",
+    "formats": {
+      "png": {
+        "title": "PNG 图片",
+        "summary": "适合保真分享、透明背景和高质量位图输出。",
+        "purpose": "用于社媒发图、产品详情、设计校对和需要透明背景的场景。",
+        "advantage": "无损压缩、边缘清晰、支持透明背景，适合需要高保真画面的成品输出。"
+      },
+      "jpeg": {
+        "title": "JPEG 图片",
+        "summary": "适合体积更小的位图交付和日常传播。",
+        "purpose": "用于网页展示、内容投放、邮件发送和对文件体积更敏感的场景。",
+        "advantage": "压缩率高、文件更小、兼容性强，适合大批量分发和快速加载。"
+      },
+      "svg": {
+        "title": "SVG 矢量",
+        "summary": "适合可缩放图形、网页嵌入和后续矢量编辑。",
+        "purpose": "用于 Logo、图标、简单海报元素以及前端页面中的可缩放图形资源。",
+        "advantage": "放大不失真、文本与路径易于再次编辑，适合响应式和多尺寸投放。"
+      },
+      "pdf": {
+        "title": "PDF 文档",
+        "summary": "适合打印交付、归档和跨设备稳定查看。",
+        "purpose": "用于打印打样、客户交付、方案归档以及需要固定版式的正式文件。",
+        "advantage": "版式稳定、跨平台一致、便于打印和归档，适合正式交付链路。"
+      },
+      "json": {
+        "title": "JSON 源文件",
+        "summary": "适合保存当前设计数据，便于版本管理和二次编辑。",
+        "purpose": "用于项目备份、协作传递、程序化生成和后续重新载入编辑器。",
+        "advantage": "完整保留结构化图层数据，便于恢复、比较差异和继续开发扩展。"
+      }
+    }
+  },
   "leftPanel": {
     "layerManagement": "图层管理",
     "addText": "添加文字",
