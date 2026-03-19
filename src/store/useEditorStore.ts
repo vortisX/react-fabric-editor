@@ -1,44 +1,60 @@
 import { create } from "zustand";
-import type { DesignDocument, Layer, PageBackground } from "../types/schema";
-import { clampCanvasPx } from "../core/canvasMath";
 
-interface BackgroundHistory {
-  past: PageBackground[];
-  future: PageBackground[];
+import { clampCanvasPx } from "../core/canvasMath";
+import type { DesignDocument, Layer, PageBackground } from "../types/schema";
+
+export type EditorCommandOrigin = "ui" | "engine" | "history" | "system";
+
+export type EditorCommand =
+  | { type: "document:load"; document: DesignDocument }
+  | { type: "layer:add"; layer: Layer }
+  | { type: "layer:update"; layerId: string; payload: Partial<Layer> }
+  | { type: "selection:set"; layerId: string | null };
+
+interface DocumentHistory {
+  past: DesignDocument[];
+  future: DesignDocument[];
 }
 
-// 定义 Store 的类型接口
-interface EditorState {
-  // === 数据状态 (State) ===
-  document: DesignDocument | null; // 当前编辑的文档核心数据
-  activeLayerId: string | null; // 当前选中的图层 ID
-  currentPageId: string | null; // 当前选中的页面 ID
-  /** 只存背景快照，不存整个文档，避免撤销背景时意外回滚图层变更 */
-  backgroundHistory: BackgroundHistory;
-  /** 视口缩放比例，1 = 100%，范围 0.1–2.0 */
-  zoom: number;
-  /** 每次递增触发 Workspace 重新计算适应画布缩放；0 为初始值不触发 */
-  fitRequest: number;
+interface MutationOptions {
+  commit?: boolean;
+  origin?: EditorCommandOrigin;
+}
 
-  // === 操作方法 (Actions) ===
+interface EditorState {
+  document: DesignDocument | null;
+  activeLayerId: string | null;
+  currentPageId: string | null;
+  history: DocumentHistory;
+  zoom: number;
+  fitRequest: number;
+  editorCommand: EditorCommand | null;
+  editorCommandId: number;
   initDocument: (doc: DesignDocument) => void;
-  setActiveLayer: (id: string | null) => void;
+  setActiveLayer: (id: string | null, origin?: EditorCommandOrigin) => void;
   setCurrentPageId: (id: string | null) => void;
-  setCanvasSizePx: (width: number, height: number) => void;
-  setCanvasUnit: (unit: string) => void;
-  setPageBackground: (background: PageBackground) => void;
-  undoBackground: () => void;
-  redoBackground: () => void;
+  setCanvasSizePx: (
+    width: number,
+    height: number,
+    options?: MutationOptions,
+  ) => void;
+  setCanvasUnit: (unit: string, options?: MutationOptions) => void;
+  setPageBackground: (
+    background: PageBackground,
+    options?: MutationOptions,
+  ) => void;
   updateLayer: (
     layerId: string,
     payload: Partial<Layer>,
+    options?: MutationOptions,
   ) => void;
-  addLayer: (layer: Layer) => void;
+  addLayer: (layer: Layer, options?: MutationOptions) => void;
+  undo: () => void;
+  redo: () => void;
   setZoom: (zoom: number) => void;
   requestFit: () => void;
 }
 
-// 预设一个空白的初始模板 (手机竖屏比例)
 const initialDoc: DesignDocument = {
   version: "1.0.0",
   workId: "draft_001",
@@ -54,184 +70,264 @@ const initialDoc: DesignDocument = {
       pageId: "page_01",
       name: "第 1 页",
       background: { type: "color", value: "#F3F4F6" },
-      layers: [], // 初始没有图层
+      layers: [],
     },
   ],
 };
 
-/** 从 document 中取出当前页面的背景，用于存入历史记录 */
-function getCurrentBackground(doc: DesignDocument, pageId: string): PageBackground | null {
-  const page = doc.pages.find((p) => p.pageId === pageId);
-  return page?.background ?? null;
-}
+const cloneDocument = (doc: DesignDocument): DesignDocument => structuredClone(doc);
 
-/** 将背景值写入指定页面，返回新的 pages 数组（不可变更新） */
-function applyBackgroundToPages(
+const emitCommand = (
+  state: Pick<EditorState, "editorCommandId">,
+  command: EditorCommand,
+): Pick<EditorState, "editorCommand" | "editorCommandId"> => ({
+  editorCommand: command,
+  editorCommandId: state.editorCommandId + 1,
+});
+
+const buildHistory = (
+  state: Pick<EditorState, "document" | "history">,
+  shouldCommit: boolean,
+): DocumentHistory => {
+  if (!shouldCommit || !state.document) return state.history;
+  return {
+    past: [...state.history.past, cloneDocument(state.document)],
+    future: [],
+  };
+};
+
+const getCurrentPage = (doc: DesignDocument, pageId: string | null) =>
+  doc.pages.find((page) => page.pageId === pageId) ?? doc.pages[0];
+
+const updateDocumentLayer = (
   doc: DesignDocument,
   pageId: string,
-  background: PageBackground,
-) {
-  return doc.pages.map((page) =>
-    page.pageId === pageId ? { ...page, background } : page,
-  );
-}
+  layerId: string,
+  payload: Partial<Layer>,
+): DesignDocument | null => {
+  let hasChanged = false;
 
-// 创建并导出全局 Store
+  const pages = doc.pages.map((page) => {
+    if (page.pageId !== pageId) return page;
+
+    const layers = page.layers.map((layer) => {
+      if (layer.id !== layerId) return layer;
+
+      const nextEntries = Object.entries(payload);
+      const changed = nextEntries.some(
+        ([key, value]) =>
+          !Object.is((layer as Record<string, unknown>)[key], value),
+      );
+      if (!changed) return layer;
+
+      hasChanged = true;
+      return { ...layer, ...payload } as Layer;
+    });
+
+    return layers === page.layers ? page : { ...page, layers };
+  });
+
+  if (!hasChanged) return null;
+  return { ...doc, pages };
+};
+
 export const useEditorStore = create<EditorState>((set) => ({
   document: initialDoc,
   activeLayerId: null,
   currentPageId: initialDoc.pages[0].pageId,
-  backgroundHistory: { past: [], future: [] },
+  history: { past: [], future: [] },
   zoom: 1,
   fitRequest: 0,
+  editorCommand: null,
+  editorCommandId: 0,
 
-  // 1. 初始化/覆盖整个文档 (用于从后端加载数据)
-  initDocument: (doc) => set({
-    document: doc,
-    currentPageId: doc.pages[0]?.pageId ?? null,
-    backgroundHistory: { past: [], future: [] },
-  }),
+  initDocument: (doc) =>
+    set((state) => ({
+      document: doc,
+      currentPageId: doc.pages[0]?.pageId ?? null,
+      activeLayerId: null,
+      history: { past: [], future: [] },
+      ...emitCommand(state, { type: "document:load", document: cloneDocument(doc) }),
+    })),
 
-  // 2. 设置当前选中的图层
-  setActiveLayer: (id) => set({ activeLayerId: id }),
-
-  // 2.1 设置当前选中的页面
-  setCurrentPageId: (id) => set({ currentPageId: id }),
-
-  setCanvasSizePx: (width, height) =>
+  setActiveLayer: (id, origin = "ui") =>
     set((state) => {
-      if (!state.document) return state;
-      const w = Math.round(clampCanvasPx(width));
-      const h = Math.round(clampCanvasPx(height));
+      if (state.activeLayerId === id) return state;
+      if (origin !== "ui") {
+        return { activeLayerId: id };
+      }
       return {
-        document: {
-          ...state.document,
-          global: { ...state.document.global, width: w, height: h },
-        },
+        activeLayerId: id,
+        ...emitCommand(state, { type: "selection:set", layerId: id }),
       };
     }),
 
-  setCanvasUnit: (unit) =>
+  setCurrentPageId: (id) => set({ currentPageId: id }),
+
+  setCanvasSizePx: (width, height, options) =>
     set((state) => {
       if (!state.document) return state;
+
+      const nextWidth = Math.round(clampCanvasPx(width));
+      const nextHeight = Math.round(clampCanvasPx(height));
+      if (
+        state.document.global.width === nextWidth &&
+        state.document.global.height === nextHeight
+      ) {
+        return state;
+      }
+
+      return {
+        document: {
+          ...state.document,
+          global: {
+            ...state.document.global,
+            width: nextWidth,
+            height: nextHeight,
+          },
+        },
+        history: buildHistory(state, options?.commit ?? false),
+      };
+    }),
+
+  setCanvasUnit: (unit, options) =>
+    set((state) => {
+      if (!state.document || state.document.global.unit === unit) return state;
       return {
         document: {
           ...state.document,
           global: { ...state.document.global, unit },
         },
+        history: buildHistory(state, options?.commit ?? true),
       };
     }),
 
-  setPageBackground: (background) =>
+  setPageBackground: (background, options) =>
     set((state) => {
       if (!state.document || !state.currentPageId) return state;
 
-      const pageId = state.currentPageId;
-      // 将当前背景快照 push 到历史栈（只存背景，不存整个文档）
-      const currentBg = getCurrentBackground(state.document, pageId);
-      const newPast = currentBg
-        ? [...state.backgroundHistory.past, currentBg]
-        : state.backgroundHistory.past;
+      const currentPage = getCurrentPage(state.document, state.currentPageId);
+      if (!currentPage) return state;
+
+      if (JSON.stringify(currentPage.background) === JSON.stringify(background)) {
+        return state;
+      }
+
+      const pages = state.document.pages.map((page) =>
+        page.pageId === currentPage.pageId ? { ...page, background } : page,
+      );
 
       return {
-        document: {
-          ...state.document,
-          pages: applyBackgroundToPages(state.document, pageId, background),
-        },
-        backgroundHistory: { past: newPast, future: [] },
+        document: { ...state.document, pages },
+        history: buildHistory(state, options?.commit ?? true),
       };
     }),
 
-  undoBackground: () =>
+  updateLayer: (layerId, payload, options) =>
     set((state) => {
       if (!state.document || !state.currentPageId) return state;
-      const { past, future } = state.backgroundHistory;
-      const prev = past[past.length - 1];
-      if (!prev) return state;
 
-      const pageId = state.currentPageId;
-      // 将当前背景推入 future，从 past 取出上一个背景恢复
-      const currentBg = getCurrentBackground(state.document, pageId);
-      const newFuture = currentBg ? [currentBg, ...future] : future;
+      const nextDocument = updateDocumentLayer(
+        state.document,
+        state.currentPageId,
+        layerId,
+        payload,
+      );
+      if (!nextDocument) return state;
+
+      const origin = options?.origin ?? "ui";
+      if (origin !== "ui") {
+        return {
+          document: nextDocument,
+          history: buildHistory(state, options?.commit ?? false),
+        };
+      }
 
       return {
-        document: {
-          ...state.document,
-          pages: applyBackgroundToPages(state.document, pageId, prev),
-        },
-        backgroundHistory: { past: past.slice(0, -1), future: newFuture },
+        document: nextDocument,
+        history: buildHistory(state, options?.commit ?? true),
+        ...emitCommand(state, { type: "layer:update", layerId, payload }),
       };
     }),
 
-  redoBackground: () =>
+  addLayer: (layer, options) =>
     set((state) => {
       if (!state.document || !state.currentPageId) return state;
-      const { past, future } = state.backgroundHistory;
-      const next = future[0];
+
+      const page = getCurrentPage(state.document, state.currentPageId);
+      if (!page) return state;
+
+      const pages = state.document.pages.map((item) =>
+        item.pageId === page.pageId
+          ? { ...item, layers: [...item.layers, layer] }
+          : item,
+      );
+
+      const origin = options?.origin ?? "ui";
+      if (origin !== "ui") {
+        return {
+          document: { ...state.document, pages },
+          activeLayerId: layer.id,
+          history: buildHistory(state, options?.commit ?? true),
+        };
+      }
+
+      return {
+        document: { ...state.document, pages },
+        activeLayerId: layer.id,
+        history: buildHistory(state, options?.commit ?? true),
+        ...emitCommand(state, { type: "layer:add", layer }),
+      };
+    }),
+
+  undo: () =>
+    set((state) => {
+      if (!state.document) return state;
+
+      const previous = state.history.past[state.history.past.length - 1];
+      if (!previous) return state;
+
+      const nextDocument = cloneDocument(previous);
+      return {
+        document: nextDocument,
+        activeLayerId: null,
+        currentPageId: nextDocument.pages[0]?.pageId ?? null,
+        history: {
+          past: state.history.past.slice(0, -1),
+          future: [cloneDocument(state.document), ...state.history.future],
+        },
+        ...emitCommand(state, {
+          type: "document:load",
+          document: cloneDocument(nextDocument),
+        }),
+      };
+    }),
+
+  redo: () =>
+    set((state) => {
+      if (!state.document) return state;
+
+      const next = state.history.future[0];
       if (!next) return state;
 
-      const pageId = state.currentPageId;
-      // 将当前背景推入 past，从 future 取出下一个背景恢复
-      const currentBg = getCurrentBackground(state.document, pageId);
-      const newPast = currentBg ? [...past, currentBg] : past;
-
+      const nextDocument = cloneDocument(next);
       return {
-        document: {
-          ...state.document,
-          pages: applyBackgroundToPages(state.document, pageId, next),
+        document: nextDocument,
+        activeLayerId: null,
+        currentPageId: nextDocument.pages[0]?.pageId ?? null,
+        history: {
+          past: [...state.history.past, cloneDocument(state.document)],
+          future: state.history.future.slice(1),
         },
-        backgroundHistory: { past: newPast, future: future.slice(1) },
-      };
-    }),
-
-  // 3. 核心：更新某个图层的属性 (严格的不可变数据更新)
-  updateLayer: (layerId, payload) =>
-    set((state) => {
-      if (!state.document || !state.currentPageId) return state;
-
-      const pageId = state.currentPageId;
-
-      // 遍历 pages，找到目标 page
-      const newPages = state.document.pages.map((page) => {
-        if (page.pageId !== pageId) return page;
-
-        // 在目标 page 中遍历 layers，找到目标 layer 并合并新属性
-        return {
-          ...page,
-          layers: page.layers.map((layer) =>
-            layer.id === layerId ? ({ ...layer, ...payload } as Layer) : layer,
-          ),
-        };
-      });
-
-      return {
-        document: {
-          ...state.document,
-          pages: newPages,
-        },
-      };
-    }),
-
-  // 4. 新增图层
-  addLayer: (layer) =>
-    set((state) => {
-      if (!state.document || !state.currentPageId) return state;
-
-      const pageId = state.currentPageId;
-
-      const newPages = state.document.pages.map((page) => {
-        if (page.pageId !== pageId) return page;
-        // 往 layers 数组末尾推入新图层
-        return { ...page, layers: [...page.layers, layer] };
-      });
-
-      return {
-        document: { ...state.document, pages: newPages },
-        activeLayerId: layer.id, // 自动选中新加的图层
+        ...emitCommand(state, {
+          type: "document:load",
+          document: cloneDocument(nextDocument),
+        }),
       };
     }),
 
   setZoom: (zoom) => set({ zoom }),
 
-  requestFit: () => set((state) => ({ fitRequest: state.fitRequest + 1 })),
+  requestFit: () =>
+    set((state) => ({ fitRequest: state.fitRequest + 1 })),
 }));

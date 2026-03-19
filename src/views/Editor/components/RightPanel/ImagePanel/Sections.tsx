@@ -42,9 +42,10 @@ export function ImageNameSection({ layer, onPropChange }: ImageSectionProps) {
       <SectionHeader title={t('rightPanel.layerName', '图层名称')} />
       <div className="px-4">
         <input
+          key={`${layer.id}:${layer.name}`}
           type="text"
-          value={layer.name}
-          onChange={(e) => onPropChange('name', e.target.value)}
+          defaultValue={layer.name}
+          onBlur={(e) => onPropChange('name', e.target.value)}
           className="w-full text-[11px] px-2 py-1.5 bg-[#f5f5f5] border border-transparent hover:border-gray-300 focus:border-blue-500 focus:bg-white rounded outline-none transition-colors"
           placeholder={t('rightPanel.layerNamePlaceholder', '请输入图层名称')}
         />
@@ -144,7 +145,8 @@ export function ImageBorderSection({ layer, onPropChange }: ImageSectionProps) {
             min={0}
             max={50}
             step={1}
-            onChange={(val) => onPropChange('strokeWidth', val)}
+            onChange={(val) => onPropChange('strokeWidth', val, { commit: false })}
+            onChangeEnd={(val) => onPropChange('strokeWidth', val, { commit: true })}
           />
           <span className="text-[10px] text-gray-600 w-6 text-right">{Math.round(layer.strokeWidth ?? 0)}</span>
         </div>
@@ -156,7 +158,8 @@ export function ImageBorderSection({ layer, onPropChange }: ImageSectionProps) {
             min={0}
             max={100}
             step={1}
-            onChange={(val) => onPropChange('borderRadius', val)}
+            onChange={(val) => onPropChange('borderRadius', val, { commit: false })}
+            onChangeEnd={(val) => onPropChange('borderRadius', val, { commit: true })}
           />
           <span className="text-[10px] text-gray-600 w-6 text-right">{Math.round(layer.borderRadius ?? 0)}</span>
         </div>
@@ -179,7 +182,7 @@ function FilterSliderRow({
   value: number;
   min: number;
   max: number;
-  onChange: (v: number) => void;
+  onChange: (v: number, commit: boolean) => void;
 }) {
   // 将 [-1,1] 或 [-2,2] 映射到 [0, 100] 供 Slider 使用
   const sliderVal = Math.round(((value - min) / (max - min)) * 100);
@@ -189,7 +192,8 @@ function FilterSliderRow({
       <Slider
         className="flex-1"
         value={sliderVal}
-        onChange={(v) => onChange(min + (v / 100) * (max - min))}
+        onChange={(v) => onChange(min + (v / 100) * (max - min), false)}
+        onChangeEnd={(v) => onChange(min + (v / 100) * (max - min), true)}
       />
       <span className="text-[10px] text-gray-600 w-8 text-right">
         {value >= 0 ? `+${value.toFixed(1)}` : value.toFixed(1)}
@@ -233,21 +237,21 @@ export function ImageFiltersSection({ layer, onPropChange }: ImageSectionProps) 
           value={brightness}
           min={-1}
           max={1}
-          onChange={(v) => onPropChange('brightness', Math.round(v * 100) / 100)}
+          onChange={(v, commit) => onPropChange('brightness', Math.round(v * 100) / 100, { commit })}
         />
         <FilterSliderRow
           label={t('rightPanel.contrast')}
           value={contrast}
           min={-1}
           max={1}
-          onChange={(v) => onPropChange('contrast', Math.round(v * 100) / 100)}
+          onChange={(v, commit) => onPropChange('contrast', Math.round(v * 100) / 100, { commit })}
         />
         <FilterSliderRow
           label={t('rightPanel.saturation')}
           value={saturation}
           min={-2}
           max={2}
-          onChange={(v) => onPropChange('saturation', Math.round(v * 100) / 100)}
+          onChange={(v, commit) => onPropChange('saturation', Math.round(v * 100) / 100, { commit })}
         />
       </div>
     </div>
@@ -267,7 +271,8 @@ export function ImageLayerPropertiesSection({ layer, onPropChange }: ImageSectio
         <Slider
           className="flex-1"
           value={layer.opacity * 100}
-          onChange={(val) => onPropChange('opacity', val / 100)}
+          onChange={(val) => onPropChange('opacity', val / 100, { commit: false })}
+          onChangeEnd={(val) => onPropChange('opacity', val / 100, { commit: true })}
         />
         <span className="text-[10px] text-gray-600 w-8 text-right">{Math.round(layer.opacity * 100)}%</span>
       </div>

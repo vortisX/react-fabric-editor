@@ -7,6 +7,10 @@ import { LANGUAGES } from '../../../locales';
 export const Header = () => {
   const { t, i18n } = useTranslation();
   const title = useEditorStore((state) => state.document?.title);
+  const canUndo = useEditorStore((state) => state.history.past.length > 0);
+  const canRedo = useEditorStore((state) => state.history.future.length > 0);
+  const undo = useEditorStore((state) => state.undo);
+  const redo = useEditorStore((state) => state.redo);
 
   const handleLanguageChange = (lang: string) => {
     i18n.changeLanguage(lang);
@@ -24,10 +28,10 @@ export const Header = () => {
 
       <div className="flex gap-2 items-center">
         <Tooltip title={t('header.undo')} placement="bottom">
-          <Button variant="text" icon={<UndoIcon />} />
+          <Button variant="text" icon={<UndoIcon />} onClick={undo} disabled={!canUndo} />
         </Tooltip>
         <Tooltip title={t('header.redo')} placement="bottom">
-          <Button variant="text" icon={<RedoIcon />} />
+          <Button variant="text" icon={<RedoIcon />} onClick={redo} disabled={!canRedo} />
         </Tooltip>
         
         <div className="w-px h-4 bg-gray-300 mx-3"></div>

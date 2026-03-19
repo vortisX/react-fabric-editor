@@ -36,7 +36,7 @@ interface HandleScalingParams {
 
 interface HandleModifiedParams {
   event: FabricModifiedEvent;
-  finalizeImageScaling: (img: FabricImageLayer) => void;
+  finalizeImageScaling: (img: FabricImageLayer) => Promise<void>;
   syncLayerTransform: (target: FabricLayerTarget) => void;
 }
 
@@ -81,7 +81,7 @@ export const bindEngineEvents = ({
 
 export const handleSelectionChanged = (target?: FabricObject): void => {
   const id = target ? (target as CustomTextbox).id : null;
-  useEditorStore.getState().setActiveLayer(id ?? null);
+  useEditorStore.getState().setActiveLayer(id ?? null, "engine");
 };
 
 export const handleScaling = ({
@@ -144,11 +144,16 @@ export const handleModified = ({
       target.initDimensions();
       target.autoFitHeight();
     }
-  } else if (target instanceof FabricImage) {
-    finalizeImageScaling(target as FabricImageLayer);
+    syncLayerTransform(targetWithId);
+    return;
   }
 
-  syncLayerTransform(targetWithId);
+  if (target instanceof FabricImage) {
+    void finalizeImageScaling(target as FabricImageLayer).then(() => {
+      syncLayerTransform(targetWithId);
+    });
+    return;
+  }
 };
 
 export const handleTextChanged = (target: FabricObject): void => {
@@ -169,7 +174,7 @@ export const handleTextChanged = (target: FabricObject): void => {
     name,
     width: textbox.width ?? 0,
     height: textbox.height ?? 0,
-  });
+  }, { commit: false, origin: "engine" });
 };
 
 export const syncLiveTransform = ({
@@ -209,7 +214,10 @@ export const syncLiveTransform = ({
       }
     }
 
-    state.updateLayer(target.id, updates as Partial<TextLayer>);
+    state.updateLayer(target.id, updates as Partial<TextLayer>, {
+      commit: false,
+      origin: "engine",
+    });
   });
 
   setSyncTransformRaf(rafId);
@@ -236,5 +244,8 @@ export const syncLayerTransform = (target: FabricLayerTarget): void => {
     (updates as Partial<TextLayer>).fontSize = round1(target.fontSize ?? 12);
   }
 
-  state.updateLayer(target.id, updates as Partial<TextLayer>);
+  state.updateLayer(target.id, updates as Partial<TextLayer>, {
+    commit: true,
+    origin: "engine",
+  });
 };

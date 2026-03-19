@@ -1,8 +1,9 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useEditorStore } from '../../../store/useEditorStore';
 import { engineInstance } from '../../../core/engine';
 import { computeCanvasSizeFromDrag, type DragEdge } from '../../../core/canvasMath';
 import { ZoomControls } from './ZoomControls';
+import type { ImageLayer, TextLayer } from '../../../types/schema';
 
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 2.0;
@@ -85,13 +86,29 @@ function ResizeHandle({ edge, zoom }: { edge: DragEdge; zoom: number }) {
             deltaX: lastDeltaXRef.current / zoom,
             deltaY: lastDeltaYRef.current / zoom,
           });
-          useEditorStore.getState().setCanvasSizePx(Math.round(widthPx), Math.round(heightPx));
+          useEditorStore
+            .getState()
+            .setCanvasSizePx(Math.round(widthPx), Math.round(heightPx), { commit: false });
         });
       }}
       onPointerUp={(e) => {
         if (pointerIdRef.current !== e.pointerId) return;
         e.preventDefault();
         e.stopPropagation();
+        if (rafRef.current !== null) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
+        const { widthPx, heightPx } = computeCanvasSizeFromDrag({
+          edge,
+          startWidthPx: startWRef.current,
+          startHeightPx: startHRef.current,
+          deltaX: lastDeltaXRef.current / zoom,
+          deltaY: lastDeltaYRef.current / zoom,
+        });
+        useEditorStore
+          .getState()
+          .setCanvasSizePx(Math.round(widthPx), Math.round(heightPx), { commit: true });
         pointerIdRef.current = null;
         setIsActive(false);
       }}
@@ -99,6 +116,10 @@ function ResizeHandle({ edge, zoom }: { edge: DragEdge; zoom: number }) {
         if (pointerIdRef.current !== e.pointerId) return;
         e.preventDefault();
         e.stopPropagation();
+        if (rafRef.current !== null) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
         pointerIdRef.current = null;
         setIsActive(false);
       }}
@@ -119,6 +140,8 @@ export const Workspace = () => {
   const zoom = useEditorStore((state) => state.zoom);
   const fitRequest = useEditorStore((state) => state.fitRequest);
   const setZoom = useEditorStore((state) => state.setZoom);
+  const editorCommand = useEditorStore((state) => state.editorCommand);
+  const editorCommandId = useEditorStore((state) => state.editorCommandId);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -157,9 +180,56 @@ export const Workspace = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!editorCommand || !engineInstance.canvas) return;
+
+    if (editorCommand.type === 'selection:set') {
+      if (editorCommand.layerId) {
+        engineInstance.selectLayer(editorCommand.layerId);
+      } else {
+        engineInstance.clearSelection();
+      }
+      return;
+    }
+
+    if (editorCommand.type === 'layer:update') {
+      engineInstance.updateLayerProps(editorCommand.layerId, editorCommand.payload);
+      return;
+    }
+
+    if (editorCommand.type === 'document:load') {
+      engineInstance.loadDocument(editorCommand.document);
+      return;
+    }
+
+    if (editorCommand.type !== 'layer:add') return;
+
+    if (editorCommand.layer.type === 'text') {
+      const measured = engineInstance.addTextLayer(editorCommand.layer as TextLayer);
+      if (!measured) return;
+      useEditorStore.getState().updateLayer(
+        editorCommand.layer.id,
+        measured,
+        { commit: false, origin: 'engine' },
+      );
+      return;
+    }
+
+    void engineInstance
+      .addImageLayer(editorCommand.layer as ImageLayer)
+      .then((measured) => {
+        if (!measured) return;
+        useEditorStore.getState().updateLayer(
+          editorCommand.layer.id,
+          measured,
+          { commit: false, origin: 'engine' },
+        );
+      });
+  }, [editorCommand, editorCommandId]);
+
   // useLayoutEffect 在 DOM 提交后、浏览器绘制前同步执行，
   // 确保 canvas resize 在当帧内完成，避免「CSS 尺寸已更新但 buffer 还是旧的」拉伸帧
-  useLayoutEffect(() => {
+  useEffect(() => {
     engineInstance.resizeCanvas(width, height);
   }, [width, height]);
 
@@ -170,7 +240,7 @@ export const Workspace = () => {
   }, [background, width, height]);
 
   // zoom 变化时通知引擎使用 Fabric 原生 zoom 重绘，canvas buffer 精确对应显示像素，避免字体发虚
-  useLayoutEffect(() => {
+  useEffect(() => {
     engineInstance.setDisplayZoom(zoom);
   }, [zoom]);
 
@@ -182,8 +252,7 @@ export const Workspace = () => {
     if (!doc) return;
     const fit = calcFitZoom(doc.global.width, doc.global.height, vp.clientWidth, vp.clientHeight);
     setZoom(fit);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [setZoom]);
 
   // fitRequest 变化时重新计算适应画布（预设切换、手动触发）
   useEffect(() => {
@@ -205,10 +274,7 @@ export const Workspace = () => {
       // Fabric v7 会创建 upper-canvas（接收鼠标事件）和 lower-canvas（canvasRef）两个兄弟节点。
       // 必须用 wrapperEl（两者共同的父容器 div）来判断点击是否在画布区域内，
       // 而不能用 canvasRef（lower-canvas），否则所有 upper-canvas 上的点击都会被误判为"画布外"。
-      const wrapperEl = engineInstance.canvas?.wrapperEl as HTMLElement | undefined;
-      if (!wrapperEl || !wrapperEl.contains(e.target as Node)) {
-        engineInstance.canvas?.discardActiveObject();
-        engineInstance.canvas?.requestRenderAll();
+      if (!engineInstance.isTargetInsideCanvas(e.target)) {
         useEditorStore.getState().setActiveLayer(null);
       }
     };

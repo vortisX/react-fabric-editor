@@ -271,7 +271,12 @@ export function LayerPropertiesSection({ layer, onPropChange }: { layer: Layer; 
       <SectionHeader title={t('rightPanel.layerProperties')} />
       <div className="px-4 flex items-center gap-3">
         <span className="text-[10px] text-gray-400 font-medium">{t('rightPanel.opacity')}</span>
-        <Slider className="flex-1" value={layer.opacity * 100} onChange={(val) => onPropChange('opacity', val / 100)} />
+        <Slider
+          className="flex-1"
+          value={layer.opacity * 100}
+          onChange={(val) => onPropChange('opacity', val / 100, { commit: false })}
+          onChangeEnd={(val) => onPropChange('opacity', val / 100, { commit: true })}
+        />
         <span className="text-[10px] text-gray-600 w-8 text-right">{Math.round(layer.opacity * 100)}%</span>
       </div>
     </div>

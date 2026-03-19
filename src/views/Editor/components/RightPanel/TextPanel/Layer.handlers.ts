@@ -1,7 +1,5 @@
 import { t } from 'i18next';
 import { useEditorStore } from '../../../../../store/useEditorStore';
-import { engineInstance } from '../../../../../core/engine';
-import { SCHEMA_TO_FABRIC } from '../../../../../core/constants';
 import type { TextLayer } from '../../../../../types/schema';
 
 function buildLayerName(text: string, fallback: string): string {
@@ -9,25 +7,35 @@ function buildLayerName(text: string, fallback: string): string {
   return trimmed.length > 15 ? trimmed.slice(0, 15) + '...' : trimmed;
 }
 
-export type PropChangeHandler = <K extends keyof TextLayer>(key: K, value: TextLayer[K]) => void;
+interface PropChangeOptions {
+  commit?: boolean;
+}
+
+export type PropChangeHandler = <K extends keyof TextLayer>(
+  key: K,
+  value: TextLayer[K],
+  options?: PropChangeOptions,
+) => void;
 
 /**
  * 封装图层属性变更逻辑：
  * 1. 更新 Zustand Store（数据源）
- * 2. 同步到 Fabric 画布（渲染层）
+ * 2. 由 Store 触发引擎同步（渲染层）
  */
-export const handlePropChange = <K extends keyof TextLayer>(layerId: string, key: K, value: TextLayer[K]) => {
+export const handlePropChange = <K extends keyof TextLayer>(
+  layerId: string,
+  key: K,
+  value: TextLayer[K],
+  options?: PropChangeOptions,
+) => {
   if (!layerId) return;
 
-  // 构建 Store 更新
   const storeUpdates: Partial<TextLayer> = { [key]: value };
   if (key === 'content') {
     storeUpdates.name = buildLayerName((value as string) || '', t('rightPanel.emptyText'));
   }
-  useEditorStore.getState().updateLayer(layerId, storeUpdates);
-
-  // 映射为 Fabric 属性名并同步画布
-  const fabricKey = SCHEMA_TO_FABRIC[key as string] ?? (key as string);
-  const fabricValue = key === 'letterSpacing' ? (value as number) * 10 : value;
-  engineInstance.updateLayerProps(layerId, { [fabricKey]: fabricValue });
+  useEditorStore.getState().updateLayer(layerId, storeUpdates, {
+    commit: options?.commit ?? true,
+    origin: 'ui',
+  });
 };

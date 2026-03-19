@@ -36,7 +36,7 @@ export function handlePresetChange(presetId: CanvasPresetId): void {
 
   const { setCanvasUnit, setCanvasSizePx, requestFit } = useEditorStore.getState();
   setCanvasUnit(preset.unit);
-  setCanvasSizePx(next.widthPx, next.heightPx);
+  setCanvasSizePx(next.widthPx, next.heightPx, { commit: true });
   // 切换预设后自动适应画布，防止画布过大或过小
   requestFit();
 }
@@ -67,9 +67,9 @@ export function applyDimensionChange(
   const heightPx = document.global.height;
 
   if (kind === 'width') {
-    setCanvasSizePx(nextPx, heightPx);
+    setCanvasSizePx(nextPx, heightPx, { commit: true });
   } else {
-    setCanvasSizePx(widthPx, nextPx);
+    setCanvasSizePx(widthPx, nextPx, { commit: true });
   }
 
   return null;

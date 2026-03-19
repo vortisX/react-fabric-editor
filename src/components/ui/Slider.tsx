@@ -1,9 +1,10 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useEffect } from 'react';
 import { cn } from '../../utils/cn';
 
 interface SliderProps {
   value: number;
   onChange?: (value: number) => void;
+  onChangeEnd?: (value: number) => void;
   min?: number;
   max?: number;
   step?: number;
@@ -11,19 +12,30 @@ interface SliderProps {
 }
 
 export const Slider: React.FC<SliderProps> = ({
-  value, onChange, min = 0, max = 100, step = 1, className,
+  value, onChange, onChangeEnd, min = 0, max = 100, step = 1, className,
 }) => {
   const trackRef = useRef<HTMLDivElement>(null);
+  const valueRef = useRef(value);
   const percent = ((value - min) / (max - min)) * 100;
 
-  const handleDrag = useCallback((clientX: number) => {
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+
+  const getValueFromClientX = useCallback((clientX: number) => {
     const rect = trackRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    if (!rect) return valueRef.current;
     const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     const raw = min + ratio * (max - min);
     const stepped = Math.round(raw / step) * step;
-    onChange?.(Math.max(min, Math.min(max, stepped)));
-  }, [min, max, step, onChange]);
+    return Math.max(min, Math.min(max, stepped));
+  }, [min, max, step]);
+
+  const handleDrag = useCallback((clientX: number) => {
+    const nextValue = getValueFromClientX(clientX);
+    valueRef.current = nextValue;
+    onChange?.(nextValue);
+  }, [getValueFromClientX, onChange]);
 
   const onPointerDown = (e: React.PointerEvent) => {
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -36,6 +48,8 @@ export const Slider: React.FC<SliderProps> = ({
       className={cn('relative h-5 flex items-center cursor-pointer select-none', className)}
       onPointerDown={onPointerDown}
       onPointerMove={(e) => { if (e.buttons === 1) handleDrag(e.clientX); }}
+      onPointerUp={() => onChangeEnd?.(valueRef.current)}
+      onPointerCancel={() => onChangeEnd?.(valueRef.current)}
     >
       {/* 轨道 */}
       <div className="absolute w-full h-1 bg-gray-200 rounded-full">

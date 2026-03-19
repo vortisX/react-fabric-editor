@@ -15,7 +15,12 @@ import {
   syncLiveTransform,
 } from "./events";
 import { fillStyleToFabric } from "./fill";
-import { addImageLayerToCanvas, addTextLayerToCanvas } from "./layers";
+import {
+  addImageLayerToCanvas,
+  addTextLayerToCanvas,
+  finalizeImageScale,
+  loadLayerStackToCanvas,
+} from "./layers";
 import { findObjectById, readImageLayer } from "./queries";
 import { updateFabricLayerProps } from "./update";
 import type { FabricImageLayer, FabricLayerTarget, LayerMeasurement } from "./types";
@@ -95,6 +100,17 @@ export class EditorEngine {
     this.canvas.requestRenderAll();
   }
 
+  public clearSelection(): void {
+    if (!this.canvas) return;
+    this.canvas.discardActiveObject();
+    this.canvas.requestRenderAll();
+  }
+
+  public isTargetInsideCanvas(target: EventTarget | null): boolean {
+    const wrapperEl = this.canvas?.wrapperEl as HTMLElement | undefined;
+    return !!wrapperEl && wrapperEl.contains(target as Node);
+  }
+
   public addTextLayer(layer: TextLayer): LayerMeasurement | undefined {
     if (!this.canvas) return undefined;
     return addTextLayerToCanvas(this.canvas, layer, this.docWidth);
@@ -109,6 +125,11 @@ export class EditorEngine {
     const page = doc.pages[0];
     if (page?.background) {
       this.setBackground(page.background, doc.global.width, doc.global.height);
+    }
+
+    if (page?.layers.length) {
+      void loadLayerStackToCanvas(this.canvas, page.layers);
+      return;
     }
 
     this.canvas.requestRenderAll();
@@ -188,11 +209,9 @@ export class EditorEngine {
   };
 
   /** 将图片图层的 scaleX/scaleY 转换为实际 width/height，确保导出 JSON 中 scale 始终为 1 */
-  private finalizeImageScaling = (img: FabricImageLayer): void => {
-    // 图片图层不再强制将 scale 重置为 1，
-    // 因为修改 FabricImage.width 会导致裁剪。
-    // 我们仅需确保同步到 Store 时计算正确即可 (syncLayerTransform 已处理)。
-    img.setCoords();
+  private finalizeImageScaling = async (img: FabricImageLayer): Promise<void> => {
+    await finalizeImageScale(img);
+    this.canvas?.requestRenderAll();
   };
 
   private setSyncTransformRaf = (value: number | null): void => {

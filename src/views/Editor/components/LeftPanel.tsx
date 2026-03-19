@@ -2,7 +2,6 @@ import { useTranslation } from 'react-i18next';
 import { Tooltip } from '../../../components/ui';
 import { GridIcon, TypeIcon, ImageIcon } from '../../../components/ui/Icons';
 import { useEditorStore } from '../../../store/useEditorStore';
-import { engineInstance } from '../../../core/engine';
 import { genId } from '../../../utils/uuid';
 import type { TextLayer, ImageLayer } from '../../../types/schema';
 
@@ -43,13 +42,6 @@ export const LeftPanel = () => {
       textAlign: 'left'
     };
 
-    const measured = engineInstance.addTextLayer(newTextLayer);
-    if (measured) {
-      newTextLayer.x = measured.x;
-      newTextLayer.y = measured.y;
-      newTextLayer.width = measured.width;
-      newTextLayer.height = measured.height;
-    }
     addLayer(newTextLayer);
   };
 
@@ -83,13 +75,6 @@ export const LeftPanel = () => {
           lockMovement: false,
         };
 
-        const measured = await engineInstance.addImageLayer(newImageLayer);
-        if (measured) {
-          newImageLayer.x = measured.x;
-          newImageLayer.y = measured.y;
-          newImageLayer.width = measured.width;
-          newImageLayer.height = measured.height;
-        }
         addLayer(newImageLayer);
       };
       reader.readAsDataURL(file);
@@ -99,7 +84,6 @@ export const LeftPanel = () => {
 
   const handleLayerClick = (id: string) => {
     setActiveLayer(id);
-    engineInstance.selectLayer(id);
   };
 
   const layers = document?.pages[0]?.layers || [];

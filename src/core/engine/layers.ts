@@ -8,7 +8,7 @@ import {
 } from "fabric";
 
 import { useEditorStore } from "../../store/useEditorStore";
-import type { FillStyle, ImageLayer, TextLayer } from "../../types/schema";
+import type { FillStyle, ImageLayer, Layer, TextLayer } from "../../types/schema";
 import { EDITOR_GLOBAL_STYLE } from "../constants";
 import { CustomTextbox } from "../CustomTextbox";
 import { applyLayerControls } from "../layerControls";
@@ -30,6 +30,72 @@ interface UpdateImageLayerPropsParams {
   readStoreLayer: () => ImageLayer | undefined;
 }
 
+const FILTER_KEYS = new Set(["brightness", "contrast", "saturation"]);
+
+const loadHtmlImage = (src: string): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const img = new window.Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("image_load_failed"));
+    img.src = src;
+  });
+
+const resizeImageElement = async (
+  source: CanvasImageSource,
+  width: number,
+  height: number,
+): Promise<HTMLImageElement> => {
+  const canvas = window.document.createElement("canvas");
+  canvas.width = Math.max(Math.round(width), 1);
+  canvas.height = Math.max(Math.round(height), 1);
+
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("canvas_context_unavailable");
+  }
+
+  context.drawImage(source, 0, 0, canvas.width, canvas.height);
+  return loadHtmlImage(canvas.toDataURL("image/png"));
+};
+
+const updateImageClipPath = (
+  img: FabricImageLayer,
+  width: number,
+  height: number,
+  borderRadius: number,
+): void => {
+  if (borderRadius <= 0) {
+    img.clipPath = undefined;
+    return;
+  }
+
+  if (img.clipPath instanceof Rect) {
+    img.clipPath.set({ width, height, rx: borderRadius, ry: borderRadius });
+    return;
+  }
+
+  img.clipPath = new Rect({
+    width,
+    height,
+    rx: borderRadius,
+    ry: borderRadius,
+    originX: "center",
+    originY: "center",
+  });
+};
+
+const normalizeImageObjectSize = async (
+  img: FabricImageLayer,
+  width: number,
+  height: number,
+): Promise<void> => {
+  const source = img.getElement() as CanvasImageSource;
+  const resizedElement = await resizeImageElement(source, width, height);
+  img.setElement(resizedElement, { width, height });
+  img.set({ width, height, scaleX: 1, scaleY: 1, dirty: true });
+  img.setCoords();
+};
+
 export const applyImageFilters = (
   img: FabricImage,
   layer: Pick<ImageLayer, "brightness" | "contrast" | "saturation">,
@@ -50,51 +116,20 @@ export const applyImageFilters = (
   img.applyFilters();
 };
 
-/**
- * 添加图片图层到画布，并返回居中后的实际坐标和尺寸。
- * 图片缩放到画布 80% 以内（保持宽高比），scaleX/scaleY 归一化为 1。
- */
-export const addImageLayerToCanvas = async ({
-  canvas,
-  layer,
-  docWidth,
-  docHeight,
-  displayZoom,
-}: AddImageLayerParams): Promise<LayerMeasurement | undefined> => {
-  let img: FabricImage;
-  try {
-    img = await FabricImage.fromURL(layer.url);
-  } catch {
-    return undefined;
-  }
-
-  const naturalWidth = img.width ?? 1;
-  const naturalHeight = img.height ?? 1;
-
-  // 确保 docWidth/docHeight 有效，如果未初始化则尝试从 canvas 获取（需除以 zoom）
-  const resolvedDocWidth = docWidth || canvas.width / displayZoom || 800;
-  const resolvedDocHeight = docHeight || canvas.height / displayZoom || 600;
-
-  // 按比例缩放：确保宽高均不超过画布的 80%
-  const maxWidth = resolvedDocWidth * 0.8;
-  const maxHeight = resolvedDocHeight * 0.8;
-  const scale = Math.min(1, maxWidth / naturalWidth, maxHeight / naturalHeight);
-  const finalWidth = Math.round(naturalWidth * scale);
-  const finalHeight = Math.round(naturalHeight * scale);
-
-  // 图片图层：使用 scaleX/scaleY 进行缩放，width/height 保持自然尺寸
-  // 这样避免了 FabricImage 在 width 变化时发生裁剪
-  const imgWithId = img as FabricImageLayer;
-  imgWithId.id = layer.id;
-
+const applyBaseImageProps = (
+  img: FabricImageLayer,
+  layer: ImageLayer,
+  width: number,
+  height: number,
+): void => {
   img.set({
-    // Fabric v7 构造时 ownDefaults 会以实例属性覆盖原型，
-    // 必须在此处显式重新应用全局控件皮肤，确保与文字图层外观一致
     ...EDITOR_GLOBAL_STYLE,
-    width: naturalWidth,
-    height: naturalHeight,
-    scaleX: scale,
-    scaleY: scale,
+    width,
+    height,
+    scaleX: 1,
+    scaleY: 1,
+    left: layer.x,
+    top: layer.y,
     angle: layer.rotation ?? 0,
     opacity: layer.opacity ?? 1,
     flipX: layer.flipX ?? false,
@@ -105,25 +140,66 @@ export const addImageLayerToCanvas = async ({
     originX: "left",
     originY: "top",
   });
-
-  // 圆角遮罩：通过 Rect clipPath 实现
-  const radius = layer.borderRadius ?? 0;
-  if (radius > 0) {
-    img.clipPath = new Rect({
-      width: finalWidth,
-      height: finalHeight,
-      rx: radius,
-      ry: radius,
-      originX: "center",
-      originY: "center",
-    });
-  }
-
+  updateImageClipPath(img, width, height, layer.borderRadius ?? 0);
   applyImageFilters(img, layer);
   applyLayerControls(img);
+};
+
+const createImageObject = async (
+  layer: ImageLayer,
+  width: number,
+  height: number,
+): Promise<FabricImageLayer> => {
+  const img = (await FabricImage.fromURL(layer.url)) as FabricImageLayer;
+  img.id = layer.id;
+
+  const normalizedElement = await resizeImageElement(
+    img.getElement() as CanvasImageSource,
+    width,
+    height,
+  );
+  img.setElement(normalizedElement, { width, height });
+  applyBaseImageProps(img, layer, width, height);
+  return img;
+};
+
+/**
+ * 添加图片图层到画布，并返回居中后的实际坐标和尺寸。
+ * 图片缩放到画布 80% 以内（保持宽高比），并在对象层面归一化为 width/height + scale=1。
+ */
+export const addImageLayerToCanvas = async ({
+  canvas,
+  layer,
+  docWidth,
+  docHeight,
+  displayZoom,
+}: AddImageLayerParams): Promise<LayerMeasurement | undefined> => {
+  let previewImage: FabricImage;
+  try {
+    previewImage = await FabricImage.fromURL(layer.url);
+  } catch {
+    return undefined;
+  }
+
+  const naturalWidth = previewImage.width ?? 1;
+  const naturalHeight = previewImage.height ?? 1;
+
+  const resolvedDocWidth = docWidth || canvas.width / displayZoom || 800;
+  const resolvedDocHeight = docHeight || canvas.height / displayZoom || 600;
+  const maxWidth = resolvedDocWidth * 0.8;
+  const maxHeight = resolvedDocHeight * 0.8;
+  const scale = Math.min(1, maxWidth / naturalWidth, maxHeight / naturalHeight);
+  const finalWidth = Math.round(naturalWidth * scale);
+  const finalHeight = Math.round(naturalHeight * scale);
+
+  let img: FabricImageLayer;
+  try {
+    img = await createImageObject(layer, finalWidth, finalHeight);
+  } catch {
+    return undefined;
+  }
 
   canvas.add(img);
-  // 必须用 viewportCenterObject：当 displayZoom != 1 时，centerObject 坐标会偏移
   canvas.viewportCenterObject(img);
   img.setCoords();
 
@@ -138,52 +214,87 @@ export const addImageLayerToCanvas = async ({
   };
 };
 
+export const loadLayerStackToCanvas = async (
+  canvas: Canvas,
+  layers: Layer[],
+): Promise<void> => {
+  for (const layer of layers) {
+    if (layer.type === "text") {
+      const node = CustomTextbox.fromLayer(layer);
+      canvas.add(node as unknown as FabricObject);
+      node.setCoords();
+      continue;
+    }
+
+    try {
+      const img = await createImageObject(layer, layer.width, layer.height);
+      canvas.add(img);
+      img.setCoords();
+    } catch {
+      // 图片加载失败时跳过，避免阻塞整个文档恢复
+    }
+  }
+
+  canvas.requestRenderAll();
+};
+
 /**
  * 图片图层属性更新：处理滤镜、圆角 clipPath、翻转等图片专属逻辑。
  */
-export const updateImageLayerProps = ({
+export const updateImageLayerProps = async ({
   img,
   props,
   readStoreLayer,
-}: UpdateImageLayerPropsParams): void => {
-  const filterKeys = new Set(["brightness", "contrast", "saturation"]);
-  const hasFilterChange = Object.keys(props).some((key) => filterKeys.has(key));
-
-  // 提取滤镜相关属性，其余属性直接 set
+}: UpdateImageLayerPropsParams): Promise<void> => {
   const directProps: Record<string, unknown> = {};
   const filterOverrides: Partial<
     Pick<ImageLayer, "brightness" | "contrast" | "saturation">
   > = {};
 
+  let nextWidth: number | null = null;
+  let nextHeight: number | null = null;
+  let nextBorderRadius: number | null = null;
+
   for (const [key, value] of Object.entries(props)) {
-    if (filterKeys.has(key)) {
+    if (FILTER_KEYS.has(key)) {
       (filterOverrides as Record<string, unknown>)[key] = value;
       continue;
     }
 
+    if (key === "width") {
+      nextWidth = Math.max(Number(value ?? img.width ?? 1), 1);
+      continue;
+    }
+
+    if (key === "height") {
+      nextHeight = Math.max(Number(value ?? img.height ?? 1), 1);
+      continue;
+    }
+
     if (key === "borderRadius") {
-      // 更新或新建 clipPath
-      const radius = (value as number) ?? 0;
-      if (radius > 0) {
-        if (img.clipPath instanceof Rect) {
-          img.clipPath.set({ rx: radius, ry: radius });
-        } else {
-          img.clipPath = new Rect({
-            width: img.width ?? 100,
-            height: img.height ?? 100,
-            rx: radius,
-            ry: radius,
-            originX: "center",
-            originY: "center",
-          });
-        }
-      } else {
-        img.clipPath = undefined;
-      }
+      nextBorderRadius = Number(value ?? 0);
       continue;
     }
 
     directProps[key] = value;
+  }
+
+  const targetWidth = nextWidth ?? (img.width ?? 1);
+  const targetHeight = nextHeight ?? (img.height ?? 1);
+
+  if (nextWidth !== null || nextHeight !== null) {
+    try {
+      await normalizeImageObjectSize(img, targetWidth, targetHeight);
+    } catch {
+      img.set({
+        width: targetWidth,
+        height: targetHeight,
+        scaleX: 1,
+        scaleY: 1,
+        dirty: true,
+      });
+      img.setCoords();
+    }
   }
 
   if (Object.keys(directProps).length > 0) {
@@ -191,11 +302,15 @@ export const updateImageLayerProps = ({
     img.setCoords();
   }
 
-  // 滤镜需要从 Store 读取最新完整状态后重新全量应用
+  if (nextBorderRadius !== null) {
+    updateImageClipPath(img, targetWidth, targetHeight, nextBorderRadius);
+  }
+
+  const hasFilterChange = Object.keys(props).some((key) => FILTER_KEYS.has(key));
   if (!hasFilterChange) return;
 
   const storeLayer = readStoreLayer();
-  const merged = {
+  applyImageFilters(img, {
     brightness: (filterOverrides.brightness ?? storeLayer?.brightness) as
       | number
       | undefined,
@@ -205,9 +320,22 @@ export const updateImageLayerProps = ({
     saturation: (filterOverrides.saturation ?? storeLayer?.saturation) as
       | number
       | undefined,
-  };
+  });
+};
 
-  applyImageFilters(img, merged);
+export const finalizeImageScale = async (img: FabricImageLayer): Promise<void> => {
+  const finalWidth = Math.max(Math.round((img.width ?? 1) * (img.scaleX ?? 1)), 1);
+  const finalHeight = Math.max(Math.round((img.height ?? 1) * (img.scaleY ?? 1)), 1);
+
+  try {
+    await normalizeImageObjectSize(img, finalWidth, finalHeight);
+  } catch {
+    img.set({ width: finalWidth, height: finalHeight, scaleX: 1, scaleY: 1 });
+    img.setCoords();
+  }
+
+  const radius = img.clipPath instanceof Rect ? img.clipPath.rx ?? 0 : 0;
+  updateImageClipPath(img, finalWidth, finalHeight, radius);
 };
 
 export const buildTextLayerProps = (
@@ -216,7 +344,6 @@ export const buildTextLayerProps = (
 ): Record<string, unknown> => {
   const finalProps: Record<string, unknown> = { ...props, dirty: true };
 
-  // fill 属性需要将 FillStyle 转换为 Fabric Gradient
   if (finalProps.fill !== undefined) {
     const width = (target as CustomTextbox).width ?? 100;
     const height = (target as CustomTextbox).height ?? 100;
@@ -237,9 +364,8 @@ export const buildTextLayerProps = (
 export const shouldHandleTextLayoutUpdate = (
   target: FabricObject,
   props: Record<string, unknown>,
-): target is Textbox => {
-  return LAYOUT_KEYS.some((key) => props[key] !== undefined) && target instanceof Textbox;
-};
+): target is Textbox =>
+  LAYOUT_KEYS.some((key) => props[key] !== undefined) && target instanceof Textbox;
 
 export const handleTextLayoutUpdate = (
   target: Textbox,
@@ -255,10 +381,14 @@ export const handleTextLayoutUpdate = (
     const id = (target as CustomTextbox).id;
     if (!id) return;
 
-    useEditorStore.getState().updateLayer(id, {
-      width: target.width ?? 0,
-      height: target.height ?? 0,
-    });
+    useEditorStore.getState().updateLayer(
+      id,
+      {
+        width: target.width ?? 0,
+        height: target.height ?? 0,
+      },
+      { commit: false, origin: "engine" },
+    );
   });
 };
 
@@ -267,17 +397,11 @@ export const addTextLayerToCanvas = (
   layer: TextLayer,
   docWidth: number,
 ): LayerMeasurement | undefined => {
-  // 必须使用文档原始宽度（不含 displayZoom），因为 Fabric 对象坐标始终在文档空间，
-  // canvas.getWidth() 返回的是 docWidth * displayZoom，会污染文本宽度计算
   const maxTextWidth = docWidth * 0.9;
-
-  // 先用足够大的宽度创建，让文字排成一行以便测量
   const node = CustomTextbox.fromLayer({ ...layer, width: maxTextWidth });
   node.initDimensions();
 
-  // 测量文字自然宽度（一行所需的宽度）
   const naturalWidth = node.calcTextWidth();
-  // 宽度：优先一行显示，超出画布 90% 则限制换行
   const finalWidth = Math.min(naturalWidth + 2, maxTextWidth);
 
   node.set({ width: finalWidth });
@@ -290,9 +414,6 @@ export const addTextLayerToCanvas = (
   node.set({ height: finalHeight });
   node._manualHeight = finalHeight;
 
-  // 必须用 viewportCenterObject 而非 centerObject：
-  // centerObject 使用 CSS 像素坐标（docWidth * zoom / 2），zoom != 1 时会偏移；
-  // viewportCenterObject 会通过逆视口变换还原为文档坐标（docWidth / 2），始终居中
   canvas.add(node as unknown as FabricObject);
   canvas.viewportCenterObject(node as unknown as FabricObject);
   node.setCoords();

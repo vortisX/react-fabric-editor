@@ -81,13 +81,13 @@ export function CanvasLayoutSection() {
     const page = doc.pages.find((p) => p.pageId === s.currentPageId) ?? doc.pages[0];
     return page?.background ?? null;
   });
-  const canUndo = useEditorStore((s) => s.backgroundHistory.past.length > 0);
-  const canRedo = useEditorStore((s) => s.backgroundHistory.future.length > 0);
+  const canUndo = useEditorStore((s) => s.history.past.length > 0);
+  const canRedo = useEditorStore((s) => s.history.future.length > 0);
 
   const setCanvasUnit = useEditorStore((s) => s.setCanvasUnit);
   const setPageBackground = useEditorStore((s) => s.setPageBackground);
-  const undoBackground = useEditorStore((s) => s.undoBackground);
-  const redoBackground = useEditorStore((s) => s.redoBackground);
+  const undo = useEditorStore((s) => s.undo);
+  const redo = useEditorStore((s) => s.redo);
 
   const selectedPresetId = useMemo(() => matchCanvasPresetId(widthPx, heightPx), [widthPx, heightPx]);
 
@@ -155,10 +155,10 @@ export function CanvasLayoutSection() {
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-gray-500 font-medium">{t('rightPanel.backgroundColor')}</span>
             <div className="flex items-center gap-1">
-              <Button variant="text" size="small" className="text-gray-600" onClick={undoBackground} disabled={!canUndo}>
+              <Button variant="text" size="small" className="text-gray-600" onClick={undo} disabled={!canUndo}>
                 {t('rightPanel.undoAction')}
               </Button>
-              <Button variant="text" size="small" className="text-gray-600" onClick={redoBackground} disabled={!canRedo}>
+              <Button variant="text" size="small" className="text-gray-600" onClick={redo} disabled={!canRedo}>
                 {t('rightPanel.redoAction')}
               </Button>
             </div>
