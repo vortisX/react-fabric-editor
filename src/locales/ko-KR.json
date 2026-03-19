@@ -83,7 +83,15 @@
     "contrast": "대비",
     "saturation": "채도",
     "resetFilters": "초기화",
-    "imageAppearance": "외관"
+    "imageAppearance": "외관",
+    "layerName": "레이어 이름",
+    "layerNamePlaceholder": "레이어 이름 입력",
+    "canvasUnitPx": "px",
+    "canvasUnitMm": "mm",
+    "canvasUnitCm": "cm",
+    "canvasUnitIn": "in",
+    "canvasWidthShort": "W",
+    "canvasHeightShort": "H"
   },
   "zoom": {
     "zoomIn": "확대",
@@ -102,5 +110,17 @@
     "monospace": "고정폭",
     "chillHuoFangSong": "寒蝉活仿宋",
     "aaKuangPaiShouShu": "Aa狂派手書"
+  },
+  "canvasPresets": {
+    "custom": "사용자 지정",
+    "square1000": "정사각형 1000×1000 px",
+    "xiaohongshu34": "샤오홍슈 게시물 (3:4) 1242×1656 px",
+    "wechatHead": "위챗 커버 1800×766 px",
+    "wechatSub11": "위챗 보조 이미지 (1:1) 1000×1000 px",
+    "a4": "A4 210×297 px",
+    "a3": "A3 297×420 px",
+    "a5": "A5 148×210 px",
+    "photo1Inch": "증명사진 1인치 25×35 mm",
+    "photo2Inch": "증명사진 2인치 35×49 mm"
   }
 }

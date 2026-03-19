@@ -29,7 +29,6 @@ const OMITTED_SCHEMA_KEYS = new Set([
   "name",
   "locked",
   "lockMovement",
-  "visible",
 ]);
 
 const mapSchemaPatchToFabricProps = (

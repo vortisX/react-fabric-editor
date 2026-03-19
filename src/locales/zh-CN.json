@@ -83,7 +83,15 @@
     "contrast": "对比度",
     "saturation": "饱和度",
     "resetFilters": "重置",
-    "imageAppearance": "外观样式"
+    "imageAppearance": "外观样式",
+    "layerName": "图层名称",
+    "layerNamePlaceholder": "请输入图层名称",
+    "canvasUnitPx": "px",
+    "canvasUnitMm": "mm",
+    "canvasUnitCm": "cm",
+    "canvasUnitIn": "in",
+    "canvasWidthShort": "W",
+    "canvasHeightShort": "H"
   },
   "zoom": {
     "zoomIn": "放大",
@@ -102,5 +110,17 @@
     "monospace": "等宽体",
     "chillHuoFangSong": "寒蝉活仿宋",
     "aaKuangPaiShouShu": "Aa狂派手书"
+  },
+  "canvasPresets": {
+    "custom": "自定义",
+    "square1000": "正方形 1000×1000 px",
+    "xiaohongshu34": "小红书配图（3:4）1242×1656 px",
+    "wechatHead": "公众号首图 1800×766 px",
+    "wechatSub11": "公众号次图（1:1）1000×1000 px",
+    "a4": "A4 纸 210×297 px",
+    "a3": "A3 纸 297×420 px",
+    "a5": "A5 纸 148×210 px",
+    "photo1Inch": "证件照 1 寸 25×35 mm",
+    "photo2Inch": "证件照 2 寸 35×49 mm"
   }
 }

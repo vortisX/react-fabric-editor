@@ -83,7 +83,15 @@
     "contrast": "Contrast",
     "saturation": "Saturate",
     "resetFilters": "Reset",
-    "imageAppearance": "Appearance"
+    "imageAppearance": "Appearance",
+    "layerName": "Layer Name",
+    "layerNamePlaceholder": "Enter layer name",
+    "canvasUnitPx": "px",
+    "canvasUnitMm": "mm",
+    "canvasUnitCm": "cm",
+    "canvasUnitIn": "in",
+    "canvasWidthShort": "W",
+    "canvasHeightShort": "H"
   },
   "zoom": {
     "zoomIn": "Zoom In",
@@ -102,5 +110,17 @@
     "monospace": "Monospace",
     "chillHuoFangSong": "Chill Huo FangSong",
     "aaKuangPaiShouShu": "Aa KuangPai ShouShu"
+  },
+  "canvasPresets": {
+    "custom": "Custom",
+    "square1000": "Square 1000×1000 px",
+    "xiaohongshu34": "Xiaohongshu Post (3:4) 1242×1656 px",
+    "wechatHead": "WeChat Cover 1800×766 px",
+    "wechatSub11": "WeChat Secondary (1:1) 1000×1000 px",
+    "a4": "A4 210×297 px",
+    "a3": "A3 297×420 px",
+    "a5": "A5 148×210 px",
+    "photo1Inch": "ID Photo 1 inch 25×35 mm",
+    "photo2Inch": "ID Photo 2 inch 35×49 mm"
   }
 }

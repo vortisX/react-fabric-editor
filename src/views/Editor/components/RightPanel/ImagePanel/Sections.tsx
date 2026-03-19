@@ -39,7 +39,7 @@ export function ImageNameSection({ layer, onPropChange }: ImageSectionProps) {
 
   return (
     <div className="flex flex-col border-b border-gray-100 pb-3">
-      <SectionHeader title={t('rightPanel.layerName', '图层名称')} />
+      <SectionHeader title={t('rightPanel.layerName')} />
       <div className="px-4">
         <input
           key={`${layer.id}:${layer.name}`}
@@ -47,7 +47,7 @@ export function ImageNameSection({ layer, onPropChange }: ImageSectionProps) {
           defaultValue={layer.name}
           onBlur={(e) => onPropChange('name', e.target.value)}
           className="w-full text-[11px] px-2 py-1.5 bg-[#f5f5f5] border border-transparent hover:border-gray-300 focus:border-blue-500 focus:bg-white rounded outline-none transition-colors"
-          placeholder={t('rightPanel.layerNamePlaceholder', '请输入图层名称')}
+          placeholder={t('rightPanel.layerNamePlaceholder')}
         />
       </div>
     </div>

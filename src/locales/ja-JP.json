@@ -83,7 +83,15 @@
     "contrast": "コントラスト",
     "saturation": "彩度",
     "resetFilters": "リセット",
-    "imageAppearance": "外観"
+    "imageAppearance": "外観",
+    "layerName": "レイヤー名",
+    "layerNamePlaceholder": "レイヤー名を入力",
+    "canvasUnitPx": "px",
+    "canvasUnitMm": "mm",
+    "canvasUnitCm": "cm",
+    "canvasUnitIn": "in",
+    "canvasWidthShort": "W",
+    "canvasHeightShort": "H"
   },
   "zoom": {
     "zoomIn": "拡大",
@@ -102,5 +110,17 @@
     "monospace": "等幅フォント",
     "chillHuoFangSong": "寒蝉活仿宋",
     "aaKuangPaiShouShu": "Aa狂派手書"
+  },
+  "canvasPresets": {
+    "custom": "カスタム",
+    "square1000": "正方形 1000×1000 px",
+    "xiaohongshu34": "小紅書投稿（3:4）1242×1656 px",
+    "wechatHead": "WeChat カバー 1800×766 px",
+    "wechatSub11": "WeChat サブ画像（1:1）1000×1000 px",
+    "a4": "A4 210×297 px",
+    "a3": "A3 297×420 px",
+    "a5": "A5 148×210 px",
+    "photo1Inch": "証明写真 1インチ 25×35 mm",
+    "photo2Inch": "証明写真 2インチ 35×49 mm"
   }
 }

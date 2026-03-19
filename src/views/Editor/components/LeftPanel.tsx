@@ -32,6 +32,7 @@ export const LeftPanel = () => {
       height: 0,
       rotation: 0,
       opacity: 1,
+      visible: true,
       locked: false,
       lockMovement: false,
       content: t('leftPanel.defaultTextContent'),
@@ -71,6 +72,7 @@ export const LeftPanel = () => {
           height: 0,
           rotation: 0,
           opacity: 1,
+          visible: true,
           locked: false,
           lockMovement: false,
         };

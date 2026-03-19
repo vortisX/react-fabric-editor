@@ -13,13 +13,6 @@ import {
   applyDimensionChange,
 } from './CanvasLayout.handlers';
 
-const UNIT_OPTIONS = [
-  { value: 'px', label: 'px' },
-  { value: 'mm', label: 'mm' },
-  { value: 'cm', label: 'cm' },
-  { value: 'in', label: 'in' },
-];
-
 function roundTo(n: number, digits: number) {
   const m = Math.pow(10, digits);
   return Math.round(n * m) / m;
@@ -71,6 +64,15 @@ function RealtimeNumberInput(props: {
 
 export function CanvasLayoutSection() {
   const { t } = useTranslation();
+  const unitOptions = useMemo(
+    () => [
+      { value: 'px', label: t('rightPanel.canvasUnitPx') },
+      { value: 'mm', label: t('rightPanel.canvasUnitMm') },
+      { value: 'cm', label: t('rightPanel.canvasUnitCm') },
+      { value: 'in', label: t('rightPanel.canvasUnitIn') },
+    ],
+    [t],
+  );
   const hasDocument = useEditorStore((s) => s.document !== null);
   const widthPx = useEditorStore((s) => s.document?.global.width ?? 0);
   const heightPx = useEditorStore((s) => s.document?.global.height ?? 0);
@@ -132,20 +134,23 @@ export function CanvasLayoutSection() {
         <Select
           value={selectedPresetId}
           onChange={(id) => handlePresetChange(id as Parameters<typeof handlePresetChange>[0])}
-          options={CANVAS_PRESETS.map((p) => ({ value: p.id, label: p.label }))}
+          options={CANVAS_PRESETS.map((preset) => ({
+            value: preset.id,
+            label: t(preset.labelKey),
+          }))}
         />
 
         <div className="grid grid-cols-2 gap-2">
           <div className="flex items-center bg-[#f5f5f5] rounded px-2 py-0.5 border border-transparent hover:border-gray-300 transition-colors">
-            <span className="text-[10px] text-gray-400 font-medium w-8 select-none flex items-center justify-center">W</span>
+            <span className="text-[10px] text-gray-400 font-medium w-8 select-none flex items-center justify-center">{t('rightPanel.canvasWidthShort')}</span>
             <RealtimeNumberInput value={widthDisplay} onChange={handleWidthChange} invalid={!!widthError} />
           </div>
-          <Select value={unit} onChange={handleUnitChange} options={UNIT_OPTIONS} />
+          <Select value={unit} onChange={handleUnitChange} options={unitOptions} />
           <div className="flex items-center bg-[#f5f5f5] rounded px-2 py-0.5 border border-transparent hover:border-gray-300 transition-colors">
-            <span className="text-[10px] text-gray-400 font-medium w-8 select-none flex items-center justify-center">H</span>
+            <span className="text-[10px] text-gray-400 font-medium w-8 select-none flex items-center justify-center">{t('rightPanel.canvasHeightShort')}</span>
             <RealtimeNumberInput value={heightDisplay} onChange={handleHeightChange} invalid={!!heightError} />
           </div>
-          <Select value={unit} onChange={handleUnitChange} options={UNIT_OPTIONS} />
+          <Select value={unit} onChange={handleUnitChange} options={unitOptions} />
         </div>
         {widthError || heightError ? (
           <div className="text-[10px] text-red-600 font-medium">{widthError ?? heightError}</div>

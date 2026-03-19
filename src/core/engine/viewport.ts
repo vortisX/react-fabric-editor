@@ -27,7 +27,5 @@ export const applyCanvasSize = ({
   canvas.setDimensions({ width, height });
   canvas.calcOffset();
 
-  // 必须同步 renderAll：setDimensions 已清空 context，requestRenderAll 是异步 RAF，
-  // 二者之间有一帧空白 -> 文字闪烁
-  canvas.renderAll();
+  canvas.requestRenderAll();
 };

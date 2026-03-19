@@ -132,6 +132,7 @@ const applyBaseImageProps = (
     top: layer.y,
     angle: layer.rotation ?? 0,
     opacity: layer.opacity ?? 1,
+    visible: layer.visible ?? true,
     flipX: layer.flipX ?? false,
     flipY: layer.flipY ?? false,
     stroke: layer.stroke ?? null,

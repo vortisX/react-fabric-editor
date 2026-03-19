@@ -234,6 +234,7 @@ export class CustomTextbox extends Textbox {
       cornerSize: 8,
       padding: 0,
       cornerStyle: 'circle',
+      visible: layer.visible ?? true,
     });
 
     textbox.set({
