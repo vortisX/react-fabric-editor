@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { useEditorStore } from '../../../../store/useEditorStore';
 import { ZoomControls } from './ZoomControls';
@@ -9,7 +9,6 @@ import {
   fitWorkspaceToViewport,
   initializeWorkspaceEngine,
   syncWorkspaceBackground,
-  syncWorkspaceCanvasSize,
   syncWorkspaceZoom,
 } from './handlers';
 import { WorkspaceResizeHandle } from './ResizeHandle';
@@ -37,6 +36,7 @@ export const Workspace = () => {
   const editorCommandId = useEditorStore((state) => state.editorCommandId);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const commitPreviewCanvasRef = useRef<HTMLCanvasElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const [resizePreview, setResizePreview] = useState<{
@@ -44,6 +44,7 @@ export const Workspace = () => {
     height: number;
   } | null>(null);
   const [previewOffset, setPreviewOffset] = useState({ x: 0, y: 0 });
+  const [isCommitPreviewVisible, setIsCommitPreviewVisible] = useState(false);
 
   const displayWidth = resizePreview?.width ?? width;
   const displayHeight = resizePreview?.height ?? height;
@@ -57,19 +58,15 @@ export const Workspace = () => {
 
   useEffect(() => initializeWorkspaceEngine(canvasRef.current), []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     applyWorkspaceEditorCommand(editorCommand);
   }, [editorCommand, editorCommandId]);
 
-  useEffect(() => {
-    syncWorkspaceCanvasSize(width, height);
-  }, [width, height]);
-
-  useEffect(() => {
+  useLayoutEffect(() => {
     syncWorkspaceBackground(width, height);
   }, [background, width, height]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     syncWorkspaceZoom(zoom);
   }, [zoom]);
 
@@ -117,6 +114,7 @@ export const Workspace = () => {
               <WorkspaceResizeHandle
                 edge="top"
                 zoom={zoom}
+                previewCanvasRef={commitPreviewCanvasRef}
                 viewportRef={viewportRef}
                 frameRef={frameRef}
                 onPreviewSizeChange={(nextWidth, nextHeight) => {
@@ -125,7 +123,11 @@ export const Workspace = () => {
                 onPreviewOffsetChange={(offsetX, offsetY) => {
                   setPreviewOffset({ x: offsetX, y: offsetY });
                 }}
+                onCommitPreviewChange={(active) => {
+                  setIsCommitPreviewVisible(active);
+                }}
                 onPreviewEnd={() => {
+                  setIsCommitPreviewVisible(false);
                   setResizePreview(null);
                   setPreviewOffset({ x: 0, y: 0 });
                 }}
@@ -133,6 +135,7 @@ export const Workspace = () => {
               <WorkspaceResizeHandle
                 edge="right"
                 zoom={zoom}
+                previewCanvasRef={commitPreviewCanvasRef}
                 viewportRef={viewportRef}
                 frameRef={frameRef}
                 onPreviewSizeChange={(nextWidth, nextHeight) => {
@@ -141,7 +144,11 @@ export const Workspace = () => {
                 onPreviewOffsetChange={(offsetX, offsetY) => {
                   setPreviewOffset({ x: offsetX, y: offsetY });
                 }}
+                onCommitPreviewChange={(active) => {
+                  setIsCommitPreviewVisible(active);
+                }}
                 onPreviewEnd={() => {
+                  setIsCommitPreviewVisible(false);
                   setResizePreview(null);
                   setPreviewOffset({ x: 0, y: 0 });
                 }}
@@ -149,6 +156,7 @@ export const Workspace = () => {
               <WorkspaceResizeHandle
                 edge="bottom"
                 zoom={zoom}
+                previewCanvasRef={commitPreviewCanvasRef}
                 viewportRef={viewportRef}
                 frameRef={frameRef}
                 onPreviewSizeChange={(nextWidth, nextHeight) => {
@@ -157,7 +165,11 @@ export const Workspace = () => {
                 onPreviewOffsetChange={(offsetX, offsetY) => {
                   setPreviewOffset({ x: offsetX, y: offsetY });
                 }}
+                onCommitPreviewChange={(active) => {
+                  setIsCommitPreviewVisible(active);
+                }}
                 onPreviewEnd={() => {
+                  setIsCommitPreviewVisible(false);
                   setResizePreview(null);
                   setPreviewOffset({ x: 0, y: 0 });
                 }}
@@ -165,6 +177,7 @@ export const Workspace = () => {
               <WorkspaceResizeHandle
                 edge="left"
                 zoom={zoom}
+                previewCanvasRef={commitPreviewCanvasRef}
                 viewportRef={viewportRef}
                 frameRef={frameRef}
                 onPreviewSizeChange={(nextWidth, nextHeight) => {
@@ -173,7 +186,11 @@ export const Workspace = () => {
                 onPreviewOffsetChange={(offsetX, offsetY) => {
                   setPreviewOffset({ x: offsetX, y: offsetY });
                 }}
+                onCommitPreviewChange={(active) => {
+                  setIsCommitPreviewVisible(active);
+                }}
                 onPreviewEnd={() => {
+                  setIsCommitPreviewVisible(false);
                   setResizePreview(null);
                   setPreviewOffset({ x: 0, y: 0 });
                 }}
@@ -190,6 +207,13 @@ export const Workspace = () => {
               >
                 <canvas ref={canvasRef} className="absolute left-0 top-0" />
               </div>
+              <canvas
+                ref={commitPreviewCanvasRef}
+                className={`pointer-events-none absolute left-0 top-0 ${
+                  isCommitPreviewVisible ? 'opacity-100' : 'opacity-0'
+                }`}
+                aria-hidden="true"
+              />
             </div>
           </div>
         </div>

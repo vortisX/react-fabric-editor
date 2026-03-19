@@ -8,6 +8,14 @@ export type EditorCommandOrigin = "ui" | "engine" | "history" | "system";
 
 export type EditorCommand =
   | { type: "document:load"; document: DesignDocument }
+  | { type: "canvas:resize"; width: number; height: number }
+  | {
+      type: "canvas:resize-and-translate";
+      width: number;
+      height: number;
+      offsetX: number;
+      offsetY: number;
+    }
   | { type: "layer:add"; layer: Layer }
   | { type: "layer:update"; layerId: string; payload: Partial<Layer> }
   | { type: "layers:translate"; offsetX: number; offsetY: number }
@@ -38,6 +46,13 @@ interface EditorState {
   setCanvasSizePx: (
     width: number,
     height: number,
+    options?: MutationOptions,
+  ) => void;
+  resizeCanvasAndTranslateCurrentPageLayers: (
+    width: number,
+    height: number,
+    offsetX: number,
+    offsetY: number,
     options?: MutationOptions,
   ) => void;
   setCanvasUnit: (unit: string, options?: MutationOptions) => void;
@@ -105,6 +120,27 @@ const buildHistory = (
 
 const getCurrentPage = (doc: DesignDocument, pageId: string | null) =>
   doc.pages.find((page) => page.pageId === pageId) ?? doc.pages[0];
+
+const updateCanvasGlobalSize = (
+  doc: DesignDocument,
+  width: number,
+  height: number,
+): DesignDocument | null => {
+  const nextWidth = Math.round(clampCanvasPx(width));
+  const nextHeight = Math.round(clampCanvasPx(height));
+  if (doc.global.width === nextWidth && doc.global.height === nextHeight) {
+    return null;
+  }
+
+  return {
+    ...doc,
+    global: {
+      ...doc.global,
+      width: nextWidth,
+      height: nextHeight,
+    },
+  };
+};
 
 const translatePageLayers = (
   doc: DesignDocument,
@@ -204,27 +240,65 @@ export const useEditorStore = create<EditorState>((set) => ({
     set((state) => {
       if (!state.document) return state;
 
-      const nextWidth = Math.round(clampCanvasPx(width));
-      const nextHeight = Math.round(clampCanvasPx(height));
-      if (
-        state.document.global.width === nextWidth &&
-        state.document.global.height === nextHeight
-      ) {
-        return state;
+      const nextDocument = updateCanvasGlobalSize(state.document, width, height);
+      if (!nextDocument) return state;
+
+      const origin = options?.origin ?? "ui";
+      if (origin !== "ui") {
+        return {
+          document: nextDocument,
+          history: buildHistory(state, options?.commit ?? false),
+        };
       }
 
       return {
-        document: {
-          ...state.document,
-          global: {
-            ...state.document.global,
-            width: nextWidth,
-            height: nextHeight,
-          },
-        },
+        document: nextDocument,
         history: buildHistory(state, options?.commit ?? false),
+        ...emitCommand(state, {
+          type: "canvas:resize",
+          width: nextDocument.global.width,
+          height: nextDocument.global.height,
+        }),
       };
     }),
+
+  resizeCanvasAndTranslateCurrentPageLayers:
+    (width, height, offsetX, offsetY, options) =>
+      set((state) => {
+        if (!state.document || !state.currentPageId) return state;
+
+        const resizedDocument =
+          updateCanvasGlobalSize(state.document, width, height) ?? state.document;
+        const nextDocument =
+          translatePageLayers(
+            resizedDocument,
+            state.currentPageId,
+            offsetX,
+            offsetY,
+          ) ?? resizedDocument;
+
+        if (nextDocument === state.document) return state;
+
+        const origin = options?.origin ?? "ui";
+        if (origin !== "ui") {
+          return {
+            document: nextDocument,
+            history: buildHistory(state, options?.commit ?? false),
+          };
+        }
+
+        return {
+          document: nextDocument,
+          history: buildHistory(state, options?.commit ?? false),
+          ...emitCommand(state, {
+            type: "canvas:resize-and-translate",
+            width: nextDocument.global.width,
+            height: nextDocument.global.height,
+            offsetX,
+            offsetY,
+          }),
+        };
+      }),
 
   setCanvasUnit: (unit, options) =>
     set((state) => {

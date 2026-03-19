@@ -5,6 +5,7 @@ interface ApplyCanvasSizeParams {
   docWidth: number;
   docHeight: number;
   displayZoom: number;
+  shouldRender?: boolean;
 }
 
 interface FabricCanvasDimensionInternals {
@@ -23,6 +24,7 @@ export const applyCanvasSize = ({
   docWidth,
   docHeight,
   displayZoom,
+  shouldRender = true,
 }: ApplyCanvasSizeParams): void => {
   const width = Math.round(docWidth * displayZoom);
   const height = Math.round(docHeight * displayZoom);
@@ -53,5 +55,7 @@ export const applyCanvasSize = ({
   }
 
   canvas.renderOnAddRemove = previousRenderOnAddRemove;
-  canvas.requestRenderAll();
+  if (shouldRender) {
+    canvas.requestRenderAll();
+  }
 };

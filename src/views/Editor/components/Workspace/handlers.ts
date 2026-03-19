@@ -88,6 +88,21 @@ export const applyWorkspaceEditorCommand = (
     return;
   }
 
+  if (editorCommand.type === 'canvas:resize') {
+    engineInstance.resizeCanvas(editorCommand.width, editorCommand.height);
+    return;
+  }
+
+  if (editorCommand.type === 'canvas:resize-and-translate') {
+    engineInstance.resizeCanvasAndTranslateLayers(
+      editorCommand.width,
+      editorCommand.height,
+      editorCommand.offsetX,
+      editorCommand.offsetY,
+    );
+    return;
+  }
+
   if (editorCommand.type === 'layers:translate') {
     engineInstance.translateAllLayers(
       editorCommand.offsetX,
@@ -242,6 +257,64 @@ export const restoreWorkspaceViewportAnchor = (
   if (deltaTop !== 0) {
     viewportElement.scrollTop += deltaTop;
   }
+};
+
+/** Commit canvas resize and page translation in one store transaction. */
+export const commitCanvasResizeDrag = ({
+  edge,
+  zoom,
+  startWidth,
+  startHeight,
+  deltaX,
+  deltaY,
+  offsetX,
+  offsetY,
+}: Omit<ApplyCanvasResizeFromDragParams, 'commit'> & {
+  offsetX: number;
+  offsetY: number;
+}): void => {
+  const { widthPx, heightPx } = measureCanvasResizeFromDrag({
+    edge,
+    zoom,
+    startWidth,
+    startHeight,
+    deltaX,
+    deltaY,
+  });
+
+  useEditorStore.getState().resizeCanvasAndTranslateCurrentPageLayers(
+    widthPx,
+    heightPx,
+    offsetX,
+    offsetY,
+    { commit: true },
+  );
+};
+
+/** Draw the final post-commit scene into an overlay canvas before mutating the real Fabric buffer. */
+export const drawCanvasResizeCommitPreview = (
+  previewCanvasElement: HTMLCanvasElement | null,
+  widthPx: number,
+  heightPx: number,
+  offsetX: number,
+  offsetY: number,
+): boolean => {
+  if (!previewCanvasElement) return false;
+
+  return engineInstance.drawResizeCommitPreview(
+    previewCanvasElement,
+    widthPx,
+    heightPx,
+    offsetX,
+    offsetY,
+  );
+};
+
+/** Clear the resize overlay after the real Fabric canvas finishes rendering the committed scene. */
+export const finishWorkspaceResizePreviewAfterRender = (
+  onRendered: () => void,
+): void => {
+  engineInstance.onNextRender(onRendered);
 };
 
 /** Apply a canvas resize preview or commit based on a pointer drag delta. */

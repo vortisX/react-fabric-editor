@@ -98,6 +98,29 @@ export class EditorEngine {
     if (!this.canvas) return;
     if (offsetX === 0 && offsetY === 0) return;
 
+    this.translateAllLayersInternal(offsetX, offsetY);
+    this.canvas.requestRenderAll();
+  }
+
+  public resizeCanvasAndTranslateLayers(
+    width: number,
+    height: number,
+    offsetX: number,
+    offsetY: number,
+  ): void {
+    if (!this.canvas) return;
+
+    this.docWidth = width;
+    this.docHeight = height;
+    this.applyCanvasSize(false);
+    this.translateAllLayersInternal(offsetX, offsetY);
+    this.canvas.requestRenderAll();
+  }
+
+  private translateAllLayersInternal(offsetX: number, offsetY: number): void {
+    if (!this.canvas) return;
+    if (offsetX === 0 && offsetY === 0) return;
+
     for (const object of this.canvas.getObjects()) {
       object.set({
         left: (object.left ?? 0) + offsetX,
@@ -105,8 +128,6 @@ export class EditorEngine {
       });
       object.setCoords();
     }
-
-    this.canvas.requestRenderAll();
   }
 
   public selectLayer(layerId: string): void {
@@ -123,6 +144,74 @@ export class EditorEngine {
     if (!this.canvas) return;
     this.canvas.discardActiveObject();
     this.canvas.requestRenderAll();
+  }
+
+  public onNextRender(callback: () => void): void {
+    const canvas = this.canvas;
+    if (!canvas) {
+      callback();
+      return;
+    }
+
+    const handleAfterRender = (): void => {
+      canvas.off("after:render", handleAfterRender);
+      callback();
+    };
+
+    canvas.on("after:render", handleAfterRender);
+  }
+
+  public drawResizeCommitPreview(
+    previewCanvasEl: HTMLCanvasElement,
+    width: number,
+    height: number,
+    offsetX: number,
+    offsetY: number,
+  ): boolean {
+    const canvas = this.canvas;
+    if (!canvas) return false;
+
+    const context = previewCanvasEl.getContext("2d");
+    if (!context) return false;
+
+    const displayWidth = Math.max(Math.round(width * this.displayZoom), 1);
+    const displayHeight = Math.max(Math.round(height * this.displayZoom), 1);
+    const originalWidth = canvas.width;
+    const originalHeight = canvas.height;
+    const originalViewportTransform = [...canvas.viewportTransform] as typeof canvas.viewportTransform;
+    const originalSkipControlsDrawing = (canvas as Canvas & {
+      skipControlsDrawing: boolean;
+    }).skipControlsDrawing;
+    const previewViewportTransform = [
+      this.displayZoom,
+      originalViewportTransform[1],
+      originalViewportTransform[2],
+      this.displayZoom,
+      originalViewportTransform[4] + offsetX * this.displayZoom,
+      originalViewportTransform[5] + offsetY * this.displayZoom,
+    ] as typeof canvas.viewportTransform;
+
+    previewCanvasEl.width = displayWidth;
+    previewCanvasEl.height = displayHeight;
+    previewCanvasEl.style.width = `${displayWidth}px`;
+    previewCanvasEl.style.height = `${displayHeight}px`;
+
+    try {
+      canvas.viewportTransform = previewViewportTransform;
+      canvas.width = displayWidth;
+      canvas.height = displayHeight;
+      (canvas as Canvas & { skipControlsDrawing: boolean }).skipControlsDrawing = true;
+      canvas.calcViewportBoundaries();
+      canvas.renderCanvas(context, canvas.getObjects());
+      return true;
+    } finally {
+      canvas.viewportTransform = originalViewportTransform;
+      canvas.width = originalWidth;
+      canvas.height = originalHeight;
+      (canvas as Canvas & { skipControlsDrawing: boolean }).skipControlsDrawing =
+        originalSkipControlsDrawing;
+      canvas.calcViewportBoundaries();
+    }
   }
 
   public isTargetInsideCanvas(target: EventTarget | null): boolean {
@@ -237,13 +326,14 @@ export class EditorEngine {
     this.syncTransformRaf = value;
   };
 
-  private applyCanvasSize(): void {
+  private applyCanvasSize(shouldRender = true): void {
     if (!this.canvas) return;
     applyCanvasSize({
       canvas: this.canvas,
       docWidth: this.docWidth,
       docHeight: this.docHeight,
       displayZoom: this.displayZoom,
+      shouldRender,
     });
   }
 }

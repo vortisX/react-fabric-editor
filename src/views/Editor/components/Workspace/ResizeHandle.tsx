@@ -4,7 +4,9 @@ import type { DragEdge } from '../../../../core/canvasMath';
 import { useEditorStore } from '../../../../store/useEditorStore';
 
 import {
-  applyCanvasResizeFromDrag,
+  commitCanvasResizeDrag,
+  drawCanvasResizeCommitPreview,
+  finishWorkspaceResizePreviewAfterRender,
   measureCanvasResizeFromDrag,
   readWorkspaceFrameAnchor,
   restoreWorkspaceViewportAnchor,
@@ -14,10 +16,12 @@ import { edgeToClassName } from './shared';
 interface WorkspaceResizeHandleProps {
   edge: DragEdge;
   zoom: number;
+  previewCanvasRef: RefObject<HTMLCanvasElement | null>;
   viewportRef: RefObject<HTMLDivElement | null>;
   frameRef: RefObject<HTMLDivElement | null>;
   onPreviewSizeChange: (width: number, height: number) => void;
   onPreviewOffsetChange: (offsetX: number, offsetY: number) => void;
+  onCommitPreviewChange: (active: boolean) => void;
   onPreviewEnd: () => void;
 }
 
@@ -25,10 +29,12 @@ interface WorkspaceResizeHandleProps {
 export const WorkspaceResizeHandle = ({
   edge,
   zoom,
+  previewCanvasRef,
   viewportRef,
   frameRef,
   onPreviewSizeChange,
   onPreviewOffsetChange,
+  onCommitPreviewChange,
   onPreviewEnd,
 }: WorkspaceResizeHandleProps) => {
   const [isActive, setIsActive] = useState(false);
@@ -65,7 +71,9 @@ export const WorkspaceResizeHandle = ({
       deltaY: lastDeltaYRef.current,
     });
 
-    onPreviewSizeChange(widthPx, heightPx);
+    if (!commit) {
+      onPreviewSizeChange(widthPx, heightPx);
+    }
 
     if (compensationRafRef.current !== null) {
       cancelAnimationFrame(compensationRafRef.current);
@@ -85,33 +93,48 @@ export const WorkspaceResizeHandle = ({
       const deltaLeft = anchor.left - left;
       const deltaTop = anchor.top - top;
 
-      onPreviewOffsetChange(deltaLeft, deltaTop);
-
       const offsetX = deltaLeft / zoom;
       const offsetY = deltaTop / zoom;
 
-      if (!commit) return;
+      const sanitizedOffsetX = Math.abs(offsetX) >= 0.05 ? offsetX : 0;
+      const sanitizedOffsetY = Math.abs(offsetY) >= 0.05 ? offsetY : 0;
 
-      // 为什么只在提交时才改真实图层：
-      // 拖拽预览阶段只做 CSS 位移补偿，可以避免 Fabric 每帧重排导致的抽搐。
-      if (Math.abs(offsetX) >= 0.05 || Math.abs(offsetY) >= 0.05) {
-        useEditorStore.getState().translateCurrentPageLayers(offsetX, offsetY, {
-          commit: false,
-        });
+      if (!commit) {
+        onPreviewOffsetChange(deltaLeft, deltaTop);
+        return;
       }
 
-      applyCanvasResizeFromDrag({
+      const hasCommitPreview = drawCanvasResizeCommitPreview(
+        previewCanvasRef.current,
+        widthPx,
+        heightPx,
+        sanitizedOffsetX,
+        sanitizedOffsetY,
+      );
+      if (hasCommitPreview) {
+        onCommitPreviewChange(true);
+        onPreviewOffsetChange(0, 0);
+        finishWorkspaceResizePreviewAfterRender(() => {
+          onCommitPreviewChange(false);
+          onPreviewEnd();
+        });
+      } else {
+        onCommitPreviewChange(false);
+      }
+
+      commitCanvasResizeDrag({
         edge,
         zoom,
         startWidth: startWidthRef.current,
         startHeight: startHeightRef.current,
         deltaX: lastDeltaXRef.current,
         deltaY: lastDeltaYRef.current,
-        commit: true,
+        offsetX: sanitizedOffsetX,
+        offsetY: sanitizedOffsetY,
       });
-      requestAnimationFrame(() => {
+      if (!hasCommitPreview) {
         onPreviewEnd();
-      });
+      }
     });
   };
 
@@ -154,6 +177,9 @@ export const WorkspaceResizeHandle = ({
         event.preventDefault();
         event.stopPropagation();
 
+        lastDeltaXRef.current = event.clientX - startXRef.current;
+        lastDeltaYRef.current = event.clientY - startYRef.current;
+
         if (rafRef.current !== null) {
           cancelAnimationFrame(rafRef.current);
           rafRef.current = null;
@@ -179,6 +205,7 @@ export const WorkspaceResizeHandle = ({
           compensationRafRef.current = null;
         }
 
+        onCommitPreviewChange(false);
         onPreviewOffsetChange(0, 0);
         onPreviewEnd();
 
