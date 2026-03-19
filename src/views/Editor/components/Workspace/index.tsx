@@ -88,7 +88,7 @@ export const Workspace = () => {
   useEffect(() => {
     const viewportElement = viewportRef.current;
     if (!viewportElement) return undefined;
-    return bindWorkspaceWheelZoom(viewportElement);
+    return bindWorkspaceWheelZoom(viewportElement, frameRef.current);
   }, []);
 
   if (!hasDocument) return null;

@@ -208,18 +208,59 @@ export const bindWorkspaceSelectionClear = (
   };
 };
 
-/** Bind Ctrl+wheel zoom support for the workspace viewport. */
+/** Bind wheel zoom support for the workspace viewport and canvas area. */
 export const bindWorkspaceWheelZoom = (
   viewportElement: HTMLDivElement,
+  frameElement: HTMLDivElement | null,
 ): (() => void) => {
   const onWheel = (event: WheelEvent) => {
-    if (!event.ctrlKey) return;
-
     event.preventDefault();
     const delta = event.deltaY > 0 ? -0.1 : 0.1;
     const currentZoom = useEditorStore.getState().zoom;
     const nextZoom = clampZoom(Math.round((currentZoom + delta) * 10) / 10);
+    if (nextZoom === currentZoom) return;
+
+    const viewportRect = viewportElement.getBoundingClientRect();
+    const currentFrameRect = frameElement?.getBoundingClientRect() ?? null;
+    const pointerX = event.clientX;
+    const pointerY = event.clientY;
+    const pointerInsideFrame =
+      currentFrameRect !== null &&
+      pointerX >= currentFrameRect.left &&
+      pointerX <= currentFrameRect.right &&
+      pointerY >= currentFrameRect.top &&
+      pointerY <= currentFrameRect.bottom;
+    const fallbackDocX =
+      (viewportRect.width / 2) / Math.max(currentZoom, 0.0001);
+    const fallbackDocY =
+      (viewportRect.height / 2) / Math.max(currentZoom, 0.0001);
+    const anchorDocX = pointerInsideFrame && currentFrameRect
+      ? (pointerX - currentFrameRect.left) / currentZoom
+      : fallbackDocX;
+    const anchorDocY = pointerInsideFrame && currentFrameRect
+      ? (pointerY - currentFrameRect.top) / currentZoom
+      : fallbackDocY;
+    const anchorClientX = pointerInsideFrame
+      ? pointerX
+      : viewportRect.left + viewportRect.width / 2;
+    const anchorClientY = pointerInsideFrame
+      ? pointerY
+      : viewportRect.top + viewportRect.height / 2;
+
     useEditorStore.getState().setZoom(nextZoom);
+
+    requestAnimationFrame(() => {
+      if (!frameElement) return;
+
+      const nextFrameRect = frameElement.getBoundingClientRect();
+      const desiredLeft = anchorClientX - anchorDocX * nextZoom;
+      const desiredTop = anchorClientY - anchorDocY * nextZoom;
+
+      // 为什么缩放后要回写 scroll：
+      // 工作区用了居中布局，单纯改 zoom 会让画布在视觉上“跳一下”，这里把鼠标下的内容尽量钉住。
+      viewportElement.scrollLeft += nextFrameRect.left - desiredLeft;
+      viewportElement.scrollTop += nextFrameRect.top - desiredTop;
+    });
   };
 
   viewportElement.addEventListener('wheel', onWheel, { passive: false });
