@@ -27,7 +27,7 @@ export const RightPanel = () => {
       : <CanvasPanel />;
 
   return (
-    <aside className="w-[240px] bg-white border-l border-gray-200 flex flex-col shrink-0 z-10 shadow-sm text-xs selection:bg-blue-100">
+    <aside className="w-60 bg-white border-l border-gray-200 flex flex-col shrink-0 z-10 shadow-sm text-xs selection:bg-blue-100">
       <Tabs
         defaultActiveKey="1"
         className="w-full h-full flex flex-col"
