@@ -1,4 +1,5 @@
 export { Button } from './Button';
+export { Dialog } from './Dialog';
 export { Tooltip } from './Tooltip';
 export { NumberInput, TextArea } from './Input';
 export { Select } from './Select';
