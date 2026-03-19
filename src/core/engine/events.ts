@@ -9,8 +9,10 @@ import { i18n } from "../../locales";
 import { useEditorStore } from "../../store/useEditorStore";
 import type { BaseLayer, TextLayer } from "../../types/schema";
 import { CustomTextbox } from "../CustomTextbox";
+import { THEME_PRIMARY } from "../constants";
 import { round1 } from "./helpers";
 import type {
+  FabricHoverEvent,
   FabricImageLayer,
   FabricLayerTarget,
   FabricModifiedEvent,
@@ -54,6 +56,14 @@ export const bindEngineEvents = ({
   onModified,
   onTextChanged,
 }: EngineEventBindings): void => {
+  let hoveredTarget: FabricObject | undefined;
+
+  const setHoveredTarget = (target?: FabricObject): void => {
+    if (hoveredTarget === target) return;
+    hoveredTarget = target;
+    canvas.renderTop();
+  };
+
   canvas.on("selection:created", (event: FabricSelectionEvent) =>
     onSelectionChanged(event.selected?.[0]),
   );
@@ -77,6 +87,25 @@ export const bindEngineEvents = ({
   canvas.on("text:changed", (event: FabricObjectEvent) =>
     onTextChanged(event.target),
   );
+  canvas.on("mouse:over", (event: FabricHoverEvent) => {
+    setHoveredTarget(event.target);
+  });
+  canvas.on("mouse:out", (event: FabricHoverEvent) => {
+    if (hoveredTarget === event.target) {
+      setHoveredTarget(undefined);
+    }
+  });
+  canvas.on("after:render", () => {
+    if (!hoveredTarget) return;
+    if (canvas.getActiveObject() === hoveredTarget) return;
+    if (!canvas.getObjects().includes(hoveredTarget)) return;
+
+    hoveredTarget._renderControls(canvas.getTopContext(), {
+      hasBorders: true,
+      hasControls: false,
+      borderColor: THEME_PRIMARY,
+    });
+  });
 };
 
 export const handleSelectionChanged = (target?: FabricObject): void => {

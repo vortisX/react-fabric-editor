@@ -6,6 +6,8 @@ export type FabricSelectionEvent = { selected?: FabricObject[] };
 
 export type FabricObjectEvent = { target: FabricObject };
 
+export type FabricHoverEvent = { target?: FabricObject };
+
 export type FabricScalingEvent = {
   target: FabricObject;
   transform?: { corner?: string; action?: string };
