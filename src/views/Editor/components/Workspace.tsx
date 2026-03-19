@@ -155,7 +155,6 @@ export const Workspace = () => {
     return () => {
       engineInstance.dispose();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // useLayoutEffect 在 DOM 提交后、浏览器绘制前同步执行，
