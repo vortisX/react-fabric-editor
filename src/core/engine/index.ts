@@ -27,7 +27,7 @@ import type { FabricImageLayer, FabricLayerTarget, LayerMeasurement } from "./ty
 import { applyCanvasSize } from "./viewport";
 
 export class EditorEngine {
-  public canvas: Canvas | null = null;
+  private canvas: Canvas | null = null;
   private backgroundAbort: AbortController | null = null;
   private syncTransformRaf: number | null = null;
   /** 文档原始尺寸（不含 zoom） */
@@ -35,6 +35,10 @@ export class EditorEngine {
   private docHeight = 0;
   /** 当前显示缩放比例，由 setDisplayZoom 维护 */
   private displayZoom = 1;
+
+  public isReady(): boolean {
+    return this.canvas !== null;
+  }
 
   public init(canvasEl: HTMLCanvasElement, width: number, height: number): void {
     if (this.canvas) this.dispose();

@@ -181,7 +181,7 @@ export const Workspace = () => {
   }, []);
 
   useEffect(() => {
-    if (!editorCommand || !engineInstance.canvas) return;
+    if (!editorCommand || !engineInstance.isReady()) return;
 
     if (editorCommand.type === 'selection:set') {
       if (editorCommand.layerId) {

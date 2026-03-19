@@ -10,7 +10,7 @@ export interface BaseLayer {
   rotation: number;
   opacity: number;
   visible: boolean;
-  locked?: boolean;
+  locked: boolean;
   lockMovement?: boolean;
 }
 
