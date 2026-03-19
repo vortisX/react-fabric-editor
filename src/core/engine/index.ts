@@ -94,6 +94,21 @@ export class EditorEngine {
     });
   }
 
+  public translateAllLayers(offsetX: number, offsetY: number): void {
+    if (!this.canvas) return;
+    if (offsetX === 0 && offsetY === 0) return;
+
+    for (const object of this.canvas.getObjects()) {
+      object.set({
+        left: (object.left ?? 0) + offsetX,
+        top: (object.top ?? 0) + offsetY,
+      });
+      object.setCoords();
+    }
+
+    this.canvas.requestRenderAll();
+  }
+
   public selectLayer(layerId: string): void {
     if (!this.canvas) return;
 

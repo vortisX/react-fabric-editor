@@ -15,6 +15,38 @@ interface ApplyCanvasResizeFromDragParams {
   commit: boolean;
 }
 
+interface WorkspaceFrameAnchor {
+  left: number;
+  top: number;
+}
+
+/** Convert the current drag delta into the next document pixel size. */
+export const measureCanvasResizeFromDrag = ({
+  edge,
+  zoom,
+  startWidth,
+  startHeight,
+  deltaX,
+  deltaY,
+}: Omit<ApplyCanvasResizeFromDragParams, 'commit'>): {
+  widthPx: number;
+  heightPx: number;
+} => {
+  const { widthPx, heightPx } = computeCanvasSizeFromDrag({
+    edge,
+    startWidthPx: startWidth,
+    startHeightPx: startHeight,
+    // 屏幕拖拽距离需要除以当前显示缩放，才能还原成文档像素。
+    deltaX: deltaX / zoom,
+    deltaY: deltaY / zoom,
+  });
+
+  return {
+    widthPx: Math.round(widthPx),
+    heightPx: Math.round(heightPx),
+  };
+};
+
 /** Initialize Fabric once the workspace canvas element is mounted. */
 export const initializeWorkspaceEngine = (
   canvasElement: HTMLCanvasElement | null,
@@ -53,6 +85,14 @@ export const applyWorkspaceEditorCommand = (
 
   if (editorCommand.type === 'layer:update') {
     engineInstance.updateLayerProps(editorCommand.layerId, editorCommand.payload);
+    return;
+  }
+
+  if (editorCommand.type === 'layers:translate') {
+    engineInstance.translateAllLayers(
+      editorCommand.offsetX,
+      editorCommand.offsetY,
+    );
     return;
   }
 
@@ -173,6 +213,37 @@ export const bindWorkspaceWheelZoom = (
   };
 };
 
+/** Capture the current workspace frame position before a canvas resize starts. */
+export const readWorkspaceFrameAnchor = (
+  frameElement: HTMLDivElement | null,
+): WorkspaceFrameAnchor | null => {
+  if (!frameElement) return null;
+
+  const { left, top } = frameElement.getBoundingClientRect();
+  return { left, top };
+};
+
+/** Restore viewport scroll so the visible canvas content stays visually anchored after resize. */
+export const restoreWorkspaceViewportAnchor = (
+  viewportElement: HTMLDivElement | null,
+  frameElement: HTMLDivElement | null,
+  anchor: WorkspaceFrameAnchor | null,
+): void => {
+  if (!viewportElement || !frameElement || !anchor) return;
+
+  const { left, top } = frameElement.getBoundingClientRect();
+  const deltaLeft = left - anchor.left;
+  const deltaTop = top - anchor.top;
+
+  if (deltaLeft !== 0) {
+    viewportElement.scrollLeft += deltaLeft;
+  }
+
+  if (deltaTop !== 0) {
+    viewportElement.scrollTop += deltaTop;
+  }
+};
+
 /** Apply a canvas resize preview or commit based on a pointer drag delta. */
 export const applyCanvasResizeFromDrag = ({
   edge,
@@ -183,18 +254,18 @@ export const applyCanvasResizeFromDrag = ({
   deltaY,
   commit,
 }: ApplyCanvasResizeFromDragParams): void => {
-  const { widthPx, heightPx } = computeCanvasSizeFromDrag({
+  const { widthPx, heightPx } = measureCanvasResizeFromDrag({
     edge,
-    startWidthPx: startWidth,
-    startHeightPx: startHeight,
-    // 屏幕拖拽距离需要除以当前显示缩放，才能还原成文档像素。
-    deltaX: deltaX / zoom,
-    deltaY: deltaY / zoom,
+    zoom,
+    startWidth,
+    startHeight,
+    deltaX,
+    deltaY,
   });
 
   useEditorStore.getState().setCanvasSizePx(
-    Math.round(widthPx),
-    Math.round(heightPx),
+    widthPx,
+    heightPx,
     { commit },
   );
 };

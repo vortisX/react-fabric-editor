@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useEditorStore } from '../../../../store/useEditorStore';
 import { ZoomControls } from './ZoomControls';
@@ -38,9 +38,17 @@ export const Workspace = () => {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
+  const [resizePreview, setResizePreview] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+  const [previewOffset, setPreviewOffset] = useState({ x: 0, y: 0 });
 
-  const zoomedWidth = width * zoom;
-  const zoomedHeight = height * zoom;
+  const displayWidth = resizePreview?.width ?? width;
+  const displayHeight = resizePreview?.height ?? height;
+  const zoomedWidth = displayWidth * zoom;
+  const zoomedHeight = displayHeight * zoom;
 
   const containerStyle = useMemo(
     () => getWorkspaceContainerStyle(zoomedWidth, zoomedHeight, background),
@@ -97,6 +105,7 @@ export const Workspace = () => {
         <div style={getWorkspaceScrollAreaStyle(zoomedWidth, zoomedHeight)}>
           <div style={getWorkspaceCanvasSlotStyle(zoomedWidth, zoomedHeight)}>
             <div
+              ref={frameRef}
               className="relative shadow-xl"
               style={{
                 ...containerStyle,
@@ -105,11 +114,82 @@ export const Workspace = () => {
                 left: 0,
               }}
             >
-              <WorkspaceResizeHandle edge="top" zoom={zoom} />
-              <WorkspaceResizeHandle edge="right" zoom={zoom} />
-              <WorkspaceResizeHandle edge="bottom" zoom={zoom} />
-              <WorkspaceResizeHandle edge="left" zoom={zoom} />
-              <canvas ref={canvasRef} className="absolute left-0 top-0" />
+              <WorkspaceResizeHandle
+                edge="top"
+                zoom={zoom}
+                viewportRef={viewportRef}
+                frameRef={frameRef}
+                onPreviewSizeChange={(nextWidth, nextHeight) => {
+                  setResizePreview({ width: nextWidth, height: nextHeight });
+                }}
+                onPreviewOffsetChange={(offsetX, offsetY) => {
+                  setPreviewOffset({ x: offsetX, y: offsetY });
+                }}
+                onPreviewEnd={() => {
+                  setResizePreview(null);
+                  setPreviewOffset({ x: 0, y: 0 });
+                }}
+              />
+              <WorkspaceResizeHandle
+                edge="right"
+                zoom={zoom}
+                viewportRef={viewportRef}
+                frameRef={frameRef}
+                onPreviewSizeChange={(nextWidth, nextHeight) => {
+                  setResizePreview({ width: nextWidth, height: nextHeight });
+                }}
+                onPreviewOffsetChange={(offsetX, offsetY) => {
+                  setPreviewOffset({ x: offsetX, y: offsetY });
+                }}
+                onPreviewEnd={() => {
+                  setResizePreview(null);
+                  setPreviewOffset({ x: 0, y: 0 });
+                }}
+              />
+              <WorkspaceResizeHandle
+                edge="bottom"
+                zoom={zoom}
+                viewportRef={viewportRef}
+                frameRef={frameRef}
+                onPreviewSizeChange={(nextWidth, nextHeight) => {
+                  setResizePreview({ width: nextWidth, height: nextHeight });
+                }}
+                onPreviewOffsetChange={(offsetX, offsetY) => {
+                  setPreviewOffset({ x: offsetX, y: offsetY });
+                }}
+                onPreviewEnd={() => {
+                  setResizePreview(null);
+                  setPreviewOffset({ x: 0, y: 0 });
+                }}
+              />
+              <WorkspaceResizeHandle
+                edge="left"
+                zoom={zoom}
+                viewportRef={viewportRef}
+                frameRef={frameRef}
+                onPreviewSizeChange={(nextWidth, nextHeight) => {
+                  setResizePreview({ width: nextWidth, height: nextHeight });
+                }}
+                onPreviewOffsetChange={(offsetX, offsetY) => {
+                  setPreviewOffset({ x: offsetX, y: offsetY });
+                }}
+                onPreviewEnd={() => {
+                  setResizePreview(null);
+                  setPreviewOffset({ x: 0, y: 0 });
+                }}
+              />
+              <div
+                className="absolute inset-0 overflow-hidden"
+                style={{
+                  transform: `translate(${previewOffset.x}px, ${previewOffset.y}px)`,
+                  willChange:
+                    previewOffset.x !== 0 || previewOffset.y !== 0
+                      ? 'transform'
+                      : undefined,
+                }}
+              >
+                <canvas ref={canvasRef} className="absolute left-0 top-0" />
+              </div>
             </div>
           </div>
         </div>

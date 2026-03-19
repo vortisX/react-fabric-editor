@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import { clampCanvasPx } from "../core/canvasMath";
+import { round1 } from "../core/engine/helpers";
 import type { DesignDocument, Layer, PageBackground } from "../types/schema";
 
 export type EditorCommandOrigin = "ui" | "engine" | "history" | "system";
@@ -9,6 +10,7 @@ export type EditorCommand =
   | { type: "document:load"; document: DesignDocument }
   | { type: "layer:add"; layer: Layer }
   | { type: "layer:update"; layerId: string; payload: Partial<Layer> }
+  | { type: "layers:translate"; offsetX: number; offsetY: number }
   | { type: "selection:set"; layerId: string | null };
 
 interface DocumentHistory {
@@ -41,6 +43,11 @@ interface EditorState {
   setCanvasUnit: (unit: string, options?: MutationOptions) => void;
   setPageBackground: (
     background: PageBackground,
+    options?: MutationOptions,
+  ) => void;
+  translateCurrentPageLayers: (
+    offsetX: number,
+    offsetY: number,
     options?: MutationOptions,
   ) => void;
   updateLayer: (
@@ -98,6 +105,35 @@ const buildHistory = (
 
 const getCurrentPage = (doc: DesignDocument, pageId: string | null) =>
   doc.pages.find((page) => page.pageId === pageId) ?? doc.pages[0];
+
+const translatePageLayers = (
+  doc: DesignDocument,
+  pageId: string,
+  offsetX: number,
+  offsetY: number,
+): DesignDocument | null => {
+  if (offsetX === 0 && offsetY === 0) return null;
+
+  let hasChanged = false;
+
+  const pages = doc.pages.map((page) => {
+    if (page.pageId !== pageId) return page;
+
+    const layers = page.layers.map((layer) => {
+      hasChanged = true;
+      return {
+        ...layer,
+        x: round1(layer.x + offsetX),
+        y: round1(layer.y + offsetY),
+      };
+    });
+
+    return { ...page, layers };
+  });
+
+  if (!hasChanged) return null;
+  return { ...doc, pages };
+};
 
 const updateDocumentLayer = (
   doc: DesignDocument,
@@ -220,6 +256,37 @@ export const useEditorStore = create<EditorState>((set) => ({
       return {
         document: { ...state.document, pages },
         history: buildHistory(state, options?.commit ?? true),
+      };
+    }),
+
+  translateCurrentPageLayers: (offsetX, offsetY, options) =>
+    set((state) => {
+      if (!state.document || !state.currentPageId) return state;
+
+      const nextDocument = translatePageLayers(
+        state.document,
+        state.currentPageId,
+        offsetX,
+        offsetY,
+      );
+      if (!nextDocument) return state;
+
+      const origin = options?.origin ?? "ui";
+      if (origin !== "ui") {
+        return {
+          document: nextDocument,
+          history: buildHistory(state, options?.commit ?? false),
+        };
+      }
+
+      return {
+        document: nextDocument,
+        history: buildHistory(state, options?.commit ?? false),
+        ...emitCommand(state, {
+          type: "layers:translate",
+          offsetX,
+          offsetY,
+        }),
       };
     }),
 

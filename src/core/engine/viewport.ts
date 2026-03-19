@@ -1,10 +1,17 @@
-import type { Canvas } from "fabric";
+import type { Canvas, TMat2D } from "fabric";
 
 interface ApplyCanvasSizeParams {
   canvas: Canvas;
   docWidth: number;
   docHeight: number;
   displayZoom: number;
+}
+
+interface FabricCanvasDimensionInternals {
+  _setDimensionsImpl: (
+    dimensions: { width: number; height: number },
+    options?: { backstoreOnly?: boolean; cssOnly?: boolean },
+  ) => void;
 }
 
 /**
@@ -19,13 +26,32 @@ export const applyCanvasSize = ({
 }: ApplyCanvasSizeParams): void => {
   const width = Math.round(docWidth * displayZoom);
   const height = Math.round(docHeight * displayZoom);
+  const currentZoom = canvas.getZoom();
+  const sizeChanged = canvas.getWidth() !== width || canvas.getHeight() !== height;
+  const zoomChanged = Math.abs(currentZoom - displayZoom) > 1e-6;
 
-  // 尺寸未变则跳过，避免 setDimensions 清空 context 导致不必要的闪烁
-  if (canvas.getWidth() === width && canvas.getHeight() === height) return;
+  if (!sizeChanged && !zoomChanged) return;
 
-  canvas.setZoom(displayZoom);
-  canvas.setDimensions({ width, height });
-  canvas.calcOffset();
+  const currentViewportTransform = canvas.viewportTransform;
+  const nextViewportTransform: TMat2D = [
+    displayZoom,
+    currentViewportTransform[1],
+    currentViewportTransform[2],
+    displayZoom,
+    currentViewportTransform[4],
+    currentViewportTransform[5],
+  ];
 
+  const previousRenderOnAddRemove = canvas.renderOnAddRemove;
+  canvas.renderOnAddRemove = false;
+  canvas.setViewportTransform(nextViewportTransform);
+
+  if (sizeChanged) {
+    (
+      canvas as unknown as Canvas & FabricCanvasDimensionInternals
+    )._setDimensionsImpl({ width, height });
+  }
+
+  canvas.renderOnAddRemove = previousRenderOnAddRemove;
   canvas.requestRenderAll();
 };
