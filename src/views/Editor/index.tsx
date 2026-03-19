@@ -3,7 +3,7 @@ import { useEditorStore } from '../../store/useEditorStore';
 
 import { Header } from './components/Header';
 import { LeftPanel } from './components/LeftPanel';
-import { Workspace } from './components/Workspace';
+import { Workspace } from './components/Workspace/index';
 import { RightPanel } from './components/RightPanel';
 
 export const EditorView = () => {
