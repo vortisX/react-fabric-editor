@@ -48,6 +48,10 @@ interface SyncLiveTransformParams {
   setSyncTransformRaf: (value: number | null) => void;
 }
 
+interface FabricAfterRenderEvent {
+  ctx?: CanvasRenderingContext2D;
+}
+
 export const bindEngineEvents = ({
   canvas,
   onSelectionChanged,
@@ -57,6 +61,8 @@ export const bindEngineEvents = ({
   onTextChanged,
 }: EngineEventBindings): void => {
   let hoveredTarget: FabricObject | undefined;
+  let isPointerDown = false;
+  const topContext = canvas.getTopContext();
 
   const setHoveredTarget = (target?: FabricObject): void => {
     if (hoveredTarget === target) return;
@@ -87,7 +93,15 @@ export const bindEngineEvents = ({
   canvas.on("text:changed", (event: FabricObjectEvent) =>
     onTextChanged(event.target),
   );
+  canvas.on("mouse:down", () => {
+    isPointerDown = true;
+    setHoveredTarget(undefined);
+  });
+  canvas.on("mouse:up", () => {
+    isPointerDown = false;
+  });
   canvas.on("mouse:over", (event: FabricHoverEvent) => {
+    if (isPointerDown) return;
     setHoveredTarget(event.target);
   });
   canvas.on("mouse:out", (event: FabricHoverEvent) => {
@@ -95,12 +109,14 @@ export const bindEngineEvents = ({
       setHoveredTarget(undefined);
     }
   });
-  canvas.on("after:render", () => {
+  canvas.on("after:render", (event: FabricAfterRenderEvent) => {
+    if (event.ctx !== topContext) return;
     if (!hoveredTarget) return;
+    if (isPointerDown) return;
     if (canvas.getActiveObject() === hoveredTarget) return;
     if (!canvas.getObjects().includes(hoveredTarget)) return;
 
-    hoveredTarget._renderControls(canvas.getTopContext(), {
+    hoveredTarget._renderControls(topContext, {
       hasBorders: true,
       hasControls: false,
       borderColor: THEME_PRIMARY,
