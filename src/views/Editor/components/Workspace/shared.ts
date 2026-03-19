@@ -1,11 +1,11 @@
 import type { CSSProperties } from 'react';
 
+import { getEditorSurfacePadding } from '../../../../core/engine/workspace';
 import type { DragEdge } from '../../../../core/canvasMath';
 import type { PageBackground } from '../../../../types/schema';
 
 export const MIN_ZOOM = 0.1;
 export const MAX_ZOOM = 2;
-export const WORKSPACE_PADDING = 60;
 
 /** Clamp zoom to the supported workspace range. */
 export const clampZoom = (zoom: number): number =>
@@ -27,8 +27,10 @@ export const calcFitZoom = (
     return 1;
   }
 
-  const scaleWidth = (viewportWidth - WORKSPACE_PADDING * 2) / canvasWidth;
-  const scaleHeight = (viewportHeight - WORKSPACE_PADDING * 2) / canvasHeight;
+  const scaleWidth =
+    (viewportWidth - Math.min(viewportWidth * 0.12, 120)) / canvasWidth;
+  const scaleHeight =
+    (viewportHeight - Math.min(viewportHeight * 0.12, 120)) / canvasHeight;
   return clampZoom(Math.min(scaleWidth, scaleHeight));
 };
 
@@ -41,6 +43,7 @@ export const getWorkspaceContainerStyle = (
   const baseStyle: CSSProperties = {
     width: `${zoomedWidth}px`,
     height: `${zoomedHeight}px`,
+    overflow: 'visible',
   };
 
   if (!background) {
@@ -71,15 +74,20 @@ export const getWorkspaceContainerStyle = (
 export const getWorkspaceScrollAreaStyle = (
   zoomedWidth: number,
   zoomedHeight: number,
-): CSSProperties => ({
-  width: `${zoomedWidth + WORKSPACE_PADDING * 2}px`,
-  minWidth: '100%',
-  height: `${zoomedHeight + WORKSPACE_PADDING * 2}px`,
-  minHeight: '100%',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-});
+  zoom: number,
+  viewportWidth: number,
+  viewportHeight: number,
+): CSSProperties => {
+  const padding = getEditorSurfacePadding(zoom, viewportWidth, viewportHeight);
+
+  return {
+    width: `${zoomedWidth + padding.x * 2}px`,
+    height: `${zoomedHeight + padding.y * 2}px`,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
+};
 
 /** Build the absolute canvas slot that Fabric renders into. */
 export const getWorkspaceCanvasSlotStyle = (
@@ -90,6 +98,7 @@ export const getWorkspaceCanvasSlotStyle = (
   height: `${zoomedHeight}px`,
   position: 'relative',
   flexShrink: 0,
+  overflow: 'visible',
 });
 
 /** Map resize edge direction to the matching visual handle classes. */

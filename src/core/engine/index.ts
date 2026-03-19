@@ -35,6 +35,8 @@ export class EditorEngine {
   private docHeight = 0;
   /** 当前显示缩放比例，由 setDisplayZoom 维护 */
   private displayZoom = 1;
+  private workspaceViewportWidth = 0;
+  private workspaceViewportHeight = 0;
 
   public isReady(): boolean {
     return this.canvas !== null;
@@ -46,6 +48,8 @@ export class EditorEngine {
     this.docWidth = width;
     this.docHeight = height;
     this.displayZoom = 1;
+    this.workspaceViewportWidth = 0;
+    this.workspaceViewportHeight = 0;
     this.canvas = createEditorCanvas(canvasEl, width, height);
 
     setupGlobalUI();
@@ -276,7 +280,12 @@ export class EditorEngine {
 
   public addTextLayer(layer: TextLayer): LayerMeasurement | undefined {
     if (!this.canvas) return undefined;
-    return addTextLayerToCanvas(this.canvas, layer, this.docWidth);
+    return addTextLayerToCanvas(
+      this.canvas,
+      layer,
+      this.docWidth,
+      this.docHeight,
+    );
   }
 
   public loadDocument(doc: DesignDocument): void {
@@ -335,6 +344,12 @@ export class EditorEngine {
     });
   }
 
+  public setWorkspaceViewportSize(width: number, height: number): void {
+    this.workspaceViewportWidth = Math.max(Math.round(width), 0);
+    this.workspaceViewportHeight = Math.max(Math.round(height), 0);
+    this.applyCanvasSize();
+  }
+
   private bindEvents(): void {
     if (!this.canvas) return;
 
@@ -388,6 +403,8 @@ export class EditorEngine {
       docWidth: this.docWidth,
       docHeight: this.docHeight,
       displayZoom: this.displayZoom,
+      viewportWidth: this.workspaceViewportWidth,
+      viewportHeight: this.workspaceViewportHeight,
       shouldRender,
     });
   }

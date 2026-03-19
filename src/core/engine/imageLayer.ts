@@ -198,7 +198,10 @@ export const addImageLayerToCanvas = async ({
   }
 
   canvas.add(img);
-  canvas.viewportCenterObject(img);
+  img.set({
+    left: round1((resolvedDocWidth - finalWidth) / 2),
+    top: round1((resolvedDocHeight - finalHeight) / 2),
+  });
   img.setCoords();
 
   canvas.setActiveObject(img);

@@ -1,4 +1,4 @@
-import { FabricImage, Pattern, type Canvas } from "fabric";
+import { FabricImage, Pattern, Rect, type Canvas } from "fabric";
 
 import type { PageBackground } from "../../types/schema";
 import { fillStyleToFabric } from "./fill";
@@ -20,6 +20,20 @@ export const applyBackground = ({
   currentAbort,
   setAbort,
 }: ApplyBackgroundParams): void => {
+  const createBackgroundRect = (fill: string | Pattern): Rect =>
+    new Rect({
+      left: 0,
+      top: 0,
+      originX: "left",
+      originY: "top",
+      width,
+      height,
+      fill,
+      selectable: false,
+      evented: false,
+      excludeFromExport: false,
+    });
+
   currentAbort?.abort();
 
   const controller = new AbortController();
@@ -27,15 +41,17 @@ export const applyBackground = ({
   const { signal } = controller;
 
   if (background.type === "color") {
-    canvas.backgroundImage = undefined;
-    canvas.backgroundColor = background.value;
+    canvas.backgroundImage = createBackgroundRect(background.value);
+    canvas.backgroundColor = "transparent";
     canvas.requestRenderAll();
     return;
   }
 
   if (background.type === "gradient") {
-    canvas.backgroundImage = undefined;
-    canvas.backgroundColor = fillStyleToFabric(background.value, width, height);
+    canvas.backgroundImage = createBackgroundRect(
+      fillStyleToFabric(background.value, width, height) as string | Pattern,
+    );
+    canvas.backgroundColor = "transparent";
     canvas.requestRenderAll();
     return;
   }
@@ -44,8 +60,8 @@ export const applyBackground = ({
   const url = background.url;
 
   if (!url) {
-    canvas.backgroundImage = undefined;
-    canvas.backgroundColor = "#ffffff";
+    canvas.backgroundImage = createBackgroundRect("#ffffff");
+    canvas.backgroundColor = "transparent";
     canvas.requestRenderAll();
     return;
   }
@@ -60,11 +76,13 @@ export const applyBackground = ({
       const imageHeight = img.height ?? 1;
 
       if (fit === "tile") {
-        canvas.backgroundImage = undefined;
-        canvas.backgroundColor = new Pattern({
-          source: img.getElement(),
-          repeat: "repeat",
-        });
+        canvas.backgroundImage = createBackgroundRect(
+          new Pattern({
+            source: img.getElement(),
+            repeat: "repeat",
+          }),
+        );
+        canvas.backgroundColor = "transparent";
         canvas.requestRenderAll();
         return;
       }
@@ -79,7 +97,7 @@ export const applyBackground = ({
           scaleY: height / imageHeight,
         });
         canvas.backgroundImage = img;
-        canvas.backgroundColor = "#ffffff";
+        canvas.backgroundColor = "transparent";
         canvas.requestRenderAll();
         return;
       }
@@ -94,7 +112,7 @@ export const applyBackground = ({
           scaleY: 1,
         });
         canvas.backgroundImage = img;
-        canvas.backgroundColor = "#ffffff";
+        canvas.backgroundColor = "transparent";
         canvas.requestRenderAll();
         return;
       }
@@ -112,7 +130,7 @@ export const applyBackground = ({
         scaleY: scale,
       });
       canvas.backgroundImage = img;
-      canvas.backgroundColor = "#ffffff";
+      canvas.backgroundColor = "transparent";
       canvas.requestRenderAll();
     })
     .catch(() => {});

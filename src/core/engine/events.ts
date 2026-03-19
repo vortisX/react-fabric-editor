@@ -52,6 +52,10 @@ interface FabricAfterRenderEvent {
   ctx?: CanvasRenderingContext2D;
 }
 
+interface FabricTopLayerInternals {
+  renderTopLayer: (ctx: CanvasRenderingContext2D) => void;
+}
+
 export const bindEngineEvents = ({
   canvas,
   onSelectionChanged,
@@ -62,12 +66,36 @@ export const bindEngineEvents = ({
 }: EngineEventBindings): void => {
   let hoveredTarget: FabricObject | undefined;
   let isPointerDown = false;
+  const mainContext = canvas.getContext();
   const topContext = canvas.getTopContext();
+
+  const renderTopOverlay = (): void => {
+    canvas.clearContext(topContext);
+    (canvas as unknown as Canvas & FabricTopLayerInternals).renderTopLayer(
+      topContext,
+    );
+
+    const activeObject = canvas.getActiveObject();
+    if (activeObject && canvas.getObjects().includes(activeObject)) {
+      activeObject._renderControls(topContext);
+    }
+
+    if (!hoveredTarget) return;
+    if (isPointerDown) return;
+    if (activeObject === hoveredTarget) return;
+    if (!canvas.getObjects().includes(hoveredTarget)) return;
+
+    hoveredTarget._renderControls(topContext, {
+      hasBorders: true,
+      hasControls: false,
+      borderColor: THEME_PRIMARY,
+    });
+  };
 
   const setHoveredTarget = (target?: FabricObject): void => {
     if (hoveredTarget === target) return;
     hoveredTarget = target;
-    canvas.renderTop();
+    renderTopOverlay();
   };
 
   canvas.on("selection:created", (event: FabricSelectionEvent) =>
@@ -76,7 +104,12 @@ export const bindEngineEvents = ({
   canvas.on("selection:updated", (event: FabricSelectionEvent) =>
     onSelectionChanged(event.selected?.[0]),
   );
-  canvas.on("selection:cleared", () => onSelectionChanged(undefined));
+  canvas.on("selection:created", renderTopOverlay);
+  canvas.on("selection:updated", renderTopOverlay);
+  canvas.on("selection:cleared", () => {
+    onSelectionChanged(undefined);
+    renderTopOverlay();
+  });
   canvas.on("object:scaling", (event: FabricScalingEvent) => onScaling(event));
   canvas.on("object:resizing", (event: FabricObjectEvent) =>
     onResizing(event.target),
@@ -96,9 +129,11 @@ export const bindEngineEvents = ({
   canvas.on("mouse:down", () => {
     isPointerDown = true;
     setHoveredTarget(undefined);
+    renderTopOverlay();
   });
   canvas.on("mouse:up", () => {
     isPointerDown = false;
+    renderTopOverlay();
   });
   canvas.on("mouse:over", (event: FabricHoverEvent) => {
     if (isPointerDown) return;
@@ -110,17 +145,8 @@ export const bindEngineEvents = ({
     }
   });
   canvas.on("after:render", (event: FabricAfterRenderEvent) => {
-    if (event.ctx !== topContext) return;
-    if (!hoveredTarget) return;
-    if (isPointerDown) return;
-    if (canvas.getActiveObject() === hoveredTarget) return;
-    if (!canvas.getObjects().includes(hoveredTarget)) return;
-
-    hoveredTarget._renderControls(topContext, {
-      hasBorders: true,
-      hasControls: false,
-      borderColor: THEME_PRIMARY,
-    });
+    if (event.ctx !== mainContext && event.ctx !== topContext) return;
+    renderTopOverlay();
   });
 };
 

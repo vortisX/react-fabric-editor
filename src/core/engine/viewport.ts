@@ -1,10 +1,17 @@
 import type { Canvas, TMat2D } from "fabric";
+import {
+  getEditorSurfacePadding,
+  getEditorSurfaceSize,
+  getEditorViewportTransform,
+} from "./workspace";
 
 interface ApplyCanvasSizeParams {
   canvas: Canvas;
   docWidth: number;
   docHeight: number;
   displayZoom: number;
+  viewportWidth?: number;
+  viewportHeight?: number;
   shouldRender?: boolean;
 }
 
@@ -13,6 +20,12 @@ interface FabricCanvasDimensionInternals {
     dimensions: { width: number; height: number },
     options?: { backstoreOnly?: boolean; cssOnly?: boolean },
   ) => void;
+}
+
+interface FabricCanvasDomInternals {
+  wrapperEl?: HTMLElement;
+  lowerCanvasEl?: HTMLCanvasElement;
+  upperCanvasEl?: HTMLCanvasElement;
 }
 
 /**
@@ -24,37 +37,64 @@ export const applyCanvasSize = ({
   docWidth,
   docHeight,
   displayZoom,
+  viewportWidth = 0,
+  viewportHeight = 0,
   shouldRender = true,
 }: ApplyCanvasSizeParams): void => {
-  const width = Math.round(docWidth * displayZoom);
-  const height = Math.round(docHeight * displayZoom);
+  const { width, height } = getEditorSurfaceSize(
+    docWidth,
+    docHeight,
+    displayZoom,
+    viewportWidth,
+    viewportHeight,
+  );
+  const padding = getEditorSurfacePadding(
+    displayZoom,
+    viewportWidth,
+    viewportHeight,
+  );
   const currentZoom = canvas.getZoom();
   const sizeChanged = canvas.getWidth() !== width || canvas.getHeight() !== height;
   const zoomChanged = Math.abs(currentZoom - displayZoom) > 1e-6;
-
-  if (!sizeChanged && !zoomChanged) return;
-
-  const currentViewportTransform = canvas.viewportTransform;
-  const nextViewportTransform: TMat2D = [
+  const nextViewportTransform: TMat2D = getEditorViewportTransform(
     displayZoom,
-    currentViewportTransform[1],
-    currentViewportTransform[2],
-    displayZoom,
-    currentViewportTransform[4],
-    currentViewportTransform[5],
-  ];
+    viewportWidth,
+    viewportHeight,
+  );
 
-  const previousRenderOnAddRemove = canvas.renderOnAddRemove;
-  canvas.renderOnAddRemove = false;
-  canvas.setViewportTransform(nextViewportTransform);
+  if (sizeChanged || zoomChanged) {
+    const previousRenderOnAddRemove = canvas.renderOnAddRemove;
+    canvas.renderOnAddRemove = false;
+    canvas.setViewportTransform(nextViewportTransform);
 
-  if (sizeChanged) {
-    (
-      canvas as unknown as Canvas & FabricCanvasDimensionInternals
-    )._setDimensionsImpl({ width, height });
+    if (sizeChanged) {
+      (
+        canvas as unknown as Canvas & FabricCanvasDimensionInternals
+      )._setDimensionsImpl({ width, height });
+    }
+
+    canvas.renderOnAddRemove = previousRenderOnAddRemove;
   }
 
-  canvas.renderOnAddRemove = previousRenderOnAddRemove;
+  const domCanvas = canvas as unknown as Canvas & FabricCanvasDimensionInternals &
+    FabricCanvasDomInternals;
+  if (domCanvas.wrapperEl) {
+    domCanvas.wrapperEl.style.position = "absolute";
+    domCanvas.wrapperEl.style.left = `${-padding.x}px`;
+    domCanvas.wrapperEl.style.top = `${-padding.y}px`;
+    domCanvas.wrapperEl.style.width = `${width}px`;
+    domCanvas.wrapperEl.style.height = `${height}px`;
+    domCanvas.wrapperEl.style.overflow = "visible";
+  }
+
+  if (domCanvas.lowerCanvasEl) {
+    domCanvas.lowerCanvasEl.style.clipPath = `inset(${padding.y}px ${padding.x}px ${padding.y}px ${padding.x}px)`;
+  }
+
+  if (domCanvas.upperCanvasEl) {
+    domCanvas.upperCanvasEl.style.clipPath = "none";
+  }
+
   if (shouldRender) {
     canvas.requestRenderAll();
   }

@@ -171,6 +171,14 @@ export const syncWorkspaceZoom = (zoom: number): void => {
   engineInstance.setDisplayZoom(zoom);
 };
 
+/** Sync the visible workspace viewport size so the off-canvas buffer covers the whole area. */
+export const syncWorkspaceViewportSize = (
+  width: number,
+  height: number,
+): void => {
+  engineInstance.setWorkspaceViewportSize(width, height);
+};
+
 /** Recalculate fit zoom based on the current viewport size. */
 export const fitWorkspaceToViewport = (
   viewportElement: HTMLDivElement | null,
@@ -188,6 +196,19 @@ export const fitWorkspaceToViewport = (
   );
 
   useEditorStore.getState().setZoom(fitZoom);
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      viewportElement.scrollLeft = Math.max(
+        (viewportElement.scrollWidth - viewportElement.clientWidth) / 2,
+        0,
+      );
+      viewportElement.scrollTop = Math.max(
+        (viewportElement.scrollHeight - viewportElement.clientHeight) / 2,
+        0,
+      );
+    });
+  });
 };
 
 /** Bind a viewport listener that clears selection when clicking outside the canvas wrapper. */

@@ -73,6 +73,7 @@ export const addTextLayerToCanvas = (
   canvas: Canvas,
   layer: TextLayer,
   docWidth: number,
+  docHeight: number,
 ): LayerMeasurement | undefined => {
   const maxTextWidth = docWidth * 0.9;
   const node = createTextObject({ ...layer, width: maxTextWidth });
@@ -91,8 +92,12 @@ export const addTextLayerToCanvas = (
   node.set({ height: finalHeight });
   node._manualHeight = finalHeight;
 
+  node.set({
+    left: (docWidth - finalWidth) / 2,
+    top: (docHeight - finalHeight) / 2,
+  });
+
   canvas.add(node as unknown as FabricObject);
-  canvas.viewportCenterObject(node as unknown as FabricObject);
   node.setCoords();
 
   canvas.setActiveObject(node as unknown as FabricObject);

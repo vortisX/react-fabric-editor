@@ -21,3 +21,12 @@ body {
   margin: 0;
   overflow: hidden;
 }
+
+.workspace-viewport {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.workspace-viewport::-webkit-scrollbar {
+  display: none;
+}

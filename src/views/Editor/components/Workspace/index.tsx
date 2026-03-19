@@ -9,6 +9,7 @@ import {
   fitWorkspaceToViewport,
   initializeWorkspaceEngine,
   syncWorkspaceBackground,
+  syncWorkspaceViewportSize,
   syncWorkspaceZoom,
 } from './handlers';
 import { WorkspaceResizeHandle } from './ResizeHandle';
@@ -45,6 +46,7 @@ export const Workspace = () => {
   } | null>(null);
   const [previewOffset, setPreviewOffset] = useState({ x: 0, y: 0 });
   const [isCommitPreviewVisible, setIsCommitPreviewVisible] = useState(false);
+  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
 
   const displayWidth = resizePreview?.width ?? width;
   const displayHeight = resizePreview?.height ?? height;
@@ -70,6 +72,10 @@ export const Workspace = () => {
     syncWorkspaceZoom(zoom);
   }, [zoom]);
 
+  useLayoutEffect(() => {
+    syncWorkspaceViewportSize(viewportSize.width, viewportSize.height);
+  }, [viewportSize]);
+
   useEffect(() => {
     fitWorkspaceToViewport(viewportRef.current);
   }, []);
@@ -91,19 +97,50 @@ export const Workspace = () => {
     return bindWorkspaceWheelZoom(viewportElement, frameRef.current);
   }, []);
 
+  useEffect(() => {
+    const viewportElement = viewportRef.current;
+    if (!viewportElement) return undefined;
+
+    const updateViewportSize = () => {
+      setViewportSize({
+        width: viewportElement.clientWidth,
+        height: viewportElement.clientHeight,
+      });
+    };
+
+    updateViewportSize();
+
+    const observer = new ResizeObserver(() => {
+      updateViewportSize();
+    });
+
+    observer.observe(viewportElement);
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   if (!hasDocument) return null;
 
   return (
     <main className="relative flex flex-1 flex-col overflow-hidden">
       <div
         ref={viewportRef}
-        className="flex-1 overflow-auto bg-[#f0f0f0]"
+        className="workspace-viewport flex-1 overflow-auto bg-[#f0f0f0]"
       >
-        <div style={getWorkspaceScrollAreaStyle(zoomedWidth, zoomedHeight)}>
+        <div
+          style={getWorkspaceScrollAreaStyle(
+            zoomedWidth,
+            zoomedHeight,
+            zoom,
+            viewportSize.width,
+            viewportSize.height,
+          )}
+        >
           <div style={getWorkspaceCanvasSlotStyle(zoomedWidth, zoomedHeight)}>
             <div
               ref={frameRef}
-              className="relative shadow-xl"
+              className="relative overflow-visible shadow-xl"
               style={{
                 ...containerStyle,
                 position: 'absolute',
@@ -196,7 +233,7 @@ export const Workspace = () => {
                 }}
               />
               <div
-                className="absolute inset-0 overflow-hidden"
+                className="absolute inset-0 overflow-visible"
                 style={{
                   transform: `translate(${previewOffset.x}px, ${previewOffset.y}px)`,
                   willChange:
