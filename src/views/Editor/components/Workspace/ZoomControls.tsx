@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useEditorStore } from '../../../store/useEditorStore';
+import { useEditorStore } from '../../../../store/useEditorStore';
 
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 2.0;

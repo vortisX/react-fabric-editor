@@ -116,7 +116,7 @@ const updateDocumentLayer = (
       const nextEntries = Object.entries(payload);
       const changed = nextEntries.some(
         ([key, value]) =>
-          !Object.is((layer as Record<string, unknown>)[key], value),
+          !Object.is((layer as unknown as Record<string, unknown>)[key], value),
       );
       if (!changed) return layer;
 
