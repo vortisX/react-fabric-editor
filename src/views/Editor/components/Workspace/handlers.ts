@@ -30,6 +30,20 @@ let zoomAnimationRaf: number | null = null;
 let zoomAnimationTarget: number | null = null;
 
 /**
+ * 终止当前仍在进行的缩放动画。
+ * Fit 会直接把 zoom 写成精确值；如果不先取消旧动画，上一轮按钮/滚轮缩放的目标值
+ * 会在下一帧把 zoom 再次拉走，导致“适应画布”无法稳定回到正确百分比。
+ */
+const stopWorkspaceZoomAnimation = (): void => {
+  if (zoomAnimationRaf !== null) {
+    cancelAnimationFrame(zoomAnimationRaf);
+  }
+
+  zoomAnimationRaf = null;
+  zoomAnimationTarget = null;
+};
+
+/**
  * 根据拖拽边与当前缩放值，把屏幕位移换算成下一帧的文档像素尺寸。
  * 这里返回的是 Schema 层使用的真实宽高，而不是已经乘过 zoom 的显示尺寸。
  */
@@ -230,6 +244,8 @@ export const fitWorkspaceToViewport = (
     viewportElement.clientHeight,
   );
 
+  // Fit 属于“直接回到精确缩放值”的场景，必须先清掉旧动画，避免旧 target 在下一帧覆盖 fit 结果。
+  stopWorkspaceZoomAnimation();
   useEditorStore.getState().setZoom(fitZoom);
 
   requestAnimationFrame(() => {
