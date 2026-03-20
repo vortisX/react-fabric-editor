@@ -7,6 +7,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: React.ReactNode;
 }
 
+/** 通用按钮组件，统一封装尺寸、视觉变体与前置图标布局。 */
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ variant = 'default', size = 'medium', icon, className, children, ...props }, ref) => {
     const base = 'inline-flex items-center justify-center gap-1.5 rounded font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed border';
@@ -22,6 +23,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <button ref={ref} className={cn(base, variants[variant], sizes[size], className)} {...props}>
+        {/* 图标单独包一层，保证不同来源的 SVG / 字符图标都能得到一致对齐。 */}
         {icon && <span className="flex items-center text-sm">{icon}</span>}
         {children}
       </button>

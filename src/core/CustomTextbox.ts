@@ -5,6 +5,7 @@ import { applyLayerControls, drawRoundedRect } from './layerControls';
 
 // ==================== 自定义文本框 ====================
 
+/** 自定义文本框，负责文本框尺寸约束、两端对齐修正和盒模型渲染。 */
 export class CustomTextbox extends Textbox {
   declare id: string;
   declare boxStroke: string;
@@ -41,7 +42,7 @@ export class CustomTextbox extends Textbox {
       const spaces = this.textLines[i].match(this._reSpacesAndTabs);
 
       if (spaces) {
-        // 有空格：拉伸空格字符（原版逻辑）
+        // 有空格：拉伸空格字符（原版逻辑）。
         const diffSpace = diff / spaces.length;
         let acc = 0;
         for (let j = 0; j <= line.length; j++) {
@@ -56,8 +57,8 @@ export class CustomTextbox extends Textbox {
           }
         }
       } else {
-        // 无空格（中文等 CJK）：均分到字符间隙
-        // 第一个字符不加间距（贴左边），后续字符各加 perGap
+        // 无空格（中文等 CJK）：均分到字符间隙。
+        // 第一个字符不加间距（贴左边），后续字符各加 perGap。
         const gaps = line.length - 1;
         const perGap = diff / gaps;
         let acc = 0;
@@ -86,7 +87,7 @@ export class CustomTextbox extends Textbox {
       !this.textLines[lineIndex]?.match(this._reSpacesAndTabs);
 
     if (isJustifyNoSpaces) {
-      // 临时设置 charSpacing 使 _renderChars 逐字渲染
+      // 临时设置 charSpacing 使 _renderChars 逐字渲染。
       const saved = this.charSpacing;
       this.charSpacing = 1e-8;
       // @ts-expect-error calling parent's protected method
@@ -165,6 +166,7 @@ export class CustomTextbox extends Textbox {
 
   // ---------- 自定义渲染 ----------
 
+  /** 重写 Fabric 默认渲染流程，接管背景、裁剪文本与边框的绘制顺序。 */
   _render(ctx: CanvasRenderingContext2D) {
     const w = this.width;
     const h = this.height;
@@ -175,6 +177,7 @@ export class CustomTextbox extends Textbox {
     this.renderBoxStroke(ctx, w, h, r);
   }
 
+  /** 绘制文本框背景色。 */
   private renderBoxBackground(ctx: CanvasRenderingContext2D, w: number, h: number, r: number) {
     if (!this.boxBackgroundColor) return;
     ctx.save();
@@ -185,6 +188,7 @@ export class CustomTextbox extends Textbox {
     ctx.restore();
   }
 
+  /** 裁剪文本绘制区域，防止内容超出手动高度后的盒子。 */
   private renderClippedText(ctx: CanvasRenderingContext2D, w: number, h: number) {
     ctx.save();
     ctx.beginPath();
@@ -194,6 +198,7 @@ export class CustomTextbox extends Textbox {
     ctx.restore();
   }
 
+  /** 绘制文本框边框，支持圆角与虚线。 */
   private renderBoxStroke(ctx: CanvasRenderingContext2D, w: number, h: number, r: number) {
     if (!this.boxStroke || this.boxStrokeWidth <= 0) return;
     ctx.save();
@@ -208,6 +213,7 @@ export class CustomTextbox extends Textbox {
 
   // ---------- 工厂方法 ----------
 
+  /** 从 Schema 文本图层创建一份带自定义能力的 Fabric Textbox。 */
   static fromLayer(layer: TextLayer): CustomTextbox {
     const fabricFill = fillStyleToFabric(layer.fill, layer.width, layer.height ?? 0);
     const textbox = new CustomTextbox(layer.content, {

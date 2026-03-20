@@ -2,6 +2,7 @@ import { SUPPORTED_FONTS } from "../../constants/fonts";
 
 const fontDataUrlCache = new Map<string, Promise<string | null>>();
 
+/** 根据字体文件扩展名推导 MIME 类型，供 dataURL 构造使用。 */
 const getFontMimeType = (path: string): string => {
   if (path.endsWith(".woff2")) return "font/woff2";
   if (path.endsWith(".woff")) return "font/woff";
@@ -9,6 +10,7 @@ const getFontMimeType = (path: string): string => {
   return "font/ttf";
 };
 
+/** 读取本地字体资源并转成 dataURL，同时做简单缓存避免重复请求。 */
 const readFontAsDataUrl = async (path: string): Promise<string | null> => {
   const cached = fontDataUrlCache.get(path);
   if (cached) {
@@ -37,6 +39,7 @@ const readFontAsDataUrl = async (path: string): Promise<string | null> => {
   return task;
 };
 
+/** 把生成好的 @font-face CSS 注入到 SVG 的 style/defs 区域。 */
 const injectFontFaceMarkup = (svg: string, fontFacesCss: string): string => {
   const stylePattern = /<style[^>]*><!\[CDATA\[([\s\S]*?)\]\]><\/style>/;
   const styleMatch = svg.match(stylePattern);
@@ -61,7 +64,7 @@ const injectFontFaceMarkup = (svg: string, fontFacesCss: string): string => {
 };
 
 /**
- * Embeds custom local fonts into exported SVG so downloaded files keep their intended typography.
+ * 为导出的 SVG 内嵌本地字体，确保下载后的文件仍能保持正确字形。
  */
 export const embedSvgFonts = async (svg: string): Promise<string> => {
   const customFonts = SUPPORTED_FONTS.filter(

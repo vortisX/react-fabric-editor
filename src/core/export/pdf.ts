@@ -10,8 +10,10 @@ const PDF_BINARY_MARKER = "%\xFF\xFF\xFF\xFF\n";
 
 const encoder = new TextEncoder();
 
+/** 把文本编码成 Uint8Array，供 PDF 字节流拼装复用。 */
 const encodeText = (value: string): Uint8Array => encoder.encode(value);
 
+/** 拼接多段字节数组，生成一段连续的 Uint8Array。 */
 const concatBytes = (parts: Uint8Array[]): Uint8Array => {
   const totalLength = parts.reduce((sum, part) => sum + part.length, 0);
   const merged = new Uint8Array(totalLength);
@@ -25,6 +27,7 @@ const concatBytes = (parts: Uint8Array[]): Uint8Array => {
   return merged;
 };
 
+/** 从 JPEG DataURL 中解出原始二进制字节。 */
 const dataUrlToBytes = (dataUrl: string): Uint8Array => {
   const base64 = dataUrl.split(",")[1] ?? "";
   const binary = atob(base64);
@@ -37,11 +40,12 @@ const dataUrlToBytes = (dataUrl: string): Uint8Array => {
   return bytes;
 };
 
+/** 把像素尺寸换算为 PDF 使用的 point 单位。 */
 const pxToPt = (valuePx: number, dpi: number): number =>
   Number(((valuePx * 72) / Math.max(dpi, 1)).toFixed(2));
 
 /**
- * Creates a single-page PDF blob by embedding a JPEG image that matches the design canvas.
+ * 通过嵌入 JPEG 图像生成单页 PDF Blob。
  */
 export const createPdfBlob = ({
   dataUrl,
@@ -55,6 +59,7 @@ export const createPdfBlob = ({
   const imageWidth = Math.max(Math.round(widthPx), 1);
   const imageHeight = Math.max(Math.round(heightPx), 1);
 
+  // 这里直接手工拼 PDF 对象结构，避免引入额外的大型 PDF 依赖。
   const imageObjectHeader = encodeText(
     `4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${imageWidth} /Height ${imageHeight} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imageBytes.length} >>\nstream\n`,
   );

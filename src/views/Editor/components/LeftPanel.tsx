@@ -5,6 +5,7 @@ import { useEditorStore } from '../../../store/useEditorStore';
 import { genId } from '../../../utils/uuid';
 import type { TextLayer, ImageLayer } from '../../../types/schema';
 
+/** 编辑器左侧栏，包含工具入口与图层树。 */
 export const LeftPanel = () => {
   const { t } = useTranslation();
   const addLayer = useEditorStore((state) => state.addLayer);
@@ -12,6 +13,7 @@ export const LeftPanel = () => {
   const activeLayerId = useEditorStore((state) => state.activeLayerId);
   const setActiveLayer = useEditorStore((state) => state.setActiveLayer);
 
+  /** 新增文本图层，并根据当前画布短边动态给出更合理的初始字号。 */
   const handleAddText = () => {
     // 根据画布短边的 5% 动态计算字体大小，限制在 [12, 200] 范围内
     const canvasShortSide = Math.min(
@@ -46,6 +48,7 @@ export const LeftPanel = () => {
     addLayer(newTextLayer);
   };
 
+  /** 通过原生文件选择器新增图片图层，并把图片读成 dataURL 供 Fabric 直接使用。 */
   const handleAddImage = () => {
     const input = window.document.createElement('input');
     input.type = 'file';
@@ -59,7 +62,7 @@ export const LeftPanel = () => {
         const url = evt.target?.result;
         if (typeof url !== 'string') return;
 
-        // 去掉文件扩展名作为图层名
+        // 去掉文件扩展名作为图层名。
         const name = file.name.replace(/\.[^.]+$/, '') || t('leftPanel.defaultImageName');
         const newImageLayer: ImageLayer = {
           id: genId('layer'),
@@ -84,6 +87,7 @@ export const LeftPanel = () => {
     input.click();
   };
 
+  /** 点击图层树项时，把对应图层设为当前选中层。 */
   const handleLayerClick = (id: string) => {
     setActiveLayer(id);
   };

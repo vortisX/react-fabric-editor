@@ -7,12 +7,14 @@ interface TooltipProps {
   children: React.ReactElement;
 }
 
+/** 通用提示浮层，支持四个方向并通过 portal 渲染到 body。 */
 export const Tooltip: React.FC<TooltipProps> = ({ title, placement = 'top', children }) => {
   const [visible, setVisible] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const triggerRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
+  /** 根据触发元素位置与朝向计算 tooltip 的 anchor 坐标。 */
   const updatePosition = useCallback(() => {
     const el = triggerRef.current;
     if (!el) return;
@@ -41,6 +43,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ title, placement = 'top', chil
     setPosition({ top, left });
   }, [placement]);
 
+  /** 鼠标悬停一小段时间后再展示 tooltip，避免快速划过时频繁闪烁。 */
   const show = () => {
     clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
@@ -53,6 +56,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ title, placement = 'top', chil
     setVisible(false);
   };
 
+  /** 组件卸载时清理延时器，防止 setState 落在已卸载组件上。 */
   useEffect(() => () => clearTimeout(timeoutRef.current), []);
 
   const arrowStyle: Record<string, React.CSSProperties> = {
@@ -83,6 +87,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ title, placement = 'top', chil
             }}
           >
             {title}
+            {/* 小箭头单独用绝对定位实现，方便按 placement 复用不同朝向样式。 */}
             <span style={{ position: 'absolute', width: 0, height: 0, borderStyle: 'solid', ...arrowStyle[placement] }} />
           </div>
         </div>,

@@ -13,6 +13,7 @@ interface TabsProps {
   className?: string;
 }
 
+/** 轻量级 Tabs 组件，适合右侧属性面板这类简单单层切换场景。 */
 export const Tabs: React.FC<TabsProps> = ({ items, defaultActiveKey, className }) => {
   const [activeKey, setActiveKey] = useState(defaultActiveKey ?? items[0]?.key ?? '');
   const activeTab = items.find((t) => t.key === activeKey);

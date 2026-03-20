@@ -11,12 +11,14 @@ export interface FillPickerProps {
     size?: 'small' | 'medium';
 }
 
+/** 统一的填充选择器入口，支持纯色与线性渐变。 */
 export const FillPicker: React.FC<FillPickerProps> = ({ value, onChange, size = 'medium' }) => {
     const [open, setOpen] = useState(false);
     const [pos, setPos] = useState({ top: 0, left: 0 });
     const triggerRef = useRef<HTMLButtonElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
 
+    /** 计算浮层面板位置，尽量避免超出视口边界。 */
     const updatePos = useCallback(() => {
         const el = triggerRef.current;
         if (!el) return;
@@ -30,11 +32,13 @@ export const FillPicker: React.FC<FillPickerProps> = ({ value, onChange, size = 
         setPos({ top, left });
     }, []);
 
+    /** 打开/关闭填充面板；打开前先计算位置。 */
     const toggle = () => {
         if (!open) updatePos();
         setOpen(!open);
     };
 
+    /** 点击外部关闭面板。 */
     useEffect(() => {
         if (!open) return;
         const handler = (e: MouseEvent) => {
@@ -73,6 +77,7 @@ export const FillPicker: React.FC<FillPickerProps> = ({ value, onChange, size = 
                         }}
                         className="fixed z-50 bg-white rounded-xl shadow-2xl border border-gray-200/80 p-3 w-62"
                     >
+                        {/* 面板内部只负责具体填充编辑逻辑，入口组件只负责触发与定位。 */}
                         <FillPanel value={value} onChange={onChange} />
                     </div>,
                     document.body,

@@ -5,6 +5,7 @@ interface ImagePropChangeOptions {
   commit?: boolean;
 }
 
+/** 图片图层属性变更函数签名，供各个 Section 组件共享。 */
 export type ImagePropChangeHandler = <K extends keyof ImageLayer>(
   key: K,
   value: ImageLayer[K],
@@ -24,6 +25,7 @@ export const handleImagePropChange = <K extends keyof ImageLayer>(
     layerId,
     { [key]: value } as Partial<ImageLayer>,
     {
+      // 图片面板里的按钮和输入大多来自用户直接操作，因此默认按一次完整提交处理。
       commit: options?.commit ?? true,
       origin: 'ui',
     },

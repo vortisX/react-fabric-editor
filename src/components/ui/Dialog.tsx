@@ -25,7 +25,7 @@ interface DialogProps {
 }
 
 /**
- * Reusable modal dialog with portal rendering and accessible close behaviors.
+ * 通用弹窗组件，负责 portal 渲染、可访问性属性和关闭行为控制。
  */
 export const Dialog = ({
   open,
@@ -49,6 +49,7 @@ export const Dialog = ({
   const titleId = useId();
   const descriptionId = useId();
 
+  /** 监听 ESC 关闭弹窗，只有在允许关闭时才注册事件。 */
   useEffect(() => {
     if (!open || !closeOnEscape || closeDisabled || !onClose) {
       return undefined;
@@ -94,6 +95,7 @@ export const Dialog = ({
         overlayClassName,
       )}
       onClick={() => {
+        // 点击遮罩关闭时，只关闭最外层 overlay，不影响内部内容区点击。
         if (closeOnOverlayClick && !closeDisabled) {
           onClose?.();
         }

@@ -1,7 +1,7 @@
 import { useEditorStore } from "../../store/useEditorStore";
 
 /**
- * Export the current design document JSON blob from the store.
+ * 从 Store 导出当前设计文档的 JSON Blob。
  */
 export const exportJsonBlob = (): Blob => {
   const documentState = useEditorStore.getState().document;

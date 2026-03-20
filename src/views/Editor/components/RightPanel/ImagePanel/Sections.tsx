@@ -12,6 +12,7 @@ interface DesignNumberInputProps {
   step?: number;
 }
 
+/** 图片面板里复用的数字输入壳，用统一视觉包装 NumberInput。 */
 const DesignNumberInput = ({ label, value, onChange, step }: DesignNumberInputProps) => (
   <div className="flex items-center bg-[#f5f5f5] rounded px-2 py-0.5 border border-transparent hover:border-gray-300 transition-colors">
     <span className="text-[10px] text-gray-400 font-medium w-8 select-none flex items-center justify-center">{label}</span>
@@ -19,6 +20,7 @@ const DesignNumberInput = ({ label, value, onChange, step }: DesignNumberInputPr
   </div>
 );
 
+/** 图片面板分区标题。 */
 const SectionHeader = ({ title }: { title: string }) => (
   <div className="flex justify-between items-center px-4 py-2 bg-white mt-1">
     <span className="text-[11px] font-bold text-gray-800 tracking-wide">{title}</span>
@@ -56,6 +58,7 @@ export function ImageNameSection({ layer, onPropChange }: ImageSectionProps) {
 
 // ─── 布局配置区 ───────────────────────────────────────────────
 
+/** 图片图层的位置、尺寸与旋转配置区。 */
 export function ImageLayoutSection({ layer, onPropChange }: ImageSectionProps) {
   const { t } = useTranslation();
 
@@ -184,7 +187,7 @@ function FilterSliderRow({
   max: number;
   onChange: (v: number, commit: boolean) => void;
 }) {
-  // 将 [-1,1] 或 [-2,2] 映射到 [0, 100] 供 Slider 使用
+  // 将 [-1,1] 或 [-2,2] 映射到 [0, 100] 供 Slider 使用。
   const sliderVal = Math.round(((value - min) / (max - min)) * 100);
   return (
     <div className="flex items-center gap-2">
@@ -202,6 +205,7 @@ function FilterSliderRow({
   );
 }
 
+/** 图片滤镜配置区，支持亮度、对比度、饱和度三组参数。 */
 export function ImageFiltersSection({ layer, onPropChange }: ImageSectionProps) {
   const { t } = useTranslation();
 
@@ -209,9 +213,10 @@ export function ImageFiltersSection({ layer, onPropChange }: ImageSectionProps) 
   const contrast = layer.contrast ?? 0;
   const saturation = layer.saturation ?? 0;
 
-  // 是否有非默认滤镜值
+  // 是否有非默认滤镜值。
   const hasFilter = brightness !== 0 || contrast !== 0 || saturation !== 0;
 
+  /** 一键恢复所有滤镜到默认值。 */
   const handleReset = () => {
     onPropChange('brightness', 0);
     onPropChange('contrast', 0);

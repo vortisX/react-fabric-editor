@@ -1,3 +1,4 @@
+/** UI 组件统一导出入口，方便业务层按需从单一模块引入。 */
 export { Button } from './Button';
 export { Dialog } from './Dialog';
 export { Tooltip } from './Tooltip';

@@ -3,7 +3,8 @@ import { dataUrlToBlob } from "./download";
 import { JPEG_EXPORT_QUALITY, type ExportScale } from "./types";
 
 /**
- * Export the current canvas scene as a raster blob.
+ * 导出当前场景为 PNG/JPEG Blob。
+ * 栅格导出底层依赖 Engine 先生成 DataURL，再统一转为 Blob。
  */
 export const exportRasterBlob = (
   format: "png" | "jpeg",

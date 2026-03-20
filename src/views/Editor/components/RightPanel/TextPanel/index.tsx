@@ -11,7 +11,7 @@ import type { TextLayer } from '../../../../../types/schema';
 
 /** 文本面板：点击文本图层或新增文本时展示，包含图层位置、排版、颜色、边框等属性 */
 export const TextPanel = () => {
-  // 精确订阅 activeLayer，避免 canvas resize / background 变更触发面板重渲染
+  // 精确订阅 activeLayer，避免 canvas resize / background 变更触发面板重渲染。
   const activeLayer = useEditorStore((state) => {
     if (!state.activeLayerId || !state.document) return null;
     const page =
@@ -22,6 +22,7 @@ export const TextPanel = () => {
 
   if (!activeLayer) return null;
 
+  /** 把文本面板的字段修改统一下发给纯 TS handlers，保持视图层只关心展示。 */
   const onPropChange: PropChangeHandler = (key, value) => {
     handlePropChange(activeLayer.id, key, value);
   };

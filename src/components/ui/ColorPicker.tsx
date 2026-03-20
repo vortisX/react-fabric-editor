@@ -16,6 +16,7 @@ const PRESET_COLORS = [
   '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800', '#ff5722',
 ];
 
+/** 通用颜色选择器，支持预设色、原生取色器、HEX 输入和清空。 */
 export const ColorPicker: React.FC<ColorPickerProps> = ({
   value, onChange, size = 'medium', allowClear = false,
 }) => {
@@ -27,6 +28,8 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
+  // 为什么这里在 render 阶段同步内部状态：
+  // ColorPicker 既支持外部受控值变化，也支持面板内即时编辑，保持 prevValue 可以避免面板打开时旧值残留。
   if (value !== prevValue) {
     setPrevValue(value);
     setHex(value || '#000000');
@@ -45,6 +48,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
     setPos({ top, left });
   }, []);
 
+  /** 打开/关闭取色面板；打开前先基于按钮位置计算浮层坐标。 */
   const toggle = () => {
     if (!open) updatePos();
     setOpen(!open);
@@ -55,6 +59,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
     onChange?.(color);
   }, [onChange]);
 
+  /** 点击面板外部时关闭取色器，避免浮层长期悬挂在页面上。 */
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
@@ -82,6 +87,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
           open && 'ring-2 ring-blue-400/40 border-blue-300'
         )}
         style={{
+          // 空值/transparent 用棋盘格展示透明态，帮助用户理解“当前无颜色”。
           backgroundColor: isTransparent ? undefined : hex,
           backgroundImage: isTransparent
             ? 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)'
@@ -100,7 +106,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
           }}
           className="fixed z-50 bg-white rounded-xl shadow-2xl border border-gray-200/80 p-3 w-58"
         >
-          {/* Color swatches */}
+          {/* 预设颜色网格：用于快速选色。 */}
           <div className="grid grid-cols-8 gap-1.5 mb-3">
             {PRESET_COLORS.map((c) => (
               <button
@@ -118,10 +124,10 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
             ))}
           </div>
 
-          {/* Divider */}
+          {/* 分隔线：把预设色与精细输入区域拆开。 */}
           <div className="h-px bg-gray-100 mb-3" />
 
-          {/* Native color input (styled) + Hex input */}
+          {/* 原生取色器 + HEX 输入：覆盖需要精确输入颜色值的场景。 */}
           <div className="flex items-center gap-2">
             <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-gray-200 shrink-0 cursor-pointer hover:border-gray-300 transition-colors">
               <input

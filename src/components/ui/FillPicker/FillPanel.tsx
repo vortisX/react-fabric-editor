@@ -11,30 +11,37 @@ interface FillPanelProps {
     onChange?: (fill: FillStyle) => void;
 }
 
+/** 渐变填充编辑面板，负责方向、色标位置和颜色调整。 */
 export const GradientPanel: React.FC<FillPanelProps> = ({ value, onChange }) => {
     const fill = value.type === 'linear' ? value : { type: 'linear' as const, direction: 'horizontal' as const, colorStops: DEFAULT_GRADIENT_STOPS };
     const [activeStopIdx, setActiveStopIdx] = useState(0);
     const activeStop = fill.colorStops[activeStopIdx] ?? fill.colorStops[0];
     const { t } = useTranslation();
 
+    /** 合并渐变 patch 并向外回传完整 FillStyle。 */
     const updateFill = (patch: Partial<typeof fill>) => {
         onChange?.({ ...fill, ...patch });
     };
 
+    /** 更新当前激活色标的颜色。 */
     const updateStopColor = (color: string) => {
         const newStops = fill.colorStops.map((s, i) => (i === activeStopIdx ? { ...s, color } : s));
         updateFill({ colorStops: newStops });
     };
 
+    /** 处理 GradientBar 回传的新色标数组与新的激活索引。 */
     const handleStopChange = (newStops: GradientColorStop[], newActiveIdx: number) => {
         setActiveStopIdx(newActiveIdx);
         updateFill({ colorStops: newStops });
     };
 
+    /** 根据用户输入的百分比更新当前激活色标位置。 */
     const handlePositionInput = (percent: number) => {
         const offset = Math.max(0, Math.min(100, percent)) / 100;
         const newStops = fill.colorStops.map((s, i) => (i === activeStopIdx ? { ...s, offset } : s));
         const sorted = [...newStops].sort((a, b) => a.offset - b.offset);
+        // 为什么更新后要重新计算 activeIdx：
+        // 色标排序后原来的索引可能失效，如果不重算，后续颜色编辑会作用到错误的 stop 上。
         const newIdx = sorted.findIndex((s) => s.offset === offset && s.color === activeStop.color);
         setActiveStopIdx(newIdx >= 0 ? newIdx : 0);
         updateFill({ colorStops: sorted });
@@ -96,10 +103,12 @@ export const GradientPanel: React.FC<FillPanelProps> = ({ value, onChange }) => 
     );
 };
 
+/** 填充面板总入口，在纯色与渐变两种编辑器之间切换。 */
 export const FillPanel: React.FC<FillPanelProps> = ({ value, onChange }) => {
     const isGradient = value.type === 'linear';
     const { t } = useTranslation();
 
+    /** 切换填充类型，并为目标类型构造一份合理的默认值。 */
     const handleTypeSwitch = (type: 'solid' | 'linear') => {
         if (type === 'solid' && value.type !== 'solid') {
             onChange?.({ type: 'solid', color: fillToDisplayColor(value) });

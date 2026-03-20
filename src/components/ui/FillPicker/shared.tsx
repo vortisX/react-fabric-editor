@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { cn } from '../../../utils/cn';
 import { PRESET_COLORS } from './utils';
 
+/** 预设颜色网格，供纯色和渐变 stop 复用。 */
 export const PresetGrid: React.FC<{ currentColor: string; onSelect: (c: string) => void }> = ({
     currentColor,
     onSelect,
@@ -26,6 +27,7 @@ export const PresetGrid: React.FC<{ currentColor: string; onSelect: (c: string) 
     </div>
 );
 
+/** 颜色输入行，组合了原生 color input 与 HEX 文本输入。 */
 export const ColorInputRow: React.FC<{ color: string; onChange: (c: string) => void }> = ({ color, onChange }) => {
     const [hex, setHex] = useState(color);
     const [prevColor, setPrevColor] = useState(color);
@@ -59,6 +61,7 @@ export const ColorInputRow: React.FC<{ color: string; onChange: (c: string) => v
                         if (/^#[0-9a-fA-F]{6}$/.test(v)) onChange(v);
                     }}
                     onBlur={() => {
+                        // 输入非法 hex 时回退到外部当前颜色，避免半成品值长期停留在输入框里。
                         if (!/^#[0-9a-fA-F]{6}$/.test(hex)) setHex(color);
                     }}
                     className="flex-1 h-full px-1 text-xs bg-transparent outline-none font-mono uppercase text-gray-700"
@@ -69,6 +72,7 @@ export const ColorInputRow: React.FC<{ color: string; onChange: (c: string) => v
     );
 };
 
+/** 填充类型切换按钮。 */
 export const TypeButton: React.FC<{ active: boolean; onClick: () => void; label: string }> = ({ active, onClick, label }) => (
     <button
         type="button"
@@ -82,6 +86,7 @@ export const TypeButton: React.FC<{ active: boolean; onClick: () => void; label:
     </button>
 );
 
+/** 渐变方向切换按钮。 */
 export const DirectionButton: React.FC<{ active: boolean; onClick: () => void; label: string; icon: React.ReactNode }> = ({
     active,
     onClick,
@@ -101,6 +106,7 @@ export const DirectionButton: React.FC<{ active: boolean; onClick: () => void; l
     </button>
 );
 
+/** 横向渐变图标。 */
 export const HorizontalIcon = () => (
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
         <rect x="1" y="3" width="10" height="6" rx="1" fill="url(#hg)" />
@@ -113,6 +119,7 @@ export const HorizontalIcon = () => (
     </svg>
 );
 
+/** 纵向渐变图标。 */
 export const VerticalIcon = () => (
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
         <rect x="3" y="1" width="6" height="10" rx="1" fill="url(#vg)" />

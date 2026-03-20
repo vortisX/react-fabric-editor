@@ -8,6 +8,7 @@ import { useEditorStore } from "../../../store/useEditorStore";
 
 import { ExportDialog } from "./ExportDialog";
 
+/** 编辑器顶部栏，负责撤销/重做、导出入口和语言切换。 */
 export const Header = () => {
   const { t, i18n } = useTranslation();
   const title = useEditorStore((state) => state.document?.title);
@@ -17,6 +18,7 @@ export const Header = () => {
   const redo = useEditorStore((state) => state.redo);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
 
+  /** 切换界面语言，并把选择持久化到本地存储。 */
   const handleLanguageChange = (lang: string) => {
     i18n.changeLanguage(lang);
     localStorage.setItem("designx-lang", lang);

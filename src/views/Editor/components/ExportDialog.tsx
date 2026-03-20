@@ -60,7 +60,7 @@ const FORMAT_TONES: Record<ExportFormat, FormatTone> = {
 };
 
 /**
- * Export dialog for downloading the current design in common delivery formats.
+ * 导出弹窗，负责选择格式、倍率、文件名并触发统一导出入口。
  */
 export const ExportDialog = ({
   open,
@@ -101,6 +101,7 @@ export const ExportDialog = ({
   const formatTone = FORMAT_TONES[format];
   const FormatIcon = formatTone.icon;
 
+  /** 执行导出流程，并在失败时统一回落到 i18n 错误提示。 */
   const handleExport = async (): Promise<void> => {
     setIsExporting(true);
     setErrorKey(null);

@@ -10,6 +10,7 @@ interface GradientBarProps {
     onChange: (stops: GradientColorStop[], activeIdx: number) => void;
 }
 
+/** 渐变预览条与色标拖拽区域，负责新增、移动、删除渐变 stop。 */
 export const GradientBar: React.FC<GradientBarProps> = ({
     colorStops,
     direction,
@@ -23,6 +24,7 @@ export const GradientBar: React.FC<GradientBarProps> = ({
     const stops = colorStops.map((s) => `${s.color} ${Math.round(s.offset * 100)}%`).join(', ');
     const bgStyle = `linear-gradient(${dir}, ${stops})`;
 
+    /** 把鼠标横向位置转换成 0~1 之间的渐变 offset。 */
     const getOffset = (clientX: number) => {
         const rect = barRef.current?.getBoundingClientRect();
         if (!rect) return 0;
@@ -35,9 +37,9 @@ export const GradientBar: React.FC<GradientBarProps> = ({
         const rect = barRef.current?.getBoundingClientRect();
         if (!rect) return;
         const offset = getOffset(e.clientX);
-        // 避免在已有色标太近处重复添加
+        // 避免在已有色标太近处重复添加。
         if (colorStops.some((s) => Math.abs(s.offset - offset) < 0.03)) return;
-        // 插值颜色
+        // 插值颜色。
         const sorted = [...colorStops].sort((a, b) => a.offset - b.offset);
         let color = '#888888';
         for (let i = 0; i < sorted.length - 1; i++) {
@@ -66,6 +68,7 @@ export const GradientBar: React.FC<GradientBarProps> = ({
         let currentIdx = idx;
         let removed = false;
 
+        /** 拖拽过程中实时更新色标位置，并处理“拖离删除”态。 */
         const onMove = (me: PointerEvent) => {
             const dy = Math.abs(me.clientY - barRect.bottom);
             const canRemove = currentStops.length > 2 && dy > 30;
@@ -86,6 +89,7 @@ export const GradientBar: React.FC<GradientBarProps> = ({
             }
         };
 
+        /** 拖拽结束时决定是保留当前位置，还是直接删除当前色标。 */
         const onUp = (me: PointerEvent) => {
             target.releasePointerCapture(me.pointerId);
             target.removeEventListener('pointermove', onMove);
@@ -94,13 +98,13 @@ export const GradientBar: React.FC<GradientBarProps> = ({
 
             const dy = Math.abs(me.clientY - barRect.bottom);
             if (colorStops.length > 2 && dy > 30) {
-                // 拖离删除
+                // 拖离删除。
                 const newStops = colorStops.filter((_, i) => i !== idx);
                 onChange(newStops, Math.min(activeIndex, newStops.length - 1));
             }
         };
 
-        onChange(colorStops, idx); // 选中
+        onChange(colorStops, idx); // 选中当前 stop，便于下面的颜色/位置编辑面板同步切换。
         target.addEventListener('pointermove', onMove);
         target.addEventListener('pointerup', onUp);
     };

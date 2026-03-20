@@ -13,7 +13,7 @@ import type { ImageLayer } from '../../../../../types/schema';
 
 /** 图片图层属性面板：点击图片图层时展示 */
 export const ImagePanel = () => {
-  // 精确订阅 activeLayer，避免无关状态变更触发重渲染
+  // 精确订阅 activeLayer，避免无关状态变更触发重渲染。
   const activeLayer = useEditorStore((state) => {
     if (!state.activeLayerId || !state.document) return null;
     const page =
@@ -24,6 +24,7 @@ export const ImagePanel = () => {
 
   if (!activeLayer || activeLayer.type !== 'image') return null;
 
+  /** 把面板里的字段改动统一转交给纯 TS handlers，保持 React 组件尽量轻。 */
   const onPropChange: ImagePropChangeHandler = (key, value) => {
     handleImagePropChange(activeLayer.id, key, value);
   };

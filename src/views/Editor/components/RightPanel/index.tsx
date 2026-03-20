@@ -13,7 +13,8 @@ import { ImagePanel } from './ImagePanel';
  */
 export const RightPanel = () => {
   const { t } = useTranslation();
-  // 精确订阅 activeLayer，获取完整图层对象以判断 type
+  // 为什么这里直接从 activeLayerId 反查完整图层：
+  // 右侧面板需要根据真实 layer.type 路由到不同面板，只订阅 id 不足以决定渲染分支。
   const activeLayer = useEditorStore((s) => {
     if (!s.activeLayerId || !s.document) return null;
     const page = s.document.pages.find((p) => p.pageId === s.currentPageId) ?? s.document.pages[0];

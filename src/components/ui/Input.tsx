@@ -12,8 +12,10 @@ interface NumberInputProps {
   className?: string;
 }
 
+/** 把数值统一保留 1 位小数，减少输入框里出现过长浮点值。 */
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
+/** 通用数字输入框，支持回车提交、失焦提交与上下方向键步进。 */
 export const NumberInput: React.FC<NumberInputProps> = ({
   value, onChange, min, max, step = 1, readOnly = false, className,
 }) => {
@@ -21,6 +23,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
 
   useEffect(() => { setLocal(String(round1(value))); }, [value]);
 
+  /** 把本地字符串提交为数值，并应用最小值/最大值限制。 */
   const commit = () => {
     const n = parseFloat(local);
     if (isNaN(n)) { setLocal(String(round1(value))); return; }
@@ -29,7 +32,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
     setLocal(String(clamped));
   };
 
-  return (
+    return (
     <input
       type="text"
       inputMode="decimal"
@@ -39,6 +42,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
       onBlur={commit}
       onKeyDown={(e) => {
         if (e.key === 'Enter') commit();
+        // 上下键提供轻量级步进能力，方便面板里快速微调数值。
         if (e.key === 'ArrowUp') { e.preventDefault(); onChange?.(round1((parseFloat(local) || 0) + step)); }
         if (e.key === 'ArrowDown') { e.preventDefault(); onChange?.(round1((parseFloat(local) || 0) - step)); }
       }}
@@ -61,11 +65,13 @@ interface TextAreaProps {
   className?: string;
 }
 
+/** 自动高度文本域，会根据内容在最小/最大行数之间伸缩。 */
 export const TextArea: React.FC<TextAreaProps> = ({
   value, onChange, placeholder, minRows = 2, maxRows = 6, className,
 }) => {
   const ref = useRef<HTMLTextAreaElement>(null);
 
+  /** 根据 scrollHeight 自动调整 textarea 高度，避免出现多余滚动条。 */
   useEffect(() => {
     const el = ref.current;
     if (!el) return;

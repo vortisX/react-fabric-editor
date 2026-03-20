@@ -15,6 +15,7 @@ const LICENSE_STYLES: Record<FontLicense, string> = {
   vip: 'bg-amber-50 text-amber-600 border-amber-200',
 };
 
+/** 字体授权标记，帮助用户在选择字体时区分免费与 VIP 资源。 */
 function LicenseBadge({ license }: { license?: FontLicense }) {
   const { t } = useTranslation();
   if (!license) return null;
@@ -28,6 +29,7 @@ function LicenseBadge({ license }: { license?: FontLicense }) {
   );
 }
 
+/** 支持搜索、预览和授权标记的字体下拉选择器。 */
 export function FontSelect({ value, onChange, options, className }: FontSelectProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -35,7 +37,7 @@ export function FontSelect({ value, onChange, options, className }: FontSelectPr
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // 点击外部关闭下拉
+  // 点击外部关闭下拉。
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -47,14 +49,14 @@ export function FontSelect({ value, onChange, options, className }: FontSelectPr
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // 展开时自动聚焦搜索框
+  // 展开时自动聚焦搜索框。
   useEffect(() => {
     if (open) inputRef.current?.focus();
   }, [open]);
 
   const selected = options.find((o) => o.value === value);
 
-  // 搜索过滤：匹配 label 或 value（大小写不敏感）
+  // 搜索过滤：匹配 label 或 value（大小写不敏感）。
   const filtered = useMemo(() => {
     if (!search.trim()) return options;
     const keyword = search.toLowerCase();

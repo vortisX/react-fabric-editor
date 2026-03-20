@@ -12,7 +12,7 @@ import {
 } from "./types";
 
 /**
- * Export the current scene as an SVG blob with embedded local fonts.
+ * 导出当前场景为 SVG Blob，并把本地字体内嵌进去。
  */
 export const exportSvgBlob = async (): Promise<Blob> => {
   const svg = engineInstance.exportSceneSvg();
@@ -28,7 +28,7 @@ export const exportSvgBlob = async (): Promise<Blob> => {
 };
 
 /**
- * Export the current scene as a single-page PDF blob.
+ * 导出当前场景为单页 PDF Blob。
  */
 export const exportPdfBlob = (scale: ExportScale): Blob => {
   const documentState = useEditorStore.getState().document;
@@ -54,7 +54,7 @@ export const exportPdfBlob = (scale: ExportScale): Blob => {
 };
 
 /**
- * Export the current design document as the requested file format and start a browser download.
+ * 按指定格式导出当前设计，并立即触发浏览器下载。
  */
 export const exportCurrentDesign = async (
   format: ExportFormat,
@@ -63,6 +63,8 @@ export const exportCurrentDesign = async (
 ): Promise<void> => {
   const outputName = buildDownloadName(filename, format);
 
+  // 为什么这里集中分发格式：
+  // 导出入口统一放在 core/export 层，视图层只负责传递用户选择，不关心具体格式实现细节。
   const blob =
     format === "png"
       ? exportRasterBlob("png", scale)

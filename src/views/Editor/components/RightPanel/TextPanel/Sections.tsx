@@ -19,6 +19,7 @@ interface DesignNumberInputProps {
   readOnly?: boolean;
 }
 
+/** 文本面板里复用的数字输入壳，统一输入框与标签的排版样式。 */
 const DesignNumberInput = ({ label, value, onChange, step, readOnly = false }: DesignNumberInputProps) => (
   <div className={`flex items-center bg-[#f5f5f5] rounded px-2 py-0.5 border border-transparent hover:border-gray-300 transition-colors ${readOnly ? 'opacity-60 cursor-not-allowed' : ''}`}>
     <span className="text-[10px] text-gray-400 font-medium w-8 select-none flex items-center justify-center">{label}</span>
@@ -26,6 +27,7 @@ const DesignNumberInput = ({ label, value, onChange, step, readOnly = false }: D
   </div>
 );
 
+/** 文本面板分区标题。 */
 const SectionHeader = ({ title }: { title: string }) => (
   <div className="flex justify-between items-center px-4 py-2 bg-white mt-1">
     <span className="text-[11px] font-bold text-gray-800 tracking-wide">{title}</span>
@@ -51,11 +53,13 @@ interface LayoutSectionProps {
 export function LayoutSection({ layer, isTextLayer, textLayer, onPropChange }: LayoutSectionProps) {
   const { t } = useTranslation();
 
+  /** 处理宽度输入，并为文本图层提供与字号相关的最小宽度保护。 */
   const handleWidthChange = (val: number | null) => {
     const minW = isTextLayer ? textLayer.fontSize : 20;
     onPropChange('width', Math.max(val ?? minW, minW));
   };
 
+  /** 处理高度输入，并为文本图层提供与字号/行高相关的最小高度保护。 */
   const handleHeightChange = (val: number | null) => {
     const minH = isTextLayer ? textLayer.fontSize * (textLayer.lineHeight ?? 1.2) : 20;
     onPropChange('height', Math.max(val ?? minH, minH));
@@ -196,7 +200,7 @@ function TextStyleToolbar({ layer, onPropChange }: TextSectionProps) {
 export function ColorFillSection({ layer, onPropChange }: TextSectionProps) {
   const { t } = useTranslation();
 
-  // 将 fill 规范化为 FillStyle 对象
+  // 将 fill 规范化为 FillStyle 对象。
   const fillValue: FillStyle =
     typeof layer.fill === 'string'
       ? { type: 'solid', color: layer.fill || '#000000' }

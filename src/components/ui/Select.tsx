@@ -13,10 +13,12 @@ interface SelectProps {
   className?: string;
 }
 
+/** 通用下拉选择器，适合简单枚举值选择。 */
 export const Select: React.FC<SelectProps> = ({ value, onChange, options, className }) => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  /** 点击组件外部时关闭下拉面板。 */
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
@@ -44,6 +46,7 @@ export const Select: React.FC<SelectProps> = ({ value, onChange, options, classN
           {options.map((opt) => (
             <div
               key={opt.value}
+              // 选择后立即关闭面板，保持与原生 select 类似的交互预期。
               onClick={() => { onChange?.(opt.value); setOpen(false); }}
               className={cn(
                 'px-2 py-1.5 text-xs cursor-pointer hover:bg-blue-50 transition-colors',

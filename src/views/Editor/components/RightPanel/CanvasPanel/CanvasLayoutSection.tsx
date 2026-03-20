@@ -13,11 +13,13 @@ import {
   applyDimensionChange,
 } from './CanvasLayout.handlers';
 
+/** 把数值按指定小数位四舍五入，供非 px 单位显示时复用。 */
 function roundTo(n: number, digits: number) {
   const m = Math.pow(10, digits);
   return Math.round(n * m) / m;
 }
 
+/** 画布面板分区标题。 */
 function SectionHeader({ title }: { title: string }) {
   return (
     <div className="flex justify-between items-center px-4 py-2 bg-white mt-1">
@@ -26,6 +28,10 @@ function SectionHeader({ title }: { title: string }) {
   );
 }
 
+/**
+ * 带实时输入的数字框。
+ * 输入过程会先更新本地字符串，再通过 rAF 节流把可解析数值回传给外层。
+ */
 function RealtimeNumberInput(props: {
   value: number;
   onChange: (value: number | null) => void;
@@ -47,6 +53,8 @@ function RealtimeNumberInput(props: {
       onChange={(e) => {
         const next = e.target.value;
         setLocal(next);
+        // 为什么用 rAF 包一层：
+        // 连续输入时可以把同一帧内的多次字符变化合并，减少外层 Store 更新频率。
         if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
         rafRef.current = requestAnimationFrame(() => {
           rafRef.current = null;
@@ -62,6 +70,10 @@ function RealtimeNumberInput(props: {
   );
 }
 
+/**
+ * 画布全局设置区。
+ * 负责处理预设尺寸、宽高单位切换、背景设置以及撤销/重做入口。
+ */
 export function CanvasLayoutSection() {
   const { t } = useTranslation();
   const unitOptions = useMemo(
@@ -109,16 +121,19 @@ export function CanvasLayoutSection() {
   if (!hasDocument) return null;
   const safeBackground: PageBackground = background ?? { type: 'color', value: '#ffffff' };
 
+  /** 处理宽度输入，并把校验错误翻译成可直接展示的文案。 */
   const handleWidthChange = (v: number | null) => {
     const errKey = applyDimensionChange('width', v, unit);
     setWidthError(errKey ? t(errKey, { min: CANVAS_MIN_PX, max: CANVAS_MAX_PX }) : null);
   };
 
+  /** 处理高度输入，并把校验错误翻译成可直接展示的文案。 */
   const handleHeightChange = (v: number | null) => {
     const errKey = applyDimensionChange('height', v, unit);
     setHeightError(errKey ? t(errKey, { min: CANVAS_MIN_PX, max: CANVAS_MAX_PX }) : null);
   };
 
+  /** 切换尺寸单位时先清空错误态，避免沿用旧单位下的错误提示。 */
   const handleUnitChange = (val: string) => {
     setWidthError(null);
     setHeightError(null);
@@ -174,6 +189,7 @@ export function CanvasLayoutSection() {
             onChange={(mode) => {
               if (mode === 'image') {
                 if (safeBackground.type === 'image') return;
+                // 先写入空 url 的 image 背景，占住模式；真正图片资源由后续文件选择填充。
                 setPageBackground({ type: 'image', url: '', fit: 'cover' });
                 return;
               }
@@ -196,6 +212,8 @@ export function CanvasLayoutSection() {
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
+                  // 为什么读成 dataURL：
+                  // 当前背景图先以内存资源方式接入，避免引入额外上传流程也能立即预览。
                   const reader = new FileReader();
                   reader.onload = () => {
                     const url = String(reader.result || '');
