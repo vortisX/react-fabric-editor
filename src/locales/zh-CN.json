@@ -171,7 +171,7 @@
     "editing": "正在编辑组内图层",
     "notEditing": "当前为整组选择状态",
     "doubleClickHint": "双击画布中的组合可进入或退出组内编辑。",
-    "enterEditing": "进入组编辑",
+    "enterEditing": "组内编辑",
     "exitEditing": "退出组编辑",
     "boundsX": "X",
     "boundsY": "Y",

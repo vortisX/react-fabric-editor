@@ -65,18 +65,22 @@ export const LeftPanel = () => {
       return;
     }
 
-    setSelectedIds((previous) => {
-      const next = previous.includes(layer.id)
-        ? previous.filter((id) => id !== layer.id)
-        : [...previous, layer.id];
-      if (next.length === 1) {
-        const selectedLayer = findLayerById(layers, next[0]) ?? null;
-        if (selectedLayer) selectTreeLayer(selectedLayer);
-      } else {
-        useEditorStore.getState().setActiveLayer(null);
-      }
-      return next;
-    });
+    const nextSelectedIds = selectedIds.includes(layer.id)
+      ? selectedIds.filter((id) => id !== layer.id)
+      : [...selectedIds, layer.id];
+
+    setSelectedIds(nextSelectedIds);
+
+    // 这里不能把 Store 更新放进 setSelectedIds 的函数式 updater。
+    // React 会在渲染阶段执行 updater，若此时再触发 Zustand/React 更新，
+    // 就会出现 “Cannot update a component while rendering” 的告警。
+    if (nextSelectedIds.length === 1) {
+      const selectedLayer = findLayerById(layers, nextSelectedIds[0]) ?? null;
+      if (selectedLayer) selectTreeLayer(selectedLayer);
+      return;
+    }
+
+    useEditorStore.getState().setActiveLayer(null);
   };
 
   /** 处理组合图层展开/收起。 */

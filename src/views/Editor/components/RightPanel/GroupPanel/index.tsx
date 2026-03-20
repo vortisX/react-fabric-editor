@@ -124,6 +124,7 @@ export const GroupPanel = () => {
             <Button
               variant={isEditingGroup ? "default" : "primary"}
               size="small"
+              className="shrink-0 whitespace-nowrap px-2"
               icon={
                 isEditingGroup ? (
                   <ArrowLeftFromLine className="h-3.5 w-3.5" />
