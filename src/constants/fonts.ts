@@ -9,6 +9,7 @@ export interface FontOption {
   license?: FontLicense;
 }
 
+/** 返回当前项目允许选择的字体列表。 */
 export function getSupportedFonts(): FontOption[] {
   return [
     { label: i18n.t('fonts.systemDefault'), value: "sans-serif", license: 'free' },
@@ -29,4 +30,5 @@ export function getSupportedFonts(): FontOption[] {
   ];
 }
 
+/** 字体常量快照，供字体选择器、SVG 导出和全局字体注册复用。 */
 export const SUPPORTED_FONTS: FontOption[] = getSupportedFonts();

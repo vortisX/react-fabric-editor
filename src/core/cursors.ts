@@ -42,7 +42,7 @@ function customRotateCursorHandler(
   control: Control,
   _fabricObject: FabricObject,
 ): string {
-  // 通过在 controls 中查找匹配 control 引用来确定 key
+  // 通过在 controls 中查找匹配 control 引用来确定 key。
   const obj = _fabricObject;
   const controls = obj.controls as Record<string, Control>;
   for (const key of Object.keys(controls)) {
@@ -63,6 +63,7 @@ function addCornerRotateControls(obj: FabricObject): void {
   const rotHandler = controlsUtils.rotationWithSnapping;
 
   for (const c of ROT_CORNERS) {
+    // 旋转热区本身不渲染可见图形，只作为命中区域存在。
     controls[c.key] = new Control({
       x: c.x,
       y: c.y,
@@ -95,6 +96,6 @@ export function applyCursorsToControls(obj: FabricObject): void {
     controls.mtr.visible = false;
   }
 
-  // 在四角外侧添加 Figma 风格旋转控制点
+  // 在四角外侧添加 Figma 风格旋转控制点。
   addCornerRotateControls(obj);
 }

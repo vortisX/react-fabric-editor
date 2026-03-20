@@ -1,6 +1,6 @@
 /**
- * 生成带前缀的唯一 ID
- * 示例: genId("layer") → "layer_k7x2m9p1"
+ * 生成带业务前缀的简易唯一 ID。
+ * 这样既方便调试时一眼看出资源类型，也能避免不同实体之间的 id 混淆。
  */
 export function genId(prefix = "id"): string {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;

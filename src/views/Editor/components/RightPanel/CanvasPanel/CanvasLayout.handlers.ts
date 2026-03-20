@@ -5,8 +5,8 @@ import { CANVAS_MIN_PX, CANVAS_MAX_PX, type CanvasUnit } from '../../../../../co
 import type { FillStyle, GradientFill, PageBackground } from '../../../../../types/schema';
 
 /**
- * Converts a PageBackground to a FillStyle for use with FillPicker.
- * Image backgrounds are treated as white solid fill (not editable via FillPicker).
+ * 把 Schema 里的页面背景转换成 FillPicker 可消费的填充结构。
+ * 图片背景暂时视为纯白填充，因为当前 FillPicker 不负责编辑背景图。
  */
 export function normalizeFillFromBackground(bg: PageBackground): FillStyle {
   if (bg.type === 'color') return { type: 'solid', color: bg.value };
@@ -14,9 +14,7 @@ export function normalizeFillFromBackground(bg: PageBackground): FillStyle {
   return { type: 'solid', color: '#ffffff' };
 }
 
-/**
- * Converts a FillStyle back to a PageBackground for storage in the schema.
- */
+/** 把 FillPicker 返回的填充结构重新转换成可落库的页面背景数据。 */
 export function nextBackgroundFromFill(fill: FillStyle): PageBackground {
   if (fill.type === 'solid') return { type: 'color', value: fill.color };
   // 渐变类型：fill 本身即为 GradientFill，直接包装成 GradientBackground
@@ -24,8 +22,8 @@ export function nextBackgroundFromFill(fill: FillStyle): PageBackground {
 }
 
 /**
- * Handles canvas preset selection.
- * Updates unit and canvas size in the store via getState() to stay decoupled from React lifecycle.
+ * 处理画布预设切换。
+ * 这里直接通过 getState() 更新 Store，保持处理逻辑与 React 生命周期解耦。
  */
 export function handlePresetChange(presetId: CanvasPresetId): void {
   const preset = CANVAS_PRESETS.find((p) => p.id === presetId);
@@ -42,9 +40,8 @@ export function handlePresetChange(presetId: CanvasPresetId): void {
 }
 
 /**
- * Handles manual dimension input change.
- * Returns the i18n error key on validation failure, or null on success.
- * The caller is responsible for translating the key via t().
+ * 处理手动输入的画布尺寸。
+ * 校验失败时返回 i18n key，成功时返回 null，翻译工作由调用方通过 `t()` 完成。
  */
 export function applyDimensionChange(
   kind: 'width' | 'height',

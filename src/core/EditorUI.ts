@@ -6,6 +6,7 @@ import { EDITOR_GLOBAL_STYLE } from "./constants";
 // 字体加载
 // ==========================================
 
+/** 加载项目内置本地字体，并把它们注册到浏览器字体集合与 Fabric config。 */
 async function loadLocalFonts(): Promise<void> {
   const registeredFamilies = new Set<string>();
   document.fonts.forEach((face) => registeredFamilies.add(face.family));
@@ -22,6 +23,7 @@ async function loadLocalFonts(): Promise<void> {
       const loadedFace = await fontFace.load();
       document.fonts.add(loadedFace);
     } catch (err) {
+      // 字体加载失败时只打印日志，不阻塞编辑器初始化。
       console.error(`[FontLoader] 加载失败: ${font.label}`, err);
     }
   }
@@ -33,6 +35,7 @@ async function loadLocalFonts(): Promise<void> {
 // 全局控件皮肤
 // ==========================================
 
+/** 把统一的编辑器交互样式写入 FabricObject/Textbox 原型。 */
 function applyGlobalPrototypeStyle(): void {
   Object.assign(FabricObject.prototype, EDITOR_GLOBAL_STYLE);
   Object.assign(Textbox.prototype, EDITOR_GLOBAL_STYLE);

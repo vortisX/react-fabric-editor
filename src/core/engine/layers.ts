@@ -17,7 +17,7 @@ export {
   shouldHandleTextLayoutUpdate,
 } from "./textLayer";
 
-/** Restore the current page layer stack into the Fabric canvas. */
+/** 把当前页面的图层栈按顺序恢复到 Fabric 画布中。 */
 export const loadLayerStackToCanvas = async (
   canvas: Canvas,
   layers: Layer[],

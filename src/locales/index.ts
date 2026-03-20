@@ -19,6 +19,7 @@ export type LanguageCode = (typeof LANGUAGES)[number]['code'];
 
 const SUPPORTED_CODES = LANGUAGES.map((l) => l.code) as unknown as string[];
 
+/** 根据用户本地存储和浏览器语言环境推断当前应使用的界面语言。 */
 function detectLanguage(): string {
   // 1. 用户手动选择过的语言优先
   if (typeof window !== 'undefined') {
@@ -46,6 +47,7 @@ function detectLanguage(): string {
 
 const savedLang = detectLanguage();
 
+/** 初始化 i18next，并注册 React 绑定与多语言资源。 */
 i18n
   .use(initReactI18next)
   .init({

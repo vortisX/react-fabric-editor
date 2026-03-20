@@ -7,7 +7,7 @@ import { fillStyleToFabric } from "./fill";
 import { LAYOUT_KEYS } from "./helpers";
 import type { LayerMeasurement } from "./types";
 
-/** Create a Fabric textbox from the schema layer. */
+/** 根据 Schema 文本图层创建对应的 Fabric 文本框对象。 */
 export const createTextObject = (layer: TextLayer): CustomTextbox =>
   CustomTextbox.fromLayer(layer);
 
@@ -76,7 +76,10 @@ export const handleTextLayoutUpdate = (
   });
 };
 
-/** Add a text layer to the canvas and return the normalized placement result. */
+/**
+ * 把文本图层添加到画布中，并返回标准化后的落位结果。
+ * 新建文本时会先按内容测量真实尺寸，再以文档中心作为默认落点。
+ */
 export const addTextLayerToCanvas = (
   canvas: Canvas,
   layer: TextLayer,

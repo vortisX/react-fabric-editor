@@ -98,7 +98,7 @@ const normalizeImageObjectSize = async (
   img.setCoords();
 };
 
-/** Apply the schema-side filter values to a Fabric image instance. */
+/** 把 Schema 中记录的滤镜值同步应用到 Fabric 图片实例。 */
 export const applyImageFilters = (
   img: FabricImage,
   layer: Pick<ImageLayer, "brightness" | "contrast" | "saturation">,
@@ -150,7 +150,7 @@ const applyBaseImageProps = (
   applyLayerControls(img);
 };
 
-/** Create a normalized Fabric image object from the schema layer. */
+/** 根据 Schema 图片图层创建一个尺寸已归一化的 Fabric 图片对象。 */
 export const createImageObject = async (
   layer: ImageLayer,
   width: number,
@@ -170,8 +170,8 @@ export const createImageObject = async (
 };
 
 /**
- * Add an image layer to the canvas and normalize the resulting object size.
- * The placed image is limited to 80% of the document viewport.
+ * 把图片图层添加到画布中，并返回归一化后的落位尺寸。
+ * 初始放置时会限制在文档视口的 80% 内，避免新图一加入就占满工作区。
  */
 export const addImageLayerToCanvas = async ({
   canvas,
@@ -226,7 +226,8 @@ export const addImageLayerToCanvas = async ({
 };
 
 /**
- * Update image-only Fabric props such as filters, clipPath and normalized width/height.
+ * 更新图片对象专属的 Fabric 属性。
+ * 这里会额外处理滤镜、圆角裁剪路径，以及 width/height 的归一化逻辑。
  */
 export const updateImageLayerProps = async ({
   img,
@@ -313,7 +314,7 @@ export const updateImageLayerProps = async ({
   });
 };
 
-/** Normalize image scale back into width/height after interactive transforms. */
+/** 在交互缩放结束后，把图片的 scale 折叠回标准的 width/height。 */
 export const finalizeImageScale = async (
   img: FabricImageLayer,
 ): Promise<void> => {

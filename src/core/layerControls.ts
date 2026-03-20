@@ -4,8 +4,8 @@ import { applyCursorsToControls } from './cursors';
 // ==================== 圆角矩形路径工具 ====================
 
 /**
- * Draws a rounded rectangle path. Falls back to a plain rect in environments
- * that do not support the native roundRect API.
+ * 绘制圆角矩形路径。
+ * 如果运行环境不支持原生 `roundRect`，则退回普通矩形，保证渲染逻辑可继续执行。
  */
 export function drawRoundedRect(
   ctx: CanvasRenderingContext2D,
@@ -135,14 +135,14 @@ export function applyLayerControls(obj: FabricObject): void {
   // 隐藏上下拉伸手柄和原始旋转手柄
   if (controls.mtr) controls.mtr.visible = false;
   
-  // 对于非图片对象（如文本），隐藏上下手柄；图片对象保留以便调整高度/拉伸
+  // 对于非图片对象（如文本），隐藏上下手柄；图片对象保留以便调整高度/拉伸。
   const isImage = obj instanceof FabricImage;
   if (!isImage) {
     if (controls.mt) controls.mt.visible = false;
     if (controls.mb) controls.mb.visible = false;
   }
 
-  // 将左右手柄替换为胶囊形状
+  // 将左右手柄替换为胶囊形状。
   // 对于非图片对象（如文本），使用 handleWidth (changeWidth) 以改变 width 属性（重排文字）
   // 对于图片对象，保留默认的 scalingX 行为（改变 scaleX），但应用自定义渲染
 
@@ -163,7 +163,7 @@ export function applyLayerControls(obj: FabricObject): void {
     controls.mr._isEnhanced = true;
   }
 
-  // 图片对象：上下手柄也使用胶囊形状（横向胶囊）
+  // 图片对象：上下手柄也使用胶囊形状（横向胶囊）。
   if (isImage) {
     if (controls.mt && !controls.mt._isEnhanced) {
       controls.mt.render = renderHorizontalPill;
@@ -175,6 +175,6 @@ export function applyLayerControls(obj: FabricObject): void {
     }
   }
 
-  // 应用自定义 SVG 光标 + Figma 风格四角透明旋转热区
+  // 应用自定义 SVG 光标 + Figma 风格四角透明旋转热区。
   applyCursorsToControls(obj);
 }

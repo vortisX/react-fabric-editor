@@ -2,11 +2,11 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 /**
- * 将多个类名合并为一个字符串，并智能合并 Tailwind CSS 类。
- * @param inputs - 要合并的类值数组。
- * @returns 合并后的单个类名字符串。
+ * 合并多个类名输入，并自动消解 Tailwind CSS 的重复或冲突类。
+ * @param inputs 要参与合并的类名片段。
+ * @returns 适合直接挂到 `className` 上的最终字符串。
  */
 export function cn(...inputs: ClassValue[]) {
-  // twMerge 会处理 clsx 生成的类字符串，合并重复或冲突的 Tailwind 类
+  // 先用 clsx 处理条件拼接，再由 twMerge 清理 Tailwind 冲突类，避免后面的样式被前面的无效覆盖。
   return twMerge(clsx(inputs));
 }
