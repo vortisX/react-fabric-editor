@@ -35,7 +35,7 @@ export const loadLayerStackToCanvas = async (
       canvas.add(img);
       img.setCoords();
     } catch {
-      // 图片加载失败时跳过，避免阻塞整个文档恢复。
+      // 图片加载失败时跳过，避免单个资源异常阻塞整个文档恢复。
     }
   }
 

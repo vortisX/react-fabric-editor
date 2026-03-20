@@ -27,6 +27,7 @@ interface UpdateImageLayerPropsParams {
 
 const FILTER_KEYS = new Set(["brightness", "contrast", "saturation"]);
 
+/** 以 Promise 形式加载原生 HTMLImageElement，供 Fabric 或二次采样流程复用。 */
 const loadHtmlImage = (src: string): Promise<HTMLImageElement> =>
   new Promise((resolve, reject) => {
     const img = new window.Image();
@@ -35,6 +36,10 @@ const loadHtmlImage = (src: string): Promise<HTMLImageElement> =>
     img.src = src;
   });
 
+/**
+ * 把任意图片源重新采样到指定宽高，并返回新的 HTMLImageElement。
+ * 这样可以把图片对象的真实像素尺寸与 Schema 宽高对齐，避免长期依赖 scaleX/scaleY。
+ */
 const resizeImageElement = async (
   source: CanvasImageSource,
   width: number,
@@ -53,6 +58,7 @@ const resizeImageElement = async (
   return loadHtmlImage(canvas.toDataURL("image/png"));
 };
 
+/** 按 borderRadius 更新图片的裁剪路径，保证圆角跟随尺寸变化。 */
 const updateImageClipPath = (
   img: FabricImageLayer,
   width: number,
@@ -79,6 +85,7 @@ const updateImageClipPath = (
   });
 };
 
+/** 把图片对象的底层元素重新采样并归一到 width/height 上。 */
 const normalizeImageObjectSize = async (
   img: FabricImageLayer,
   width: number,
@@ -112,6 +119,7 @@ export const applyImageFilters = (
   img.applyFilters();
 };
 
+/** 把图片图层的基础显示属性批量应用到 FabricImage 实例。 */
 const applyBaseImageProps = (
   img: FabricImageLayer,
   layer: ImageLayer,
@@ -186,6 +194,8 @@ export const addImageLayerToCanvas = async ({
   const resolvedDocHeight = docHeight || canvas.height / displayZoom || 600;
   const maxWidth = resolvedDocWidth * 0.8;
   const maxHeight = resolvedDocHeight * 0.8;
+  // 为什么限制到文档 80%：
+  // 新增大图时如果直接按原始分辨率放入，很容易一上来就铺满甚至超出画布，影响初次编辑体验。
   const scale = Math.min(1, maxWidth / naturalWidth, maxHeight / naturalHeight);
   const finalWidth = Math.round(naturalWidth * scale);
   const finalHeight = Math.round(naturalHeight * scale);
@@ -263,6 +273,7 @@ export const updateImageLayerProps = async ({
     try {
       await normalizeImageObjectSize(img, targetWidth, targetHeight);
     } catch {
+      // 采样失败时仍然退回到直接设置尺寸，优先保证编辑器可继续工作。
       img.set({
         width: targetWidth,
         height: targetHeight,
@@ -287,6 +298,8 @@ export const updateImageLayerProps = async ({
   if (!hasFilterChange) return;
 
   const storeLayer = readStoreLayer();
+  // 为什么要回读 storeLayer：
+  // 本次 patch 里可能只改了 brightness，但滤镜应用需要完整的 brightness/contrast/saturation 组合。
   applyImageFilters(img, {
     brightness: (filterOverrides.brightness ?? storeLayer?.brightness) as
       | number
@@ -310,6 +323,7 @@ export const finalizeImageScale = async (
   try {
     await normalizeImageObjectSize(img, finalWidth, finalHeight);
   } catch {
+    // 归一失败时保底直接折叠 scale，避免对象停留在 scale!=1 的非标准状态。
     img.set({ width: finalWidth, height: finalHeight, scaleX: 1, scaleY: 1 });
     img.setCoords();
   }

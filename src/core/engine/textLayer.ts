@@ -11,7 +11,10 @@ import type { LayerMeasurement } from "./types";
 export const createTextObject = (layer: TextLayer): CustomTextbox =>
   CustomTextbox.fromLayer(layer);
 
-/** Build the final Fabric prop patch for a text layer update. */
+/**
+ * 构造文本图层更新时最终传给 Fabric 的属性补丁。
+ * 这里会处理 fill 转换与 `_manualHeight` 这种 Fabric 外部扩展字段。
+ */
 export const buildTextLayerProps = (
   target: FabricObject,
   props: Record<string, unknown>,
@@ -29,20 +32,24 @@ export const buildTextLayerProps = (
   }
 
   if (props.height !== undefined) {
+    // 手动高度需要单独透传给 CustomTextbox，避免后续 autoFit 覆盖用户显式输入的高度。
     finalProps._manualHeight = props.height;
   }
 
   return finalProps;
 };
 
-/** Check whether a text layer patch requires a post-set layout pass. */
+/** 判断本次文本 patch 是否需要在 set 之后额外做一次布局重算。 */
 export const shouldHandleTextLayoutUpdate = (
   target: FabricObject,
   props: Record<string, unknown>,
 ): target is Textbox =>
   LAYOUT_KEYS.some((key) => props[key] !== undefined) && target instanceof Textbox;
 
-/** Recalculate textbox dimensions and push the normalized size back to the store. */
+/**
+ * 重新计算 Textbox 尺寸，并把标准化后的宽高回写到 Store。
+ * 这样 UI 面板与导出 JSON 看到的始终是 Textbox 当前真实尺寸。
+ */
 export const handleTextLayoutUpdate = (
   target: Textbox,
   props: Record<string, unknown>,
@@ -50,6 +57,7 @@ export const handleTextLayoutUpdate = (
   target.initDimensions();
 
   if (target instanceof CustomTextbox && props.height === undefined) {
+    // 当用户没有显式改高度时，文本框高度由内容自动撑开。
     target.autoFitHeight();
   }
 

@@ -31,6 +31,10 @@ const OMITTED_SCHEMA_KEYS = new Set([
   "lockMovement",
 ]);
 
+/**
+ * 把 Schema 层 patch 映射成 Fabric 可识别的属性补丁。
+ * 文本和图片在字段命名上存在差异，因此这里按对象类型分别处理。
+ */
 const mapSchemaPatchToFabricProps = (
   target: FabricObject,
   props: Record<string, unknown>,
@@ -47,6 +51,7 @@ const mapSchemaPatchToFabricProps = (
     }
 
     const fabricKey = SCHEMA_TO_FABRIC[key] ?? key;
+    // Fabric 的 charSpacing 单位是 1/1000 em，而 Schema 里按更直观的字距值保存，因此这里做一次换算。
     mappedProps[fabricKey] =
       key === "letterSpacing" ? Number(rawValue ?? 0) * 10 : rawValue;
   }
@@ -54,6 +59,10 @@ const mapSchemaPatchToFabricProps = (
   return mappedProps;
 };
 
+/**
+ * 把来自 Store 的图层属性更新应用到 Fabric 对象。
+ * 图片与文本走不同分支：图片需要异步归一尺寸/滤镜，文本则需要额外处理布局。
+ */
 export const updateFabricLayerProps = ({
   canvas,
   target,

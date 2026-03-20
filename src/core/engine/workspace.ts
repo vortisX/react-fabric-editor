@@ -7,6 +7,7 @@ export interface EditorSurfacePadding {
   y: number;
 }
 
+/** 计算编辑器外围缓冲层 padding，保证缩放后画布周围始终有足够可滚动留白。 */
 export const getEditorSurfacePadding = (
   displayZoom: number,
   viewportWidth = 0,
@@ -16,6 +17,7 @@ export const getEditorSurfacePadding = (
   y: Math.max(EDITOR_SURFACE_BASE_PADDING * displayZoom, viewportHeight),
 });
 
+/** 根据文档尺寸、缩放值和缓冲层 padding 计算实际 Fabric 画布尺寸。 */
 export const getEditorSurfaceSize = (
   docWidth: number,
   docHeight: number,
@@ -35,6 +37,7 @@ export const getEditorSurfaceSize = (
   };
 };
 
+/** 生成 Fabric viewportTransform，让文档内容落在缓冲层 padding 之后的可视区域内。 */
 export const getEditorViewportTransform = (
   displayZoom: number,
   viewportWidth = 0,

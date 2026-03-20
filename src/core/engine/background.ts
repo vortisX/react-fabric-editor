@@ -12,6 +12,10 @@ interface ApplyBackgroundParams {
   setAbort: (controller: AbortController) => void;
 }
 
+/**
+ * 把页面背景配置应用到 Fabric 画布。
+ * 支持纯色、渐变、图片 cover/stretch/tile/none，并负责取消上一次未完成的图片加载。
+ */
 export const applyBackground = ({
   canvas,
   background,
@@ -20,6 +24,7 @@ export const applyBackground = ({
   currentAbort,
   setAbort,
 }: ApplyBackgroundParams): void => {
+  /** 创建一个不可交互的背景矩形，用来承载纯色、渐变或平铺 Pattern。 */
   const createBackgroundRect = (fill: string | Pattern): Rect =>
     new Rect({
       left: 0,
@@ -34,6 +39,8 @@ export const applyBackground = ({
       excludeFromExport: false,
     });
 
+  // 为什么每次都先终止旧请求：
+  // 用户快速切换背景时，旧图片如果后到达，会把新背景覆盖掉，因此必须先 cancel。
   currentAbort?.abort();
 
   const controller = new AbortController();
@@ -76,6 +83,7 @@ export const applyBackground = ({
       const imageHeight = img.height ?? 1;
 
       if (fit === "tile") {
+        // 平铺模式不需要缩放图片本体，而是把图片元素包装成 Fabric Pattern 重复填充。
         canvas.backgroundImage = createBackgroundRect(
           new Pattern({
             source: img.getElement(),
@@ -88,6 +96,7 @@ export const applyBackground = ({
       }
 
       if (fit === "stretch") {
+        // 拉伸模式直接把图片缩放到文档尺寸，允许牺牲原始比例。
         img.set({
           originX: "left",
           originY: "top",
@@ -103,6 +112,7 @@ export const applyBackground = ({
       }
 
       if (fit === "none") {
+        // 原尺寸模式只把图片放到画布中心，不做任何缩放。
         img.set({
           originX: "center",
           originY: "center",
@@ -133,5 +143,7 @@ export const applyBackground = ({
       canvas.backgroundColor = "transparent";
       canvas.requestRenderAll();
     })
-    .catch(() => {});
+    .catch(() => {
+      // 背景图片加载失败时保持当前画布可用，避免因为资源异常阻塞编辑器。
+    });
 };

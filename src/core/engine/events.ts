@@ -56,6 +56,10 @@ interface FabricTopLayerInternals {
   renderTopLayer: (ctx: CanvasRenderingContext2D) => void;
 }
 
+/**
+ * 统一绑定 Engine 需要的 Fabric 事件。
+ * 这里同时处理选中态同步、hover 控件描边、变换事件桥接等交互逻辑。
+ */
 export const bindEngineEvents = ({
   canvas,
   onSelectionChanged,
@@ -69,6 +73,7 @@ export const bindEngineEvents = ({
   const mainContext = canvas.getContext();
   const topContext = canvas.getTopContext();
 
+  /** 重绘 Fabric 顶层控制层，补充 hover 态边框与激活对象控件。 */
   const renderTopOverlay = (): void => {
     canvas.clearContext(topContext);
     (canvas as unknown as Canvas & FabricTopLayerInternals).renderTopLayer(
@@ -85,6 +90,8 @@ export const bindEngineEvents = ({
     if (activeObject === hoveredTarget) return;
     if (!canvas.getObjects().includes(hoveredTarget)) return;
 
+    // 为什么这里手动补画 hover 边框：
+    // Fabric 默认只给 activeObject 画控件，hover 态需要我们在 top layer 上额外渲染。
     hoveredTarget._renderControls(topContext, {
       hasBorders: true,
       hasControls: false,
@@ -92,6 +99,7 @@ export const bindEngineEvents = ({
     });
   };
 
+  /** 更新当前 hover 对象，并在变化时重绘顶层 overlay。 */
   const setHoveredTarget = (target?: FabricObject): void => {
     if (hoveredTarget === target) return;
     hoveredTarget = target;
@@ -150,11 +158,16 @@ export const bindEngineEvents = ({
   });
 };
 
+/** 把 Fabric 当前选中对象同步回 Store 的 activeLayerId。 */
 export const handleSelectionChanged = (target?: FabricObject): void => {
   const id = target ? (target as CustomTextbox).id : null;
   useEditorStore.getState().setActiveLayer(id ?? null, "engine");
 };
 
+/**
+ * 处理缩放中的实时逻辑。
+ * 文本图层需要在边缩放时把 scale 归一到 width/fontSize，图片等其它对象则只做实时同步节流。
+ */
 export const handleScaling = ({
   canvas,
   event,
@@ -181,6 +194,8 @@ export const handleScaling = ({
   if (isSideResize) {
     const center = target.getCenterPoint();
     const newWidth = Math.max((target.width ?? 0) * scaleX, 1);
+    // 为什么边缩放时立刻归一 scaleX：
+    // 文本宽度要始终落在 width 上，不能长期把宽度变化藏在 scaleX 里，否则 Store 很难保持标准化。
     target.set({ width: newWidth, scaleX: 1 });
     target.setPositionByOrigin(center, "center", "center");
     target.initDimensions();
@@ -191,6 +206,7 @@ export const handleScaling = ({
   queueLiveTransform(target as FabricLayerTarget);
 };
 
+/** 处理移动、旋转、resize 等实时变换，统一复用 live transform 节流同步。 */
 export const handleResizing = (
   target: FabricObject,
   queueLiveTransform: (target: FabricLayerTarget) => void,
@@ -198,6 +214,10 @@ export const handleResizing = (
   queueLiveTransform(target as FabricLayerTarget);
 };
 
+/**
+ * 处理对象变换提交完成后的最终同步。
+ * 这里才允许写入 commit=true 的历史步骤，避免拖动过程中持续污染历史栈。
+ */
 export const handleModified = ({
   event,
   finalizeImageScaling,
@@ -220,6 +240,7 @@ export const handleModified = ({
   }
 
   if (target instanceof FabricImage) {
+    // 图片需要先把 scaleX/scaleY 折叠回 width/height，再把标准化结果同步回 Store。
     void finalizeImageScaling(target as FabricImageLayer).then(() => {
       syncLayerTransform(targetWithId);
     });
@@ -227,6 +248,7 @@ export const handleModified = ({
   }
 };
 
+/** 处理文本内容变化，并把文本内容、显示名与自动测量后的尺寸回写到 Store。 */
 export const handleTextChanged = (target: FabricObject): void => {
   const textbox = target as CustomTextbox;
   if (!textbox.id || textbox.text === undefined) return;
@@ -248,6 +270,10 @@ export const handleTextChanged = (target: FabricObject): void => {
   }, { commit: false, origin: "engine" });
 };
 
+/**
+ * 在高频交互中节流同步对象几何信息。
+ * 这里只做实时预览同步，不进入历史栈。
+ */
 export const syncLiveTransform = ({
   target,
   syncTransformRaf,
@@ -294,6 +320,10 @@ export const syncLiveTransform = ({
   setSyncTransformRaf(rafId);
 };
 
+/**
+ * 把对象最终几何信息一次性提交到 Store。
+ * 与 syncLiveTransform 的区别在于：这里属于“操作完成”，因此 commit=true。
+ */
 export const syncLayerTransform = (target: FabricLayerTarget): void => {
   if (!target?.id) return;
 

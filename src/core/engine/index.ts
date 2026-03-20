@@ -38,10 +38,15 @@ export class EditorEngine {
   private workspaceViewportWidth = 0;
   private workspaceViewportHeight = 0;
 
+  /** 判断 Engine 是否已经完成 Fabric Canvas 初始化。 */
   public isReady(): boolean {
     return this.canvas !== null;
   }
 
+  /**
+   * 初始化编辑器引擎。
+   * 会重置文档尺寸、工作区缩放上下文，并创建新的 Fabric Canvas 实例。
+   */
   public init(canvasEl: HTMLCanvasElement, width: number, height: number): void {
     if (this.canvas) this.dispose();
 
@@ -56,6 +61,7 @@ export class EditorEngine {
     this.bindEvents();
   }
 
+  /** 释放引擎内部的异步任务、背景请求与 Fabric 实例。 */
   public dispose(): void {
     if (this.syncTransformRaf !== null) {
       cancelAnimationFrame(this.syncTransformRaf);
@@ -70,6 +76,7 @@ export class EditorEngine {
     this.canvas = null;
   }
 
+  /** 向当前画布新增图片图层，并返回标准化后的尺寸测量结果。 */
   public async addImageLayer(
     layer: ImageLayer,
   ): Promise<LayerMeasurement | undefined> {
@@ -84,6 +91,7 @@ export class EditorEngine {
     });
   }
 
+  /** 把来自 Store 的图层属性补丁应用到指定 Fabric 对象。 */
   public updateLayerProps(layerId: string, props: Record<string, unknown>): void {
     if (!this.canvas) return;
 
@@ -98,6 +106,7 @@ export class EditorEngine {
     });
   }
 
+  /** 整体平移当前画布上的全部对象，常用于左/上边缩放画布后的补偿。 */
   public translateAllLayers(offsetX: number, offsetY: number): void {
     if (!this.canvas) return;
     if (offsetX === 0 && offsetY === 0) return;
@@ -106,6 +115,7 @@ export class EditorEngine {
     this.canvas.requestRenderAll();
   }
 
+  /** 同时更新画布尺寸并平移全部图层，保证文档尺寸变化后视觉位置符合预期。 */
   public resizeCanvasAndTranslateLayers(
     width: number,
     height: number,
@@ -121,6 +131,7 @@ export class EditorEngine {
     this.canvas.requestRenderAll();
   }
 
+  /** 引擎内部的对象平移实现，供多个公开方法复用。 */
   private translateAllLayersInternal(offsetX: number, offsetY: number): void {
     if (!this.canvas) return;
     if (offsetX === 0 && offsetY === 0) return;
@@ -134,6 +145,7 @@ export class EditorEngine {
     }
   }
 
+  /** 根据图层 id 在 Fabric 中设置选中对象。 */
   public selectLayer(layerId: string): void {
     if (!this.canvas) return;
 
@@ -144,12 +156,17 @@ export class EditorEngine {
     this.canvas.requestRenderAll();
   }
 
+  /** 清空当前 Fabric 选中态。 */
   public clearSelection(): void {
     if (!this.canvas) return;
     this.canvas.discardActiveObject();
     this.canvas.requestRenderAll();
   }
 
+  /**
+   * 导出当前场景为栅格图 DataURL。
+   * 导出时会临时把 viewport 归一为文档坐标系，避免把工作区缓冲层一并导出出去。
+   */
   public exportSceneDataUrl(
     format: "png" | "jpeg",
     quality = 1,
@@ -196,6 +213,7 @@ export class EditorEngine {
     });
   }
 
+  /** 导出当前场景为 SVG 字符串，尺寸以文档真实宽高为准。 */
   public exportSceneSvg(): string | undefined {
     return this.withExportScene((canvas) =>
       canvas.toSVG({
@@ -205,6 +223,7 @@ export class EditorEngine {
     );
   }
 
+  /** 注册一次性的下一帧渲染回调，供尺寸提交预览等场景等待真实画面完成。 */
   public onNextRender(callback: () => void): void {
     const canvas = this.canvas;
     if (!canvas) {
@@ -220,6 +239,10 @@ export class EditorEngine {
     canvas.on("after:render", handleAfterRender);
   }
 
+  /**
+   * 绘制“尺寸提交完成后”的最终预览画面到独立 overlay canvas。
+   * 这样可以在真实 Fabric buffer 重建前先让用户看到稳定结果。
+   */
   public drawResizeCommitPreview(
     previewCanvasEl: HTMLCanvasElement,
     width: number,
@@ -256,6 +279,8 @@ export class EditorEngine {
     previewCanvasEl.style.height = `${displayHeight}px`;
 
     try {
+      // 为什么直接改 canvas 本体的 viewport/width/height：
+      // 这里要复用当前 Fabric 场景绘制到外部 context，临时切换是成本最低的方案。
       canvas.viewportTransform = previewViewportTransform;
       canvas.width = displayWidth;
       canvas.height = displayHeight;
@@ -273,11 +298,13 @@ export class EditorEngine {
     }
   }
 
+  /** 判断某个事件目标是否仍然位于当前 Fabric wrapper 内。 */
   public isTargetInsideCanvas(target: EventTarget | null): boolean {
     const wrapperEl = this.canvas?.wrapperEl as HTMLElement | undefined;
     return !!wrapperEl && wrapperEl.contains(target as Node);
   }
 
+  /** 向当前画布新增文本图层，并返回标准化后的初始摆放结果。 */
   public addTextLayer(layer: TextLayer): LayerMeasurement | undefined {
     if (!this.canvas) return undefined;
     return addTextLayerToCanvas(
@@ -288,6 +315,10 @@ export class EditorEngine {
     );
   }
 
+  /**
+   * 加载完整文档到 Engine。
+   * 当前实现先以第一页为准恢复背景和图层栈。
+   */
   public loadDocument(doc: DesignDocument): void {
     if (!this.canvas) return;
 
@@ -307,6 +338,7 @@ export class EditorEngine {
     this.canvas.requestRenderAll();
   }
 
+  /** 更新文档真实尺寸，并同步刷新 Fabric 画布显示区域。 */
   public resizeCanvas(width: number, height: number): void {
     if (!this.canvas) return;
     this.docWidth = width;
@@ -325,6 +357,7 @@ export class EditorEngine {
     this.applyCanvasSize();
   }
 
+  /** 设置当前页面背景，并处理背景资源加载与取消。 */
   public setBackground(
     background: PageBackground,
     width: number,
@@ -344,12 +377,14 @@ export class EditorEngine {
     });
   }
 
+  /** 记录当前工作区 viewport 尺寸，供缓冲层和 viewportTransform 计算使用。 */
   public setWorkspaceViewportSize(width: number, height: number): void {
     this.workspaceViewportWidth = Math.max(Math.round(width), 0);
     this.workspaceViewportHeight = Math.max(Math.round(height), 0);
     this.applyCanvasSize();
   }
 
+  /** 绑定 Fabric 事件到 Engine 内部同步逻辑。 */
   private bindEvents(): void {
     if (!this.canvas) return;
 
@@ -374,6 +409,7 @@ export class EditorEngine {
     });
   }
 
+  /** 把高频交互对象加入节流同步流程。 */
   private queueLiveTransform = (target: FabricLayerTarget): void => {
     syncLiveTransform({
       target,
@@ -382,6 +418,7 @@ export class EditorEngine {
     });
   };
 
+  /** 提交对象的最终几何状态到 Store。 */
   private commitLayerTransform = (target: FabricLayerTarget): void => {
     syncLayerTransform(target);
   };
@@ -392,10 +429,12 @@ export class EditorEngine {
     this.canvas?.requestRenderAll();
   };
 
+  /** 更新节流同步使用的 rAF id，方便下次变换时判断是否已有待执行任务。 */
   private setSyncTransformRaf = (value: number | null): void => {
     this.syncTransformRaf = value;
   };
 
+  /** 把当前文档尺寸、zoom 与 viewport 尺寸统一应用到 Fabric Canvas。 */
   private applyCanvasSize(shouldRender = true): void {
     if (!this.canvas) return;
     applyCanvasSize({
@@ -409,6 +448,10 @@ export class EditorEngine {
     });
   }
 
+  /**
+   * 在“导出模式”下临时执行一段回调。
+   * 回调期间 Fabric 会被切到文档原始坐标系，结束后再完整恢复现场。
+   */
   private withExportScene<T>(callback: (canvas: Canvas) => T): T | undefined {
     const canvas = this.canvas;
     if (!canvas) return undefined;
@@ -425,6 +468,8 @@ export class EditorEngine {
 
     try {
       canvas.discardActiveObject();
+      // 为什么导出时强制 viewport = identity：
+      // 工作区缩放和 padding 只属于编辑态展示，导出文件必须严格以文档坐标系为准。
       canvas.viewportTransform = [1, 0, 0, 1, 0, 0];
       canvas.width = Math.max(Math.round(this.docWidth), 1);
       canvas.height = Math.max(Math.round(this.docHeight), 1);

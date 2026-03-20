@@ -16,6 +16,7 @@ export const fillStyleToFabric = (
   if (fill.type === "solid") return fill.color;
 
   const isHorizontal = fill.direction === "horizontal";
+  // 渐变方向在 Schema 里只有横向/纵向两种，这里直接映射成 Fabric 线性渐变坐标。
   return new Gradient({
     type: "linear",
     coords: {

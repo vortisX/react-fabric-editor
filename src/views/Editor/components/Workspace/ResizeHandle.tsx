@@ -25,7 +25,10 @@ interface WorkspaceResizeHandleProps {
   onPreviewEnd: () => void;
 }
 
-/** Resize handle for interactive document edge dragging in the workspace. */
+/**
+ * 工作区边缘拖拽手柄。
+ * 负责把用户的指针拖拽转换成画布尺寸预览、位移补偿以及最终提交。
+ */
 export const WorkspaceResizeHandle = ({
   edge,
   zoom,
@@ -48,6 +51,7 @@ export const WorkspaceResizeHandle = ({
   const lastDeltaXRef = useRef(0);
   const lastDeltaYRef = useRef(0);
 
+  /** 组件卸载时清理所有残留 rAF，避免异步回调继续操作已卸载的节点。 */
   useEffect(
     () => () => {
       if (rafRef.current !== null) {
@@ -60,6 +64,10 @@ export const WorkspaceResizeHandle = ({
     [],
   );
 
+  /**
+   * 根据当前拖拽位移应用尺寸预览或最终提交。
+   * `commit=false` 时只更新视觉预览，`commit=true` 时会触发 Store 提交与最终 overlay 预览。
+   */
   const applyResize = (commit: boolean) => {
     const anchor = readWorkspaceFrameAnchor(frameRef.current);
     const { widthPx, heightPx } = measureCanvasResizeFromDrag({
@@ -81,6 +89,8 @@ export const WorkspaceResizeHandle = ({
 
     compensationRafRef.current = requestAnimationFrame(() => {
       compensationRafRef.current = null;
+      // 为什么先恢复 viewport 锚点：
+      // 当左/上边缩小时，画框左上角会移动，如果不先补偿滚动位置，用户会感觉当前视口内容被突然推走。
       restoreWorkspaceViewportAnchor(
         viewportRef.current,
         frameRef.current,
@@ -96,6 +106,9 @@ export const WorkspaceResizeHandle = ({
       const offsetX = deltaLeft / zoom;
       const offsetY = deltaTop / zoom;
 
+      // 为什么这里做阈值清洗：
+      // DOM 布局与浮点缩放会引入极小抖动，如果把 0.01 这类噪声也提交到 Store，
+      // 会造成预览和历史记录里出现肉眼看不见、但持续累积的偏移。
       const sanitizedOffsetX = Math.abs(offsetX) >= 0.05 ? offsetX : 0;
       const sanitizedOffsetY = Math.abs(offsetY) >= 0.05 ? offsetY : 0;
 
@@ -114,6 +127,8 @@ export const WorkspaceResizeHandle = ({
       if (hasCommitPreview) {
         onCommitPreviewChange(true);
         onPreviewOffsetChange(0, 0);
+        // 为什么等真实 Fabric 渲染完成再关预览：
+        // 避免 overlay 提前消失，导致用户在 commit 瞬间看到真实 buffer 还没准备好的闪烁。
         finishWorkspaceResizePreviewAfterRender(() => {
           onCommitPreviewChange(false);
           onPreviewEnd();
@@ -144,6 +159,7 @@ export const WorkspaceResizeHandle = ({
       role="slider"
       aria-label={`canvas-resize-${edge}`}
       onPointerDown={(event) => {
+        // 进入拖拽前先接管 pointer，避免指针移出手柄后丢失后续 move/up 事件。
         event.preventDefault();
         event.stopPropagation();
         (event.currentTarget as HTMLDivElement).setPointerCapture(event.pointerId);
@@ -164,6 +180,8 @@ export const WorkspaceResizeHandle = ({
         lastDeltaXRef.current = event.clientX - startXRef.current;
         lastDeltaYRef.current = event.clientY - startYRef.current;
 
+        // 为什么 move 过程要节流到 rAF：
+        // 指针移动频率可能远高于浏览器绘制频率，直接同步会让预览更新过于密集并拖慢主线程。
         if (rafRef.current !== null) return;
 
         rafRef.current = requestAnimationFrame(() => {
@@ -174,6 +192,7 @@ export const WorkspaceResizeHandle = ({
       onPointerUp={(event) => {
         if (pointerIdRef.current !== event.pointerId) return;
 
+        // 指针抬起时立刻收尾，并把最后一次位移提交为正式结果。
         event.preventDefault();
         event.stopPropagation();
 
@@ -193,6 +212,7 @@ export const WorkspaceResizeHandle = ({
       onPointerCancel={(event) => {
         if (pointerIdRef.current !== event.pointerId) return;
 
+        // pointer cancel 通常表示浏览器中断了本次手势，这里必须完整撤销预览态。
         event.preventDefault();
         event.stopPropagation();
 

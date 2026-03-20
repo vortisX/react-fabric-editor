@@ -29,7 +29,10 @@ const WHEEL_ZOOM_SENSITIVITY = 0.001;
 let zoomAnimationRaf: number | null = null;
 let zoomAnimationTarget: number | null = null;
 
-/** Convert the current drag delta into the next document pixel size. */
+/**
+ * 根据拖拽边与当前缩放值，把屏幕位移换算成下一帧的文档像素尺寸。
+ * 这里返回的是 Schema 层使用的真实宽高，而不是已经乘过 zoom 的显示尺寸。
+ */
 export const measureCanvasResizeFromDrag = ({
   edge,
   zoom,
@@ -56,7 +59,10 @@ export const measureCanvasResizeFromDrag = ({
   };
 };
 
-/** Initialize Fabric once the workspace canvas element is mounted. */
+/**
+ * 在工作区 canvas DOM 挂载完成后初始化 Fabric 引擎。
+ * 返回的清理函数会在组件卸载时释放 Fabric 事件与内部资源。
+ */
 export const initializeWorkspaceEngine = (
   canvasElement: HTMLCanvasElement | null,
 ): (() => void) | undefined => {
@@ -77,12 +83,17 @@ export const initializeWorkspaceEngine = (
   };
 };
 
-/** Sync a store-side editor command into the isolated Fabric engine. */
+/**
+ * 把 Store 中发出的编辑命令同步到隔离的 Fabric 引擎。
+ * 这里是 React/Store 与 Engine 之间的命令桥，保证 UI 不直接操作 Fabric 实例。
+ */
 export const applyWorkspaceEditorCommand = (
   editorCommand: EditorCommand | null,
 ): void => {
   if (!editorCommand || !engineInstance.isReady()) return;
 
+  // 为什么这里用显式分支而不是命令表：
+  // 每种命令对应的副作用差异很大，显式分支更方便在后续维护时补充边界条件和注释。
   if (editorCommand.type === 'selection:set') {
     if (editorCommand.layerId) {
       engineInstance.selectLayer(editorCommand.layerId);
@@ -150,7 +161,10 @@ export const applyWorkspaceEditorCommand = (
     });
 };
 
-/** Sync document pixel size changes into the Fabric canvas buffer. */
+/**
+ * 把文档真实尺寸同步给 Fabric 画布 buffer。
+ * 这个入口主要用于工作区尺寸变化后，通知 Engine 重建显示缓冲区。
+ */
 export const syncWorkspaceCanvasSize = (
   width: number,
   height: number,
@@ -158,7 +172,10 @@ export const syncWorkspaceCanvasSize = (
   engineInstance.resizeCanvas(width, height);
 };
 
-/** Sync background changes into the Fabric engine. */
+/**
+ * 把当前页面背景同步到 Fabric 引擎。
+ * 背景属于页面级状态，因此需要根据 currentPageId 解析出当前页再下发。
+ */
 export const syncWorkspaceBackground = (
   width: number,
   height: number,
@@ -175,12 +192,18 @@ export const syncWorkspaceBackground = (
   engineInstance.setBackground(page.background, width, height);
 };
 
-/** Sync the current workspace zoom into the Fabric renderer. */
+/**
+ * 把工作区缩放值同步到 Fabric 显示层。
+ * 这里只同步显示 zoom，不会修改文档真实宽高。
+ */
 export const syncWorkspaceZoom = (zoom: number): void => {
   engineInstance.setDisplayZoom(zoom);
 };
 
-/** Sync the visible workspace viewport size so the off-canvas buffer covers the whole area. */
+/**
+ * 把当前可视工作区尺寸同步给 Engine。
+ * Engine 会用它计算缓冲层 padding，确保大缩放下仍然有足够的可渲染区域。
+ */
 export const syncWorkspaceViewportSize = (
   width: number,
   height: number,
@@ -188,7 +211,10 @@ export const syncWorkspaceViewportSize = (
   engineInstance.setWorkspaceViewportSize(width, height);
 };
 
-/** Recalculate fit zoom based on the current viewport size. */
+/**
+ * 根据当前工作区可视区域重新计算“适应画布”缩放值，并把滚动位置回正到中心。
+ * 这里通常在首次进入编辑器或用户主动点击 Fit 时调用。
+ */
 export const fitWorkspaceToViewport = (
   viewportElement: HTMLDivElement | null,
 ): void => {
@@ -208,6 +234,9 @@ export const fitWorkspaceToViewport = (
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
+      // 为什么连续套两层 rAF：
+      // 需要先等 React 和 Fabric 都完成一轮尺寸更新，再读取最新 scrollWidth/scrollHeight，
+      // 否则很容易在旧布局基础上居中，造成“刚 fit 完又轻微跳一下”。
       viewportElement.scrollLeft = Math.max(
         (viewportElement.scrollWidth - viewportElement.clientWidth) / 2,
         0,
@@ -220,7 +249,10 @@ export const fitWorkspaceToViewport = (
   });
 };
 
-/** Bind a viewport listener that clears selection when clicking outside the canvas wrapper. */
+/**
+ * 绑定工作区点击空白取消选中的交互。
+ * 只要点击目标不在 Fabric wrapper 内，就把当前激活图层清空。
+ */
 export const bindWorkspaceSelectionClear = (
   viewportElement: HTMLDivElement,
 ): (() => void) => {
@@ -238,10 +270,15 @@ export const bindWorkspaceSelectionClear = (
   };
 };
 
-/** Bind wheel zoom support for the workspace viewport and canvas area. */
+/**
+ * 绑定工作区滚轮缩放行为。
+ * 当前产品规则是“画布始终居中”，因此滚轮只负责计算下一目标 zoom，
+ * 具体的居中与平滑过渡交给 applyWorkspaceZoom 统一处理。
+ */
 export const bindWorkspaceWheelZoom = (
   viewportElement: HTMLDivElement,
 ): (() => void) => {
+  /** 处理工作区滚轮缩放输入，并把离散滚轮事件转成连续缩放目标值。 */
   const onWheel = (event: WheelEvent) => {
     event.preventDefault();
     const currentZoom = useEditorStore.getState().zoom;
@@ -262,6 +299,10 @@ export const bindWorkspaceWheelZoom = (
   };
 };
 
+/**
+ * 把工作区滚动位置直接置为水平/垂直中心。
+ * 该函数只负责滚动条位置，不负责改 zoom。
+ */
 export const centerWorkspaceViewport = (
   viewportElement: HTMLDivElement,
 ): void => {
@@ -275,6 +316,10 @@ export const centerWorkspaceViewport = (
   );
 };
 
+/**
+ * 用单一动画循环把当前 zoom 平滑追到目标 zoom。
+ * 连续滚轮输入时不会反复重启动画，而是持续追踪最新目标值，减少顿挫感。
+ */
 const animateWorkspaceZoom = (
   nextZoom: number,
 ): void => {
@@ -286,6 +331,7 @@ const animateWorkspaceZoom = (
   zoomAnimationTarget = nextZoom;
   if (zoomAnimationRaf !== null) return;
 
+  /** 在每一帧里读取最新 zoom，并向最新目标值平滑逼近。 */
   const step = () => {
     const targetZoom = zoomAnimationTarget;
     if (targetZoom === null) {
@@ -313,7 +359,11 @@ const animateWorkspaceZoom = (
   zoomAnimationRaf = requestAnimationFrame(step);
 };
 
-/** Apply a workspace zoom and keep the canvas centered inside the workspace viewport. */
+/**
+ * 应用工作区缩放目标。
+ * 当前只负责发起缩放动画；真正的滚动居中放在 Workspace 组件的 layout 阶段执行，
+ * 这样可以避免“先缩放一帧，再回中一帧”的抽动感。
+ */
 export const applyWorkspaceZoom = ({
   nextZoom,
 }: ApplyWorkspaceZoomParams): void => {
@@ -326,7 +376,10 @@ export const applyWorkspaceZoom = ({
   animateWorkspaceZoom(nextZoom);
 };
 
-/** Capture the current workspace frame position before a canvas resize starts. */
+/**
+ * 读取当前工作区画框在视口中的位置。
+ * 这个锚点会在拖拽改尺寸前缓存下来，用于后续滚动补偿。
+ */
 export const readWorkspaceFrameAnchor = (
   frameElement: HTMLDivElement | null,
 ): WorkspaceFrameAnchor | null => {
@@ -336,7 +389,10 @@ export const readWorkspaceFrameAnchor = (
   return { left, top };
 };
 
-/** Restore viewport scroll so the visible canvas content stays visually anchored after resize. */
+/**
+ * 在工作区尺寸调整后恢复视口滚动位置，尽量保持用户当前看到的内容不跳动。
+ * 这里通过比较 resize 前后的 frame 位置差，反推需要补偿的 scroll 位移。
+ */
 export const restoreWorkspaceViewportAnchor = (
   viewportElement: HTMLDivElement | null,
   frameElement: HTMLDivElement | null,
@@ -357,7 +413,10 @@ export const restoreWorkspaceViewportAnchor = (
   }
 };
 
-/** Commit canvas resize and page translation in one store transaction. */
+/**
+ * 在一次 Store 事务里同时提交画布尺寸变化和图层平移。
+ * 这样可以保证左/上边拖拽时，文档尺寸变化与图层整体平移属于同一个历史步骤。
+ */
 export const commitCanvasResizeDrag = ({
   edge,
   zoom,
@@ -389,7 +448,10 @@ export const commitCanvasResizeDrag = ({
   );
 };
 
-/** Draw the final post-commit scene into an overlay canvas before mutating the real Fabric buffer. */
+/**
+ * 在真正提交尺寸修改前，把最终结果绘制到 overlay canvas。
+ * 这样可以避免用户在 commit 瞬间看到 Fabric buffer 重建带来的闪烁。
+ */
 export const drawCanvasResizeCommitPreview = (
   previewCanvasElement: HTMLCanvasElement | null,
   widthPx: number,
@@ -408,14 +470,20 @@ export const drawCanvasResizeCommitPreview = (
   );
 };
 
-/** Clear the resize overlay after the real Fabric canvas finishes rendering the committed scene. */
+/**
+ * 等待真实 Fabric 画布完成下一次渲染后，再移除尺寸调整预览层。
+ * 这样能保证 overlay 与真实画面之间的切换是连续的。
+ */
 export const finishWorkspaceResizePreviewAfterRender = (
   onRendered: () => void,
 ): void => {
   engineInstance.onNextRender(onRendered);
 };
 
-/** Apply a canvas resize preview or commit based on a pointer drag delta. */
+/**
+ * 根据拖拽位移应用工作区尺寸预览或最终提交。
+ * `commit=false` 只更新预览尺寸；`commit=true` 才会真正写入 Store。
+ */
 export const applyCanvasResizeFromDrag = ({
   edge,
   zoom,

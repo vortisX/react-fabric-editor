@@ -7,11 +7,14 @@ import type { PageBackground } from '../../../../types/schema';
 export const MIN_ZOOM = 0.1;
 export const MAX_ZOOM = 2;
 
-/** Clamp zoom to the supported workspace range. */
+/** 将传入 zoom 限制在当前工作区允许的最小/最大范围内。 */
 export const clampZoom = (zoom: number): number =>
   Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom));
 
-/** Calculate a fit-to-viewport zoom with workspace padding applied. */
+/**
+ * 计算适应工作区的缩放值。
+ * 这里会预留一部分边缘留白，避免 fit 后画布紧贴工作区边界，看起来过于拥挤。
+ */
 export const calcFitZoom = (
   canvasWidth: number,
   canvasHeight: number,
@@ -34,7 +37,10 @@ export const calcFitZoom = (
   return clampZoom(Math.min(scaleWidth, scaleHeight));
 };
 
-/** Build the visual container style for the current canvas background. */
+/**
+ * 生成画布视觉容器样式。
+ * 该容器负责显示页面背景色/渐变，并作为 Fabric 画布与预览层的定位参考。
+ */
 export const getWorkspaceContainerStyle = (
   zoomedWidth: number,
   zoomedHeight: number,
@@ -57,6 +63,8 @@ export const getWorkspaceContainerStyle = (
   if (background.type === 'gradient') {
     const { direction, colorStops } = background.value;
     const angle = direction === 'horizontal' ? 'to right' : 'to bottom';
+    // 为什么这里直接转成 CSS gradient：
+    // 工作区背景只需要视觉展示，不参与 Fabric 对象渲染，用 CSS 能减少额外的 canvas 绘制成本。
     const stops = colorStops
       .map((stop) => `${stop.color} ${Math.round(stop.offset * 100)}%`)
       .join(', ');
@@ -70,7 +78,10 @@ export const getWorkspaceContainerStyle = (
   return { ...baseStyle, background: '#ffffff' };
 };
 
-/** Build the scroll area size so the zoomed canvas keeps proper layout space. */
+/**
+ * 生成工作区滚动区域样式。
+ * 它本质上是一个“占位画布外壳”，用于给居中的真实画布提供足够的滚动空间与缓冲留白。
+ */
 export const getWorkspaceScrollAreaStyle = (
   zoomedWidth: number,
   zoomedHeight: number,
@@ -88,7 +99,10 @@ export const getWorkspaceScrollAreaStyle = (
   };
 };
 
-/** Build the absolute canvas slot that Fabric renders into. */
+/**
+ * 生成 Fabric 画布槽位样式。
+ * 槽位会根据当前 zoom 与 viewport padding 绝对定位，确保画布总是放在滚动区正确的位置。
+ */
 export const getWorkspaceCanvasSlotStyle = (
   zoomedWidth: number,
   zoomedHeight: number,
@@ -108,7 +122,10 @@ export const getWorkspaceCanvasSlotStyle = (
   };
 };
 
-/** Map resize edge direction to the matching visual handle classes. */
+/**
+ * 把拖拽边方向映射成对应的 Resize Handle 样式类名。
+ * 这里统一管理尺寸拖拽手柄的视觉状态，避免 JSX 中散落大量条件类拼接。
+ */
 export const edgeToClassName = (edge: DragEdge, isActive: boolean): string => {
   const colorClass = isActive ? 'bg-[#18a0fb]' : 'bg-gray-400 hover:bg-[#18a0fb]';
   const common =
