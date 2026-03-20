@@ -38,6 +38,11 @@ Zustand Store (`src/store/useEditorStore.ts`) 负责全盘状态：
 * **Fabric v7 API**：严格使用 Fabric.js 7.x 的 ES Module 语法（如 `import { Canvas, Textbox, FabricImage } from "fabric"`）。
 * **高频渲染优化**：调用更新时，**永远使用 `canvas.requestRenderAll()`** 而不是同步的 `canvas.renderAll()`。
 * **缩放重置策略 (Scale Normalization)**：Fabric 默认通过改变 `scaleX/scaleY` 来缩放对象。引擎在捕获到缩放事件时，**必须**将 `scale` 转换为实际的 `width/height/fontSize` 存入 Store，并强制将对象的 `scaleX/scaleY` 重置为 `1`。这保证了导出的 JSON 始终是标准尺寸。
+* **工作区缩放职责边界**：
+  * `Store.zoom` 表示工作区显示缩放，而不是文档真实尺寸。
+  * `Workspace` 负责滚轮、右下角百分比按钮、Fit 等缩放交互，以及视口居中与过渡动画。
+  * `EditorEngine` 只负责把 `displayZoom` 同步到 Fabric viewport/buffer，**不要**在 Engine 内引入 React 视口滚动逻辑。
+* **当前缩放产品规则**：无论鼠标滚轮还是右下角百分比/按钮缩放，**画布都必须保持在工作区中央**。除非用户明确要求，否则**不要实现鼠标锚点跟随缩放**。
 
 ---
 
@@ -67,7 +72,8 @@ src/
 │       ├── Button.tsx      # 绝对纯净，通过 props 交互，严禁引入 useEditorStore
 │       └── index.ts        
 ├── core/                   # 🔴 Fabric 引擎核心 (物理隔离区)
-│   ├── engine.ts           # 引擎入口 (绝不允许出现任何 React/JSX 代码！)
+│   ├── engine/             # 引擎分层模块（canvas / layers / events / viewport / workspace）
+│   ├── export/             # 导出模块（pdf / svg）
 │   └── canvasMath.ts       
 ├── store/                  # 🟡 状态管理 (SSOT)
 │   └── useEditorStore.ts   
@@ -76,13 +82,12 @@ src/
 └── views/                  # 🔵 业务视图组件
     └── Editor/             
         └── components/     
-            ├── Workspace.tsx     
+            ├── Workspace/        # 工作区模块（index / handlers / shared / ResizeHandle / ZoomControls）
             └── RightPanel/       # 🟣 右侧属性面板 (严格的策略模式拆分)
-                ├── index.tsx               # 路由器：根据 activeLayer.type 渲染
-                ├── CanvasLayoutSection.tsx # 画布全局设置
-                ├── TextLayerSection.tsx    # 文本图层 UI
-                ├── ImageLayerSection.tsx   # 图片图层 UI
-                └── ImageLayer.handlers.ts  # 💡 纯 TS 逻辑处理器
+                ├── index.tsx                  # 路由器：根据 activeLayer.type 渲染
+                ├── CanvasPanel/               # 画布全局设置
+                ├── TextPanel/                 # 文本图层 UI + handlers
+                └── ImagePanel/                # 图片图层 UI + handlers
 ~~~
 
 ### 💡 逻辑抽离原则 (Logic Extraction Rule)
@@ -94,8 +99,9 @@ src/
 
 当要求你新增图层或功能时，严格按照以下步骤：
 1. **Schema先行**：在 `src/types/schema.ts` 中定义或扩充接口。
-2. **渲染映射**：在 `src/core/engine.ts` 中处理从 Schema 到 Fabric 实例的转换。
-3. **UI绑定**：在对应的 `RightPanel/xxxSection.tsx` 中编写属性面板，读取 Store 作为 value，通过 `updateLayer` 提交改动。
+2. **渲染映射**：在 `src/core/engine/` 对应模块中处理从 Schema 到 Fabric 实例的转换。
+3. **UI绑定**：在对应的 `RightPanel/*Panel/` 组件中编写属性面板，读取 Store 作为 value，通过 `updateLayer` 提交改动。
+4. **工作区交互**：如果功能涉及缩放、拖动画布边缘、视口滚动或缓冲层预览，优先在 `src/views/Editor/components/Workspace/handlers.ts` / `shared.ts` 中实现，避免把 DOM 布局逻辑塞进 Engine。
 
 ---
 
@@ -104,6 +110,7 @@ src/
 * 必须使用 `src/utils/cn.ts` (基于 clsx + tailwind-merge) 处理动态类名拼接。
 * **严禁滥用内联样式 (`style={{...}}`)**。
 * 浮动面板必须使用 Tailwind 的 Z-Index 变量（如 `z-50`），禁止硬编码 `zIndex: 9999`。
+* **例外说明**：涉及 Fabric 画布尺寸、Workspace padding、滚动区尺寸、预览 overlay 定位时，可以使用必要的内联 `style`，但必须由纯函数集中生成，禁止在 JSX 中散落复杂计算。
 
 ---
 
