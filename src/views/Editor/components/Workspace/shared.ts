@@ -83,9 +83,8 @@ export const getWorkspaceScrollAreaStyle = (
   return {
     width: `${zoomedWidth + padding.x * 2}px`,
     height: `${zoomedHeight + padding.y * 2}px`,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: 'relative',
+    flexShrink: 0,
   };
 };
 
@@ -93,13 +92,21 @@ export const getWorkspaceScrollAreaStyle = (
 export const getWorkspaceCanvasSlotStyle = (
   zoomedWidth: number,
   zoomedHeight: number,
-): CSSProperties => ({
-  width: `${zoomedWidth}px`,
-  height: `${zoomedHeight}px`,
-  position: 'relative',
-  flexShrink: 0,
-  overflow: 'visible',
-});
+  zoom: number,
+  viewportWidth: number,
+  viewportHeight: number,
+): CSSProperties => {
+  const padding = getEditorSurfacePadding(zoom, viewportWidth, viewportHeight);
+
+  return {
+    width: `${zoomedWidth}px`,
+    height: `${zoomedHeight}px`,
+    position: 'absolute',
+    left: `${padding.x}px`,
+    top: `${padding.y}px`,
+    overflow: 'visible',
+  };
+};
 
 /** Map resize edge direction to the matching visual handle classes. */
 export const edgeToClassName = (edge: DragEdge, isActive: boolean): string => {

@@ -1,16 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useEditorStore } from '../../../../store/useEditorStore';
+import { applyWorkspaceZoom } from './handlers';
+import { MAX_ZOOM, MIN_ZOOM, clampZoom } from './shared';
 
-const MIN_ZOOM = 0.1;
-const MAX_ZOOM = 2.0;
 const ZOOM_STEP = 0.2;
 
 const PRESET_ZOOMS = [2.0, 1.5, 1.0, 0.5] as const;
-
-function clampZoom(z: number): number {
-  return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z));
-}
 
 function roundZoom(z: number): number {
   return Math.round(z * 10) / 10;
@@ -19,22 +15,27 @@ function roundZoom(z: number): number {
 export const ZoomControls = () => {
   const { t } = useTranslation();
   const zoom = useEditorStore((s) => s.zoom);
-  const setZoom = useEditorStore((s) => s.setZoom);
   const requestFit = useEditorStore((s) => s.requestFit);
 
   const [open, setOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   const handleZoomOut = () => {
-    setZoom(clampZoom(roundZoom(zoom - ZOOM_STEP)));
+    applyWorkspaceZoom({
+      nextZoom: clampZoom(roundZoom(zoom - ZOOM_STEP)),
+    });
   };
 
   const handleZoomIn = () => {
-    setZoom(clampZoom(roundZoom(zoom + ZOOM_STEP)));
+    applyWorkspaceZoom({
+      nextZoom: clampZoom(roundZoom(zoom + ZOOM_STEP)),
+    });
   };
 
   const handlePreset = (z: number) => {
-    setZoom(z);
+    applyWorkspaceZoom({
+      nextZoom: z,
+    });
     setOpen(false);
   };
 

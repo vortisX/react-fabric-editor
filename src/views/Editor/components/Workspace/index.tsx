@@ -6,6 +6,7 @@ import {
   applyWorkspaceEditorCommand,
   bindWorkspaceSelectionClear,
   bindWorkspaceWheelZoom,
+  centerWorkspaceViewport,
   fitWorkspaceToViewport,
   initializeWorkspaceEngine,
   syncWorkspaceBackground,
@@ -73,6 +74,11 @@ export const Workspace = () => {
   }, [zoom]);
 
   useLayoutEffect(() => {
+    if (!viewportRef.current) return;
+    centerWorkspaceViewport(viewportRef.current);
+  }, [zoom]);
+
+  useLayoutEffect(() => {
     syncWorkspaceViewportSize(viewportSize.width, viewportSize.height);
   }, [viewportSize]);
 
@@ -94,7 +100,7 @@ export const Workspace = () => {
   useEffect(() => {
     const viewportElement = viewportRef.current;
     if (!viewportElement) return undefined;
-    return bindWorkspaceWheelZoom(viewportElement, frameRef.current);
+    return bindWorkspaceWheelZoom(viewportElement);
   }, []);
 
   useEffect(() => {
@@ -137,7 +143,15 @@ export const Workspace = () => {
             viewportSize.height,
           )}
         >
-          <div style={getWorkspaceCanvasSlotStyle(zoomedWidth, zoomedHeight)}>
+          <div
+            style={getWorkspaceCanvasSlotStyle(
+              zoomedWidth,
+              zoomedHeight,
+              zoom,
+              viewportSize.width,
+              viewportSize.height,
+            )}
+          >
             <div
               ref={frameRef}
               className="relative overflow-visible shadow-xl"

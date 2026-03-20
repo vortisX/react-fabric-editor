@@ -95,6 +95,11 @@ export const applyCanvasSize = ({
     domCanvas.upperCanvasEl.style.clipPath = "none";
   }
 
+  if (sizeChanged || zoomChanged) {
+    canvas.calcViewportBoundaries();
+    canvas.calcOffset();
+  }
+
   if (shouldRender) {
     canvas.requestRenderAll();
   }

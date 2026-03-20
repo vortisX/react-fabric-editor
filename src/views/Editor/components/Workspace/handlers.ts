@@ -20,6 +20,15 @@ interface WorkspaceFrameAnchor {
   top: number;
 }
 
+interface ApplyWorkspaceZoomParams {
+  nextZoom: number;
+}
+
+const WHEEL_ZOOM_SENSITIVITY = 0.001;
+
+let zoomAnimationRaf: number | null = null;
+let zoomAnimationTarget: number | null = null;
+
 /** Convert the current drag delta into the next document pixel size. */
 export const measureCanvasResizeFromDrag = ({
   edge,
@@ -232,55 +241,18 @@ export const bindWorkspaceSelectionClear = (
 /** Bind wheel zoom support for the workspace viewport and canvas area. */
 export const bindWorkspaceWheelZoom = (
   viewportElement: HTMLDivElement,
-  frameElement: HTMLDivElement | null,
 ): (() => void) => {
   const onWheel = (event: WheelEvent) => {
     event.preventDefault();
-    const delta = event.deltaY > 0 ? -0.1 : 0.1;
     const currentZoom = useEditorStore.getState().zoom;
-    const nextZoom = clampZoom(Math.round((currentZoom + delta) * 10) / 10);
-    if (nextZoom === currentZoom) return;
-
-    const viewportRect = viewportElement.getBoundingClientRect();
-    const currentFrameRect = frameElement?.getBoundingClientRect() ?? null;
-    const pointerX = event.clientX;
-    const pointerY = event.clientY;
-    const pointerInsideFrame =
-      currentFrameRect !== null &&
-      pointerX >= currentFrameRect.left &&
-      pointerX <= currentFrameRect.right &&
-      pointerY >= currentFrameRect.top &&
-      pointerY <= currentFrameRect.bottom;
-    const fallbackDocX =
-      (viewportRect.width / 2) / Math.max(currentZoom, 0.0001);
-    const fallbackDocY =
-      (viewportRect.height / 2) / Math.max(currentZoom, 0.0001);
-    const anchorDocX = pointerInsideFrame && currentFrameRect
-      ? (pointerX - currentFrameRect.left) / currentZoom
-      : fallbackDocX;
-    const anchorDocY = pointerInsideFrame && currentFrameRect
-      ? (pointerY - currentFrameRect.top) / currentZoom
-      : fallbackDocY;
-    const anchorClientX = pointerInsideFrame
-      ? pointerX
-      : viewportRect.left + viewportRect.width / 2;
-    const anchorClientY = pointerInsideFrame
-      ? pointerY
-      : viewportRect.top + viewportRect.height / 2;
-
-    useEditorStore.getState().setZoom(nextZoom);
-
-    requestAnimationFrame(() => {
-      if (!frameElement) return;
-
-      const nextFrameRect = frameElement.getBoundingClientRect();
-      const desiredLeft = anchorClientX - anchorDocX * nextZoom;
-      const desiredTop = anchorClientY - anchorDocY * nextZoom;
-
-      // 为什么缩放后要回写 scroll：
-      // 工作区用了居中布局，单纯改 zoom 会让画布在视觉上“跳一下”，这里把鼠标下的内容尽量钉住。
-      viewportElement.scrollLeft += nextFrameRect.left - desiredLeft;
-      viewportElement.scrollTop += nextFrameRect.top - desiredTop;
+    // 为什么改成指数缩放：
+    // 固定 0.1 步进在滚轮上会显得很“顿”，这里按 deltaY 连续计算缩放值，
+    // 保持画布仍然固定居中，但视觉上会顺滑很多。
+    const rawNextZoom =
+      currentZoom * Math.exp(-event.deltaY * WHEEL_ZOOM_SENSITIVITY);
+    const nextZoom = clampZoom(Math.round(rawNextZoom * 1000) / 1000);
+    applyWorkspaceZoom({
+      nextZoom,
     });
   };
 
@@ -288,6 +260,70 @@ export const bindWorkspaceWheelZoom = (
   return () => {
     viewportElement.removeEventListener('wheel', onWheel);
   };
+};
+
+export const centerWorkspaceViewport = (
+  viewportElement: HTMLDivElement,
+): void => {
+  viewportElement.scrollLeft = Math.max(
+    (viewportElement.scrollWidth - viewportElement.clientWidth) / 2,
+  0,
+  );
+  viewportElement.scrollTop = Math.max(
+    (viewportElement.scrollHeight - viewportElement.clientHeight) / 2,
+    0,
+  );
+};
+
+const animateWorkspaceZoom = (
+  nextZoom: number,
+): void => {
+  const currentZoom = useEditorStore.getState().zoom;
+  if (Math.abs(nextZoom - currentZoom) < 1e-6 && zoomAnimationRaf === null) {
+    return;
+  }
+
+  zoomAnimationTarget = nextZoom;
+  if (zoomAnimationRaf !== null) return;
+
+  const step = () => {
+    const targetZoom = zoomAnimationTarget;
+    if (targetZoom === null) {
+      zoomAnimationRaf = null;
+      return;
+    }
+
+    const frameZoom = useEditorStore.getState().zoom;
+    const delta = targetZoom - frameZoom;
+    const nextFrameZoom = Math.abs(delta) < 0.002
+      ? targetZoom
+      : frameZoom + delta * 0.22;
+
+    useEditorStore.getState().setZoom(Math.round(nextFrameZoom * 1000) / 1000);
+
+    if (Math.abs(targetZoom - nextFrameZoom) < 1e-6) {
+      zoomAnimationRaf = null;
+      zoomAnimationTarget = null;
+      return;
+    }
+
+    zoomAnimationRaf = requestAnimationFrame(step);
+  };
+
+  zoomAnimationRaf = requestAnimationFrame(step);
+};
+
+/** Apply a workspace zoom and keep the canvas centered inside the workspace viewport. */
+export const applyWorkspaceZoom = ({
+  nextZoom,
+}: ApplyWorkspaceZoomParams): void => {
+  const currentZoom = useEditorStore.getState().zoom;
+  if (Math.abs(nextZoom - currentZoom) < 1e-6) return;
+
+  // 为什么统一走动画：
+  // 用户已经确认缩放中心固定在工作区中央，因此这里直接对 zoom 做短时缓动，
+  // 具体的居中滚动放到 Workspace 的 layout 阶段执行，避免每帧先错位再回正产生抽动。
+  animateWorkspaceZoom(nextZoom);
 };
 
 /** Capture the current workspace frame position before a canvas resize starts. */
