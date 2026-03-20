@@ -9,6 +9,7 @@ import type { ImageLayer } from "../../types/schema";
 import { EDITOR_GLOBAL_STYLE } from "../constants";
 import { applyLayerControls } from "../layerControls";
 import { round1 } from "./helpers";
+import { buildLayerInteractionProps } from "./interaction";
 import type { FabricImageLayer, LayerMeasurement } from "./types";
 
 interface AddImageLayerParams {
@@ -128,6 +129,10 @@ const applyBaseImageProps = (
 ): void => {
   img.set({
     ...EDITOR_GLOBAL_STYLE,
+    ...buildLayerInteractionProps({
+      visible: layer.visible ?? true,
+      locked: layer.locked ?? false,
+    }),
     width,
     height,
     scaleX: 1,
@@ -136,7 +141,6 @@ const applyBaseImageProps = (
     top: layer.y,
     angle: layer.rotation ?? 0,
     opacity: layer.opacity ?? 1,
-    visible: layer.visible ?? true,
     flipX: layer.flipX ?? false,
     flipY: layer.flipY ?? false,
     stroke: layer.stroke ?? null,

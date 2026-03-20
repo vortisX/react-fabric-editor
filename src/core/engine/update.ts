@@ -8,6 +8,7 @@ import {
   shouldHandleTextLayoutUpdate,
   updateImageLayerProps,
 } from "./layers";
+import { applyLayerInteractionState } from "./interaction";
 import type { FabricImageLayer } from "./types";
 
 interface UpdateLayerPropsParams {
@@ -27,7 +28,6 @@ const OMITTED_SCHEMA_KEYS = new Set([
   "id",
   "type",
   "name",
-  "locked",
   "lockMovement",
 ]);
 
@@ -69,7 +69,26 @@ export const updateFabricLayerProps = ({
   props,
   readStoreLayer,
 }: UpdateLayerPropsParams): void => {
+  const nextVisible =
+    props.visible === undefined ? undefined : Boolean(props.visible);
+  const nextLocked =
+    props.locked === undefined ? undefined : Boolean(props.locked);
   const mappedProps = mapSchemaPatchToFabricProps(target, props);
+
+  if (nextVisible !== undefined || nextLocked !== undefined) {
+    applyLayerInteractionState(target, {
+      visible: nextVisible ?? Boolean(target.visible),
+      locked:
+        nextLocked ??
+        Boolean(
+          target.lockMovementX ||
+            target.lockMovementY ||
+            target.lockScalingX ||
+            target.lockScalingY ||
+            target.lockRotation,
+        ),
+    });
+  }
 
   if (target instanceof FabricImage) {
     void updateImageLayerProps({

@@ -92,8 +92,14 @@ export interface ImageLayer extends BaseLayer {
   saturation?: number;       // 饱和度 [-2, 2]，默认 0
 }
 
+// 组合图层（树节点容器）
+export interface GroupLayer extends BaseLayer {
+  type: "group";
+  children: Layer[];
+}
+
 // 图层联合类型
-export type Layer = TextLayer | ImageLayer;
+export type Layer = TextLayer | ImageLayer | GroupLayer;
 
 // 页面结构
 export interface Page {

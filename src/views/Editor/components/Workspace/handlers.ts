@@ -106,6 +106,13 @@ export const applyWorkspaceEditorCommand = (
 ): void => {
   if (!editorCommand || !engineInstance.isReady()) return;
 
+  if (editorCommand.type === 'commands:batch') {
+    editorCommand.commands.forEach((command) => {
+      applyWorkspaceEditorCommand(command);
+    });
+    return;
+  }
+
   // 为什么这里用显式分支而不是命令表：
   // 每种命令对应的副作用差异很大，显式分支更方便在后续维护时补充边界条件和注释。
   if (editorCommand.type === 'selection:set') {
@@ -147,6 +154,11 @@ export const applyWorkspaceEditorCommand = (
 
   if (editorCommand.type === 'document:load') {
     engineInstance.loadDocument(editorCommand.document);
+    if (editorCommand.activeLayerId) {
+      engineInstance.selectLayer(editorCommand.activeLayerId);
+    } else {
+      engineInstance.clearSelection();
+    }
     return;
   }
 

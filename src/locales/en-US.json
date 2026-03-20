@@ -68,7 +68,22 @@
     "layerTree": "Layers",
     "emptyCanvas": "Canvas is empty",
     "defaultTextContent": "Double-click to edit",
-    "defaultImageName": "Image Layer"
+    "defaultImageName": "Image Layer",
+    "groupSelected": "Group",
+    "groupNameDefault": "New Group",
+    "imageThumbnailAlt": "Image thumbnail",
+    "toggleGroup": "Toggle group",
+    "moveLayerUp": "Move layer up",
+    "moveLayerDown": "Move layer down",
+    "lockLayer": "Lock layer",
+    "unlockLayer": "Unlock layer",
+    "hideLayer": "Hide layer",
+    "showLayer": "Show layer",
+    "layerType": {
+      "text": "Text Layer",
+      "image": "Image Layer",
+      "group": "Group Layer"
+    }
   },
   "rightPanel": {
     "propertiesPanel": "Properties",

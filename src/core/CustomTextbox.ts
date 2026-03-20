@@ -1,6 +1,7 @@
 import { Textbox, FabricObject } from 'fabric';
 import type { TextLayer } from '../types/schema';
 import { fillStyleToFabric } from './engine/fill';
+import { buildLayerInteractionProps } from './engine/interaction';
 import { applyLayerControls, drawRoundedRect } from './layerControls';
 
 // ==================== 自定义文本框 ====================
@@ -240,7 +241,10 @@ export class CustomTextbox extends Textbox {
       cornerSize: 8,
       padding: 0,
       cornerStyle: 'circle',
-      visible: layer.visible ?? true,
+      ...buildLayerInteractionProps({
+        visible: layer.visible ?? true,
+        locked: layer.locked ?? false,
+      }),
     });
 
     textbox.set({
@@ -252,6 +256,7 @@ export class CustomTextbox extends Textbox {
       boxBorderRadius: layer.borderRadius ?? 0,
       _manualHeight: layer.height,
     });
+    textbox.editable = !layer.locked;
 
     applyLayerControls(textbox as unknown as FabricObject);
     return textbox;

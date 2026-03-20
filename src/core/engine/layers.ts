@@ -1,5 +1,6 @@
 import { type Canvas, type FabricObject } from "fabric";
 
+import { flattenRenderableLayers } from "../layerTree";
 import type { Layer } from "../../types/schema";
 import { createImageObject } from "./imageLayer";
 import { createTextObject } from "./textLayer";
@@ -22,7 +23,9 @@ export const loadLayerStackToCanvas = async (
   canvas: Canvas,
   layers: Layer[],
 ): Promise<void> => {
-  for (const layer of layers) {
+  const renderableLayers = flattenRenderableLayers(layers);
+
+  for (const layer of renderableLayers) {
     if (layer.type === "text") {
       const node = createTextObject(layer);
       canvas.add(node as unknown as FabricObject);

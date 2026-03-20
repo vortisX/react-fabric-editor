@@ -1,3 +1,4 @@
+import { findLayerById } from '../../../../../core/layerTree';
 import { useEditorStore } from '../../../../../store/useEditorStore';
 import { handleImagePropChange, type ImagePropChangeHandler } from './Layer.handlers';
 import {
@@ -19,7 +20,7 @@ export const ImagePanel = () => {
     const page =
       state.document.pages.find((p) => p.pageId === state.currentPageId) ??
       state.document.pages[0];
-    return (page?.layers.find((l) => l.id === state.activeLayerId) ?? null) as ImageLayer | null;
+    return (page ? findLayerById(page.layers, state.activeLayerId) : null) as ImageLayer | null;
   });
 
   if (!activeLayer || activeLayer.type !== 'image') return null;

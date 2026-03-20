@@ -68,7 +68,22 @@
     "layerTree": "图层树",
     "emptyCanvas": "画布空空如也",
     "defaultTextContent": "双击修改文字",
-    "defaultImageName": "图片图层"
+    "defaultImageName": "图片图层",
+    "groupSelected": "组合",
+    "groupNameDefault": "新建组合",
+    "imageThumbnailAlt": "图片缩略图",
+    "toggleGroup": "展开或收起组合",
+    "moveLayerUp": "上移图层",
+    "moveLayerDown": "下移图层",
+    "lockLayer": "锁定图层",
+    "unlockLayer": "解锁图层",
+    "hideLayer": "隐藏图层",
+    "showLayer": "显示图层",
+    "layerType": {
+      "text": "文本图层",
+      "image": "图片图层",
+      "group": "组合图层"
+    }
   },
   "rightPanel": {
     "propertiesPanel": "属性面板",

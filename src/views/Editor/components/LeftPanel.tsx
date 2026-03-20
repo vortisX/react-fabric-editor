@@ -1,159 +1,211 @@
-import { useTranslation } from 'react-i18next';
-import { Tooltip } from '../../../components/ui';
-import { GridIcon, TypeIcon, ImageIcon } from '../../../components/ui/Icons';
-import { useEditorStore } from '../../../store/useEditorStore';
-import { genId } from '../../../utils/uuid';
-import type { TextLayer, ImageLayer } from '../../../types/schema';
+import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { useTranslation } from "react-i18next";
+import { Layers3 } from "lucide-react";
 
-/** 编辑器左侧栏，包含工具入口与图层树。 */
+import { Tooltip } from "../../../components/ui";
+import { GridIcon, ImageIcon, TypeIcon } from "../../../components/ui/Icons";
+import { canGroupLayers, collectGroupIds, findLayerById } from "../../../core/layerTree";
+import { useEditorStore } from "../../../store/useEditorStore";
+import type { Layer } from "../../../types/schema";
+import { cn } from "../../../utils/cn";
+import {
+  addDefaultTextLayer,
+  groupTreeLayers,
+  moveTreeLayer,
+  openImageLayerPicker,
+  selectTreeLayer,
+} from "./LeftPanel.handlers";
+import { LayerTree, type LayerDropTarget } from "./LeftPanelTree";
+
+/** 编辑器左侧栏，负责工具入口、多选分组和图层树状态编排。 */
 export const LeftPanel = () => {
   const { t } = useTranslation();
-  const addLayer = useEditorStore((state) => state.addLayer);
   const document = useEditorStore((state) => state.document);
+  const currentPageId = useEditorStore((state) => state.currentPageId);
   const activeLayerId = useEditorStore((state) => state.activeLayerId);
-  const setActiveLayer = useEditorStore((state) => state.setActiveLayer);
+  const page =
+    document?.pages.find((item) => item.pageId === currentPageId) ??
+    document?.pages[0];
+  const layers = page?.layers ?? [];
 
-  /** 新增文本图层，并根据当前画布短边动态给出更合理的初始字号。 */
-  const handleAddText = () => {
-    // 根据画布短边的 5% 动态计算字体大小，限制在 [12, 200] 范围内
-    const canvasShortSide = Math.min(
-      document?.global.width ?? 500,
-      document?.global.height ?? 500
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [expandedGroupIds, setExpandedGroupIds] = useState<Set<string>>(new Set());
+  const [draggingLayerId, setDraggingLayerId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<LayerDropTarget | null>(null);
+
+  const allGroupIds = useMemo(() => collectGroupIds(layers), [layers]);
+  const canGroupSelection = useMemo(
+    () => canGroupLayers(layers, selectedIds),
+    [layers, selectedIds],
+  );
+
+  /** 当画布侧改变选中图层时，把树选中态同步到对应叶子节点。 */
+  useEffect(() => {
+    if (!activeLayerId) return;
+    setSelectedIds([activeLayerId]);
+  }, [activeLayerId]);
+
+  /** 新创建或新加载的组合图层默认展开，减少用户额外点开成本。 */
+  useEffect(() => {
+    setExpandedGroupIds((previous) => {
+      const next = new Set(previous);
+      allGroupIds.forEach((groupId) => {
+        next.add(groupId);
+      });
+      return next;
+    });
+  }, [allGroupIds]);
+
+  /** 处理图层树单选或 Ctrl/Cmd 多选，并同步真正可编辑的叶子图层。 */
+  const handleSelect = (layer: Layer, event: ReactMouseEvent<HTMLDivElement>) => {
+    const isMultiSelect = event.metaKey || event.ctrlKey;
+    if (!isMultiSelect) {
+      setSelectedIds([layer.id]);
+      selectTreeLayer(layer);
+      return;
+    }
+
+    setSelectedIds((previous) => {
+      const next = previous.includes(layer.id)
+        ? previous.filter((id) => id !== layer.id)
+        : [...previous, layer.id];
+      if (next.length === 1) {
+        const selectedLayer = findLayerById(layers, next[0]) ?? null;
+        if (selectedLayer) selectTreeLayer(selectedLayer);
+      } else {
+        useEditorStore.getState().setActiveLayer(null);
+      }
+      return next;
+    });
+  };
+
+  /** 处理组合图层展开/收起。 */
+  const handleToggleExpanded = (groupId: string) => {
+    setExpandedGroupIds((previous) => {
+      const next = new Set(previous);
+      if (next.has(groupId)) next.delete(groupId);
+      else next.add(groupId);
+      return next;
+    });
+  };
+
+  /** 更新当前拖拽高亮的落点。 */
+  const handleDragOver = (target: LayerDropTarget) => {
+    setDropTarget(target);
+  };
+
+  /** 在拖拽释放时把节点真正移动到目标位置。 */
+  const handleDrop = (target: LayerDropTarget) => {
+    if (!draggingLayerId) return;
+    moveTreeLayer(draggingLayerId, target.parentId, target.index);
+    setDraggingLayerId(null);
+    setDropTarget(null);
+  };
+
+  /** 启动原生拖拽，并确保树上保持当前节点为选中态。 */
+  const handleDragStart = (layerId: string) => {
+    setDraggingLayerId(layerId);
+    setSelectedIds((previous) =>
+      previous.includes(layerId) ? previous : [layerId],
     );
-    const fontSize = Math.round(
-      Math.max(12, Math.min(200, canvasShortSide * 0.05))
+  };
+
+  /** 结束拖拽后清理视觉态，避免残留高亮。 */
+  const handleDragEnd = () => {
+    setDraggingLayerId(null);
+    setDropTarget(null);
+  };
+
+  /** 把当前多选节点组合成一个新的 group。 */
+  const handleGroupSelection = () => {
+    const groupId = groupTreeLayers(
+      selectedIds,
+      t("leftPanel.groupNameDefault"),
     );
+    if (!groupId) return;
 
-    const newTextLayer: TextLayer = {
-      id: genId('layer'),
-      name: t('leftPanel.defaultTextContent'),
-      type: 'text',
-      x: 0,
-      y: 0,
-      width: 0,
-      height: 0,
-      rotation: 0,
-      opacity: 1,
-      visible: true,
-      locked: false,
-      lockMovement: false,
-      content: t('leftPanel.defaultTextContent'),
-      fontFamily: 'AaKuangPaiShouShu-2',
-      fontSize,
-      fontWeight: 'normal',
-      fill: '#333333',
-      textAlign: 'left'
-    };
-
-    addLayer(newTextLayer);
+    setSelectedIds([groupId]);
+    setExpandedGroupIds((previous) => {
+      const next = new Set(previous);
+      next.add(groupId);
+      return next;
+    });
   };
-
-  /** 通过原生文件选择器新增图片图层，并把图片读成 dataURL 供 Fabric 直接使用。 */
-  const handleAddImage = () => {
-    const input = window.document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/png,image/jpeg,image/webp,image/svg+xml';
-    input.onchange = () => {
-      const file = input.files?.[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = async (evt) => {
-        const url = evt.target?.result;
-        if (typeof url !== 'string') return;
-
-        // 去掉文件扩展名作为图层名。
-        const name = file.name.replace(/\.[^.]+$/, '') || t('leftPanel.defaultImageName');
-        const newImageLayer: ImageLayer = {
-          id: genId('layer'),
-          name,
-          type: 'image',
-          url,
-          x: 0,
-          y: 0,
-          width: 0,
-          height: 0,
-          rotation: 0,
-          opacity: 1,
-          visible: true,
-          locked: false,
-          lockMovement: false,
-        };
-
-        addLayer(newImageLayer);
-      };
-      reader.readAsDataURL(file);
-    };
-    input.click();
-  };
-
-  /** 点击图层树项时，把对应图层设为当前选中层。 */
-  const handleLayerClick = (id: string) => {
-    setActiveLayer(id);
-  };
-
-  const layers = document?.pages[0]?.layers || [];
 
   return (
     <>
-      {/* 极窄工具栏 */}
-      <aside className="w-14 bg-white border-r border-gray-200 flex flex-col items-center py-4 gap-4 shrink-0 z-10">
-        <Tooltip title={t('leftPanel.layerManagement')} placement="right">
-          <div className="w-10 h-10 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center text-lg cursor-pointer">
+      <aside className="z-10 flex w-14 shrink-0 flex-col items-center gap-4 border-r border-gray-200 bg-white py-4">
+        <Tooltip title={t("leftPanel.layerManagement")} placement="right">
+          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-blue-50 text-lg text-blue-600">
             <GridIcon />
           </div>
         </Tooltip>
-        <Tooltip title={t('leftPanel.addText')} placement="right">
-          <div 
-            onClick={handleAddText}
-            className="w-10 h-10 rounded-md text-gray-500 hover:bg-gray-100 flex items-center justify-center text-lg cursor-pointer transition-colors"
+        <Tooltip title={t("leftPanel.addText")} placement="right">
+          <button
+            type="button"
+            onClick={() => {
+              addDefaultTextLayer(t);
+            }}
+            className="flex h-10 w-10 items-center justify-center rounded-md text-lg text-gray-500 transition-colors hover:bg-gray-100"
           >
             <TypeIcon />
-          </div>
+          </button>
         </Tooltip>
-        <Tooltip title={t('leftPanel.addImage')} placement="right">
-          <div onClick={handleAddImage} className="w-10 h-10 rounded-md text-gray-500 hover:bg-gray-100 flex items-center justify-center text-lg cursor-pointer transition-colors">
+        <Tooltip title={t("leftPanel.addImage")} placement="right">
+          <button
+            type="button"
+            onClick={() => {
+              openImageLayerPicker(t);
+            }}
+            className="flex h-10 w-10 items-center justify-center rounded-md text-lg text-gray-500 transition-colors hover:bg-gray-100"
+          >
             <ImageIcon />
-          </div>
+          </button>
         </Tooltip>
       </aside>
 
-      {/* 图层树面板 */}
-      <aside className="w-60 bg-white border-r border-gray-200 flex flex-col shrink-0 z-10 shadow-sm">
-        <div className="h-10 border-b border-gray-100 flex items-center px-4 font-semibold text-gray-800">
-          {t('leftPanel.layerTree')}
+      <aside className="z-10 flex w-72 shrink-0 flex-col border-r border-gray-200 bg-white shadow-sm">
+        <div className="flex h-12 items-center justify-between border-b border-gray-100 px-4">
+          <div className="font-semibold text-gray-800">{t("leftPanel.layerTree")}</div>
+          <button
+            type="button"
+            className={cn(
+              "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
+              canGroupSelection
+                ? "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                : "cursor-not-allowed border-gray-200 bg-gray-50 text-gray-300",
+            )}
+            onClick={handleGroupSelection}
+            disabled={!canGroupSelection}
+          >
+            <Layers3 className="h-3.5 w-3.5" />
+            <span>{t("leftPanel.groupSelected")}</span>
+          </button>
         </div>
-        <div className="flex-1 p-2 overflow-y-auto flex flex-col gap-1">
+
+        <div className="flex-1 overflow-y-auto px-1.5 py-2">
           {layers.length === 0 ? (
-            <div className="text-center text-gray-400 mt-6 tracking-wide">
-              {t('leftPanel.emptyCanvas')}
+            <div className="mt-6 text-center tracking-wide text-gray-400">
+              {t("leftPanel.emptyCanvas")}
             </div>
           ) : (
-            layers.map((layer) => {
-              const isActive = activeLayerId === layer.id;
-              return (
-                <div 
-                  key={layer.id}
-                  onClick={() => handleLayerClick(layer.id)}
-                  className={`
-                    px-3 py-2 rounded cursor-pointer flex items-center gap-2 border transition-colors
-                    ${isActive 
-                      ? 'bg-blue-50 text-blue-700 border-blue-200 font-medium'
-                      : 'text-gray-600 border-transparent hover:bg-gray-50 hover:border-gray-200'
-                    }
-                  `}
-                >
-                  {layer.type === 'text'
-                    ? <TypeIcon className={isActive ? 'text-blue-500' : 'text-gray-400'} />
-                    : <ImageIcon />
-                  }
-                  <span className="truncate">{layer.name}</span>
-                </div>
-              );
-            })
+            <LayerTree
+              layers={layers}
+              selectedIds={selectedIds}
+              expandedGroupIds={expandedGroupIds}
+              draggingLayerId={draggingLayerId}
+              dropTarget={dropTarget}
+              t={t}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+              onSelect={handleSelect}
+              onToggleExpanded={handleToggleExpanded}
+            />
           )}
         </div>
       </aside>
     </>
   );
-}
+};

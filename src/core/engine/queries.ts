@@ -1,3 +1,4 @@
+import { findLayerById } from "../layerTree";
 import type { FabricObject } from "fabric";
 
 import { useEditorStore } from "../../store/useEditorStore";
@@ -10,7 +11,7 @@ export const readImageLayer = (layerId: string): ImageLayer | undefined => {
   const page =
     state.document?.pages.find((item) => item.pageId === state.currentPageId) ??
     state.document?.pages[0];
-  const layer = page?.layers.find((item) => item.id === layerId);
+  const layer = page ? findLayerById(page.layers, layerId) : undefined;
   return layer?.type === "image" ? layer : undefined;
 };
 

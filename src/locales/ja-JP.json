@@ -68,7 +68,22 @@
     "layerTree": "レイヤー",
     "emptyCanvas": "キャンバスは空です",
     "defaultTextContent": "ダブルクリックで編集",
-    "defaultImageName": "画像レイヤー"
+    "defaultImageName": "画像レイヤー",
+    "groupSelected": "グループ化",
+    "groupNameDefault": "新規グループ",
+    "imageThumbnailAlt": "画像サムネイル",
+    "toggleGroup": "グループの開閉",
+    "moveLayerUp": "レイヤーを上へ",
+    "moveLayerDown": "レイヤーを下へ",
+    "lockLayer": "レイヤーをロック",
+    "unlockLayer": "レイヤーをロック解除",
+    "hideLayer": "レイヤーを非表示",
+    "showLayer": "レイヤーを表示",
+    "layerType": {
+      "text": "テキストレイヤー",
+      "image": "画像レイヤー",
+      "group": "グループレイヤー"
+    }
   },
   "rightPanel": {
     "propertiesPanel": "プロパティ",

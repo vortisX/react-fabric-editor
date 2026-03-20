@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Tabs } from '../../../../components/ui';
+import { findLayerById } from '../../../../core/layerTree';
 import { useEditorStore } from '../../../../store/useEditorStore';
 import { CanvasPanel } from './CanvasPanel';
 import { TextPanel } from './TextPanel';
@@ -18,12 +19,12 @@ export const RightPanel = () => {
   const activeLayer = useEditorStore((s) => {
     if (!s.activeLayerId || !s.document) return null;
     const page = s.document.pages.find((p) => p.pageId === s.currentPageId) ?? s.document.pages[0];
-    return page?.layers.find((l) => l.id === s.activeLayerId) ?? null;
+    return page ? findLayerById(page.layers, s.activeLayerId) ?? null : null;
   });
 
   const panel = activeLayer?.type === 'image'
     ? <ImagePanel />
-    : activeLayer
+    : activeLayer?.type === 'text'
       ? <TextPanel />
       : <CanvasPanel />;
 

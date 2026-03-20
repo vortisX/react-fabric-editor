@@ -68,7 +68,22 @@
     "layerTree": "레이어",
     "emptyCanvas": "캔버스가 비어 있습니다",
     "defaultTextContent": "더블클릭하여 편집",
-    "defaultImageName": "이미지 레이어"
+    "defaultImageName": "이미지 레이어",
+    "groupSelected": "그룹",
+    "groupNameDefault": "새 그룹",
+    "imageThumbnailAlt": "이미지 썸네일",
+    "toggleGroup": "그룹 펼치기 또는 접기",
+    "moveLayerUp": "레이어 위로 이동",
+    "moveLayerDown": "레이어 아래로 이동",
+    "lockLayer": "레이어 잠금",
+    "unlockLayer": "레이어 잠금 해제",
+    "hideLayer": "레이어 숨기기",
+    "showLayer": "레이어 표시",
+    "layerType": {
+      "text": "텍스트 레이어",
+      "image": "이미지 레이어",
+      "group": "그룹 레이어"
+    }
   },
   "rightPanel": {
     "propertiesPanel": "속성",

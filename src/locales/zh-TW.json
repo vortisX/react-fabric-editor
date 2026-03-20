@@ -68,7 +68,22 @@
     "layerTree": "圖層樹",
     "emptyCanvas": "畫布空空如也",
     "defaultTextContent": "雙擊修改文字",
-    "defaultImageName": "圖片圖層"
+    "defaultImageName": "圖片圖層",
+    "groupSelected": "組合",
+    "groupNameDefault": "新增組合",
+    "imageThumbnailAlt": "圖片縮圖",
+    "toggleGroup": "展開或收起組合",
+    "moveLayerUp": "上移圖層",
+    "moveLayerDown": "下移圖層",
+    "lockLayer": "鎖定圖層",
+    "unlockLayer": "解鎖圖層",
+    "hideLayer": "隱藏圖層",
+    "showLayer": "顯示圖層",
+    "layerType": {
+      "text": "文字圖層",
+      "image": "圖片圖層",
+      "group": "組合圖層"
+    }
   },
   "rightPanel": {
     "propertiesPanel": "屬性面板",
