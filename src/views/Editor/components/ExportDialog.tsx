@@ -3,14 +3,13 @@ import { FileJson, FileText, Image, Scaling, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Button, Dialog } from "../../../components/ui";
-import { useEditorStore } from "../../../store/useEditorStore";
-import { cn } from "../../../utils/cn";
-
 import {
   exportCurrentDesign,
   type ExportFormat,
   type ExportScale,
-} from "./Header.handlers";
+} from "../../../core/export";
+import { useEditorStore } from "../../../store/useEditorStore";
+import { cn } from "../../../utils/cn";
 
 interface ExportDialogProps {
   open: boolean;
