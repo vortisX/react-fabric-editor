@@ -3,6 +3,7 @@ import { Tabs } from '../../../../components/ui';
 import { findLayerById } from '../../../../core/layerTree';
 import { useEditorStore } from '../../../../store/useEditorStore';
 import { CanvasPanel } from './CanvasPanel';
+import { GroupPanel } from './GroupPanel';
 import { TextPanel } from './TextPanel';
 import { ImagePanel } from './ImagePanel';
 
@@ -26,7 +27,9 @@ export const RightPanel = () => {
     ? <ImagePanel />
     : activeLayer?.type === 'text'
       ? <TextPanel />
-      : <CanvasPanel />;
+      : activeLayer?.type === 'group'
+        ? <GroupPanel />
+        : <CanvasPanel />;
 
   return (
     <aside className="w-60 bg-white border-l border-gray-200 flex flex-col shrink-0 z-10 shadow-sm text-xs selection:bg-blue-100">

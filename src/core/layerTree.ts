@@ -1,4 +1,5 @@
 import type { GroupLayer, Layer } from "../types/schema";
+import { normalizeGroupLayer } from "./groupGeometry";
 
 /** 叶子图层只包含真正会映射到 Fabric 对象的文本层和图片层。 */
 export type LeafLayer = Exclude<Layer, GroupLayer>;
@@ -9,6 +10,12 @@ export interface LayerLocation {
   parentId: string | null;
   index: number;
   siblings: Layer[];
+}
+
+/** 描述从根节点到某个图层的完整路径，便于回溯其祖先组合。 */
+export interface LayerPathEntry {
+  layer: Layer;
+  parentId: string | null;
 }
 
 /** 判断某个图层节点是否为组合图层。 */
@@ -55,6 +62,47 @@ export const findLayerLocation = (
   }
 
   return null;
+};
+
+/** 在树中查找某个图层的完整祖先路径。 */
+export const findLayerPath = (
+  layers: Layer[],
+  layerId: string,
+  parentId: string | null = null,
+): LayerPathEntry[] | null => {
+  for (const layer of layers) {
+    if (layer.id === layerId) {
+      return [{ layer, parentId }];
+    }
+
+    if (!isGroupLayer(layer)) continue;
+    const childPath = findLayerPath(layer.children, layerId, layer.id);
+    if (!childPath) continue;
+
+    return [{ layer, parentId }, ...childPath];
+  }
+
+  return null;
+};
+
+/** 返回某个图层当前在画布上真正可被选中的节点 id，并兼容组内编辑态。 */
+export const resolveSelectableLayerId = (
+  layers: Layer[],
+  layerId: string,
+  editingGroupIds: string[] = [],
+): string | null => {
+  const path = findLayerPath(layers, layerId);
+  if (!path?.length) return null;
+
+  const editingGroupIdSet = new Set(editingGroupIds);
+  for (let index = path.length - 1; index >= 0; index -= 1) {
+    const entry = path[index];
+    if (entry.parentId === null || editingGroupIdSet.has(entry.parentId)) {
+      return entry.layer.id;
+    }
+  }
+
+  return path[path.length - 1]?.layer.id ?? null;
 };
 
 /** 判断某个节点分支中是否包含目标图层 id。 */
@@ -247,12 +295,29 @@ export const groupLayersInTree = (
   const insertIndex = locations[0]?.index ?? 0;
   const children = siblings.filter((layer) => selectedIds.has(layer.id));
   const nextSiblings = siblings.filter((layer) => !selectedIds.has(layer.id));
-  nextSiblings.splice(insertIndex, 0, { ...groupLayer, children });
+  nextSiblings.splice(
+    insertIndex,
+    0,
+    normalizeGroupLayer({ ...groupLayer, children }),
+  );
 
   return {
     layers: replaceChildrenAtParent(layers, parentId, nextSiblings),
     groupId: groupLayer.id,
   };
+};
+
+/** 把某个组合图层拆开，恢复为同级多个图层。 */
+export const ungroupLayerInTree = (
+  layers: Layer[],
+  groupId: string,
+): Layer[] | null => {
+  const location = findLayerLocation(layers, groupId);
+  if (!location || !isGroupLayer(location.layer)) return null;
+
+  const nextSiblings = [...location.siblings];
+  nextSiblings.splice(location.index, 1, ...location.layer.children);
+  return replaceChildrenAtParent(layers, location.parentId, nextSiblings);
 };
 
 /** 把指定图层移动到目标父级和目标索引位置。 */

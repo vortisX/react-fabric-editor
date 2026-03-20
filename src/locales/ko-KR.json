@@ -164,6 +164,20 @@
     "canvasWidthShort": "W",
     "canvasHeightShort": "H"
   },
+  "groupPanel": {
+    "groupInfo": "그룹 정보",
+    "groupChildren": "그룹 내부 레이어",
+    "ungroup": "그룹 해제",
+    "editing": "그룹 내부 편집 중",
+    "notEditing": "그룹 전체 선택 상태",
+    "doubleClickHint": "캔버스의 그룹을 더블클릭하면 그룹 편집에 들어가거나 나올 수 있습니다.",
+    "enterEditing": "그룹 편집",
+    "exitEditing": "편집 종료",
+    "boundsX": "X",
+    "boundsY": "Y",
+    "boundsWidth": "너비",
+    "boundsHeight": "높이"
+  },
   "zoom": {
     "zoomIn": "확대",
     "zoomOut": "축소",

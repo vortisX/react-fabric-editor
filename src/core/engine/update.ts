@@ -1,4 +1,4 @@
-import { FabricImage, type Canvas, type FabricObject } from "fabric";
+import { FabricImage, Group, type Canvas, type FabricObject } from "fabric";
 
 import type { ImageLayer } from "../../types/schema";
 import { SCHEMA_TO_FABRIC } from "../constants";
@@ -98,6 +98,13 @@ export const updateFabricLayerProps = ({
     }).then(() => {
       canvas.requestRenderAll();
     });
+    return;
+  }
+
+  if (target instanceof Group) {
+    target.set({ ...mappedProps, dirty: true });
+    target.setCoords();
+    canvas.requestRenderAll();
     return;
   }
 

@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next";
 
+import { resolveSelectableLayerId } from "../../../core/layerTree";
 import { useEditorStore } from "../../../store/useEditorStore";
 import type { ImageLayer, Layer, TextLayer } from "../../../types/schema";
 import { genId } from "../../../utils/uuid";
@@ -87,12 +88,18 @@ export const openImageLayerPicker = (t: TFunction): void => {
 /** 在图层树中选中某个节点，并同步真正可编辑的叶子图层到 Store。 */
 export const selectTreeLayer = (layer: Layer): void => {
   const state = useEditorStore.getState();
-  if (layer.type === "group") {
-    state.setActiveLayer(null);
+  if (state.editingGroupIds.includes(layer.id)) {
+    state.setActiveLayer(layer.id, "engine");
     return;
   }
 
-  state.setActiveLayer(layer.id);
+  const page =
+    state.document?.pages.find((item) => item.pageId === state.currentPageId) ??
+    state.document?.pages[0];
+  const selectableLayerId = page
+    ? resolveSelectableLayerId(page.layers, layer.id, state.editingGroupIds)
+    : null;
+  state.setActiveLayer(selectableLayerId);
 };
 
 /** 切换图层树节点的显隐状态。 */
@@ -135,3 +142,8 @@ export const groupTreeLayers = (
   layerIds: string[],
   groupName: string,
 ): string | null => useEditorStore.getState().groupLayers(layerIds, groupName);
+
+/** 拆分某个组合图层。 */
+export const ungroupTreeLayer = (layerId: string): void => {
+  useEditorStore.getState().ungroupLayer(layerId);
+};

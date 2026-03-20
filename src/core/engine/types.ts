@@ -1,12 +1,18 @@
-import type { FabricImage, FabricObject } from "fabric";
+import type { FabricImage, FabricObject, Group } from "fabric";
 
 export type FabricImageLayer = FabricImage & { id: string };
+export type FabricGroupLayer = Group & { id: string; editingParentGroupId?: string };
+export type EditableFabricObject = FabricObject & {
+  id?: string;
+  editingParentGroupId?: string;
+};
 
 export type FabricSelectionEvent = { selected?: FabricObject[] };
 
 export type FabricObjectEvent = { target: FabricObject };
 
 export type FabricHoverEvent = { target?: FabricObject };
+export type FabricDoubleClickEvent = { target?: FabricObject };
 
 export type FabricScalingEvent = {
   target: FabricObject;
@@ -18,7 +24,7 @@ export type FabricModifiedEvent = {
   transform?: { corner?: string };
 };
 
-export type FabricLayerTarget = FabricObject & { id?: string };
+export type FabricLayerTarget = EditableFabricObject;
 
 export type LayerMeasurement = {
   x: number;

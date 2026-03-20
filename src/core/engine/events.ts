@@ -1,5 +1,6 @@
 import {
   FabricImage,
+  Group,
   Textbox,
   type Canvas,
   type FabricObject,
@@ -7,11 +8,15 @@ import {
 
 import { i18n } from "../../locales";
 import { useEditorStore } from "../../store/useEditorStore";
-import type { BaseLayer, TextLayer } from "../../types/schema";
+import type { BaseLayer, GroupLayer, TextLayer } from "../../types/schema";
 import { CustomTextbox } from "../CustomTextbox";
 import { THEME_PRIMARY } from "../constants";
 import { round1 } from "./helpers";
+import { readFabricGroupSnapshot } from "./groupLayer";
+import { readLayer } from "./queries";
 import type {
+  FabricDoubleClickEvent,
+  FabricGroupLayer,
   FabricHoverEvent,
   FabricImageLayer,
   FabricLayerTarget,
@@ -28,6 +33,7 @@ interface EngineEventBindings {
   onResizing: (target: FabricObject) => void;
   onModified: (event: FabricModifiedEvent) => void;
   onTextChanged: (target: FabricObject) => void;
+  onDoubleClick: (event: FabricDoubleClickEvent) => void;
 }
 
 interface HandleScalingParams {
@@ -40,6 +46,7 @@ interface HandleModifiedParams {
   event: FabricModifiedEvent;
   finalizeImageScaling: (img: FabricImageLayer) => Promise<void>;
   syncLayerTransform: (target: FabricLayerTarget) => void;
+  syncGroupTransform: (target: FabricGroupLayer) => void;
 }
 
 interface SyncLiveTransformParams {
@@ -67,6 +74,7 @@ export const bindEngineEvents = ({
   onResizing,
   onModified,
   onTextChanged,
+  onDoubleClick,
 }: EngineEventBindings): void => {
   let hoveredTarget: FabricObject | undefined;
   let isPointerDown = false;
@@ -134,6 +142,9 @@ export const bindEngineEvents = ({
   canvas.on("text:changed", (event: FabricObjectEvent) =>
     onTextChanged(event.target),
   );
+  canvas.on("mouse:dblclick", (event: FabricDoubleClickEvent) =>
+    onDoubleClick(event),
+  );
   canvas.on("mouse:down", () => {
     isPointerDown = true;
     setHoveredTarget(undefined);
@@ -160,7 +171,7 @@ export const bindEngineEvents = ({
 
 /** 把 Fabric 当前选中对象同步回 Store 的 activeLayerId。 */
 export const handleSelectionChanged = (target?: FabricObject): void => {
-  const id = target ? (target as CustomTextbox).id : null;
+  const id = target ? (target as FabricLayerTarget).id : null;
   useEditorStore.getState().setActiveLayer(id ?? null, "engine");
 };
 
@@ -222,6 +233,7 @@ export const handleModified = ({
   event,
   finalizeImageScaling,
   syncLayerTransform,
+  syncGroupTransform,
 }: HandleModifiedParams): void => {
   const target = event.target;
   const targetWithId = target as FabricLayerTarget;
@@ -245,6 +257,10 @@ export const handleModified = ({
       syncLayerTransform(targetWithId);
     });
     return;
+  }
+
+  if (target instanceof Group) {
+    syncGroupTransform(target as FabricGroupLayer);
   }
 };
 
@@ -287,6 +303,29 @@ export const syncLiveTransform = ({
 
     const state = useEditorStore.getState();
     if (!state.currentPageId) return;
+
+    if (target instanceof Group) {
+      const groupTarget = target as FabricGroupLayer;
+      const storeLayer = readLayer(groupTarget.id);
+      if (!storeLayer || storeLayer.type !== "group") return;
+
+      const bounds = groupTarget.getBoundingRect();
+      state.updateLayer(
+        groupTarget.id,
+        {
+          x: round1(bounds.left),
+          y: round1(bounds.top),
+          width: round1(bounds.width),
+          height: round1(bounds.height),
+          rotation: 0,
+        } as Partial<GroupLayer>,
+        {
+          commit: false,
+          origin: "engine",
+        },
+      );
+      return;
+    }
 
     const scaleX = target.scaleX ?? 1;
     const scaleY = target.scaleY ?? 1;
@@ -346,6 +385,22 @@ export const syncLayerTransform = (target: FabricLayerTarget): void => {
   }
 
   state.updateLayer(target.id, updates as Partial<TextLayer>, {
+    commit: true,
+    origin: "engine",
+  });
+};
+
+/** 把整个组合图层的当前快照一次性提交回 Store。 */
+export const syncGroupTransform = (target: FabricGroupLayer): void => {
+  if (!target?.id) return;
+
+  const state = useEditorStore.getState();
+  if (!state.currentPageId) return;
+
+  const nextGroupLayer = readFabricGroupSnapshot(target, readLayer);
+  if (!nextGroupLayer) return;
+
+  state.replaceLayer(target.id, nextGroupLayer, {
     commit: true,
     origin: "engine",
   });

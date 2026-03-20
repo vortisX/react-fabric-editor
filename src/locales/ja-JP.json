@@ -164,6 +164,20 @@
     "canvasWidthShort": "W",
     "canvasHeightShort": "H"
   },
+  "groupPanel": {
+    "groupInfo": "グループ情報",
+    "groupChildren": "グループ内レイヤー",
+    "ungroup": "グループ解除",
+    "editing": "グループ内を編集中",
+    "notEditing": "グループ全体を選択中",
+    "doubleClickHint": "キャンバス上のグループをダブルクリックすると編集の入退場ができます。",
+    "enterEditing": "グループ編集",
+    "exitEditing": "編集を終了",
+    "boundsX": "X",
+    "boundsY": "Y",
+    "boundsWidth": "幅",
+    "boundsHeight": "高さ"
+  },
   "zoom": {
     "zoomIn": "拡大",
     "zoomOut": "縮小",

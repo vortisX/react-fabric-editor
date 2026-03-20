@@ -164,6 +164,20 @@
     "canvasWidthShort": "W",
     "canvasHeightShort": "H"
   },
+  "groupPanel": {
+    "groupInfo": "Group Info",
+    "groupChildren": "Children",
+    "ungroup": "Ungroup",
+    "editing": "Editing children",
+    "notEditing": "Whole group selected",
+    "doubleClickHint": "Double-click the group on canvas to enter or exit editing.",
+    "enterEditing": "Edit Group",
+    "exitEditing": "Exit Group",
+    "boundsX": "X",
+    "boundsY": "Y",
+    "boundsWidth": "W",
+    "boundsHeight": "H"
+  },
   "zoom": {
     "zoomIn": "Zoom In",
     "zoomOut": "Zoom Out",

@@ -1,11 +1,12 @@
 import { clampCanvasPx } from "../core/canvasMath";
+import { normalizeGroupLayer } from "../core/groupGeometry";
 import {
   branchContainsLayerId,
   findLayerById,
-  flattenRenderableLayers,
   groupLayersInTree,
   moveLayerByStep,
   moveLayerInTree,
+  ungroupLayerInTree,
   updateLayerBranchById,
   updateLayerById,
 } from "../core/layerTree";
@@ -37,6 +38,8 @@ export type EditorSingleCommand =
   | { type: "layer:add"; layer: Layer }
   | { type: "layer:update"; layerId: string; payload: Partial<Layer> }
   | { type: "layers:translate"; offsetX: number; offsetY: number }
+  | { type: "group:edit-enter"; groupId: string }
+  | { type: "group:edit-exit" }
   | { type: "selection:set"; layerId: string | null };
 
 /** Engine 命令允许单条执行，也允许批量顺序执行。 */
@@ -58,6 +61,7 @@ export interface EditorState {
   document: DesignDocument | null;
   activeLayerId: string | null;
   currentPageId: string | null;
+  editingGroupIds: string[];
   history: DocumentHistory;
   zoom: number;
   fitRequest: number;
@@ -93,6 +97,11 @@ export interface EditorState {
     payload: Partial<Layer>,
     options?: MutationOptions,
   ) => void;
+  replaceLayer: (
+    layerId: string,
+    nextLayer: Layer,
+    options?: MutationOptions,
+  ) => void;
   addLayer: (layer: Layer, options?: MutationOptions) => void;
   toggleLayerVisibility: (
     layerId: string,
@@ -117,6 +126,10 @@ export interface EditorState {
     groupName: string,
     options?: MutationOptions,
   ) => string | null;
+  ungroupLayer: (
+    layerId: string,
+    options?: MutationOptions,
+  ) => void;
   undo: () => void;
   redo: () => void;
   setZoom: (zoom: number) => void;
@@ -179,6 +192,30 @@ export const buildHistory = (
 export const getCurrentPage = (doc: DesignDocument, pageId: string | null) =>
   doc.pages.find((page) => page.pageId === pageId) ?? doc.pages[0];
 
+/** 递归平移单个图层；组合图层会连同全部后代一起移动，保持绝对坐标体系一致。 */
+const translateLayerTree = (
+  layer: Layer,
+  offsetX: number,
+  offsetY: number,
+): Layer => {
+  if (layer.type !== "group") {
+    return {
+      ...layer,
+      x: round1(layer.x + offsetX),
+      y: round1(layer.y + offsetY),
+    };
+  }
+
+  return normalizeGroupLayer({
+    ...layer,
+    x: round1(layer.x + offsetX),
+    y: round1(layer.y + offsetY),
+    children: layer.children.map((child) =>
+      translateLayerTree(child, offsetX, offsetY),
+    ),
+  });
+};
+
 /**
  * 更新文档的全局画布尺寸。
  * 这里只修改 global.width/global.height，不处理图层平移等附加逻辑。
@@ -222,11 +259,7 @@ export const translatePageLayers = (
 
     const layers = page.layers.map((layer) => {
       hasChanged = true;
-      return {
-        ...layer,
-        x: round1(layer.x + offsetX),
-        y: round1(layer.y + offsetY),
-      };
+      return translateLayerTree(layer, offsetX, offsetY);
     });
 
     return { ...page, layers };
@@ -255,6 +288,36 @@ export const updateDocumentLayer = (
 
       hasChanged = true;
       return { ...layer, ...payload } as Layer;
+    });
+
+    return layers ? { ...page, layers } : page;
+  });
+
+  return hasChanged ? { ...doc, pages } : null;
+};
+
+/** 用完整的新图层节点替换树中的旧节点。 */
+export const replaceDocumentLayer = (
+  doc: DesignDocument,
+  pageId: string,
+  layerId: string,
+  nextLayer: Layer,
+): DesignDocument | null => {
+  const normalizedNextLayer =
+    nextLayer.type === "group" ? normalizeGroupLayer(nextLayer) : nextLayer;
+  let hasChanged = false;
+  const pages = doc.pages.map((page) => {
+    if (page.pageId !== pageId) return page;
+
+    const layers = updateLayerById(page.layers, layerId, (layer) => {
+      if (
+        layer === normalizedNextLayer ||
+        JSON.stringify(layer) === JSON.stringify(normalizedNextLayer)
+      ) {
+        return layer;
+      }
+      hasChanged = true;
+      return normalizedNextLayer;
     });
 
     return layers ? { ...page, layers } : page;
@@ -385,6 +448,24 @@ export const groupDocumentLayers = (
   return groupId ? { document: { ...doc, pages }, groupId } : null;
 };
 
+/** 拆分当前页中的组合图层。 */
+export const ungroupDocumentLayer = (
+  doc: DesignDocument,
+  pageId: string,
+  layerId: string,
+): DesignDocument | null => {
+  let hasChanged = false;
+  const pages = doc.pages.map((page) => {
+    if (page.pageId !== pageId) return page;
+    const layers = ungroupLayerInTree(page.layers, layerId);
+    if (!layers) return page;
+    hasChanged = true;
+    return { ...page, layers };
+  });
+
+  return hasChanged ? { ...doc, pages } : null;
+};
+
 /** 判断分支显隐变化后是否需要清空当前选中图层。 */
 export const shouldClearActiveLayerAfterVisibilityChange = (
   doc: DesignDocument,
@@ -411,9 +492,20 @@ export const buildBranchLayerUpdateCommands = (
   const branch = findLayerById(page?.layers ?? [], layerId);
   if (!branch) return [];
 
-  return flattenRenderableLayers([branch]).map((layer) => ({
-    type: "layer:update",
-    layerId: layer.id,
-    payload: mapPayload(layer),
-  }));
+  const commands: EditorSingleCommand[] = [];
+  const walkBranch = (layer: Layer) => {
+    commands.push({
+      type: "layer:update",
+      layerId: layer.id,
+      payload: mapPayload(layer),
+    });
+
+    if (layer.type !== "group") return;
+    layer.children.forEach((child) => {
+      walkBranch(child);
+    });
+  };
+
+  walkBranch(branch);
+  return commands;
 };

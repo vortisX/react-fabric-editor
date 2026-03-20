@@ -1,4 +1,4 @@
-import { FabricObject, Control, controlsUtils, FabricImage } from 'fabric';
+import { FabricObject, Control, controlsUtils, FabricImage, Group } from 'fabric';
 import { applyCursorsToControls } from './cursors';
 
 // ==================== 圆角矩形路径工具 ====================
@@ -136,7 +136,7 @@ export function applyLayerControls(obj: FabricObject): void {
   if (controls.mtr) controls.mtr.visible = false;
   
   // 对于非图片对象（如文本），隐藏上下手柄；图片对象保留以便调整高度/拉伸。
-  const isImage = obj instanceof FabricImage;
+  const isImage = obj instanceof FabricImage || obj instanceof Group;
   if (!isImage) {
     if (controls.mt) controls.mt.visible = false;
     if (controls.mb) controls.mb.visible = false;

@@ -164,6 +164,20 @@
     "canvasWidthShort": "W",
     "canvasHeightShort": "H"
   },
+  "groupPanel": {
+    "groupInfo": "組合資訊",
+    "groupChildren": "組內圖層",
+    "ungroup": "拆分組合",
+    "editing": "正在編輯組內圖層",
+    "notEditing": "目前為整組選取狀態",
+    "doubleClickHint": "雙擊畫布中的組合即可進入或退出組內編輯。",
+    "enterEditing": "進入組編輯",
+    "exitEditing": "退出組編輯",
+    "boundsX": "X",
+    "boundsY": "Y",
+    "boundsWidth": "寬",
+    "boundsHeight": "高"
+  },
   "zoom": {
     "zoomIn": "放大",
     "zoomOut": "縮小",

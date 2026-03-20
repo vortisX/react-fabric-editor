@@ -129,6 +129,16 @@ export const applyWorkspaceEditorCommand = (
     return;
   }
 
+  if (editorCommand.type === 'group:edit-enter') {
+    engineInstance.openGroupEditing(editorCommand.groupId);
+    return;
+  }
+
+  if (editorCommand.type === 'group:edit-exit') {
+    engineInstance.closeGroupEditing(true);
+    return;
+  }
+
   if (editorCommand.type === 'canvas:resize') {
     engineInstance.resizeCanvas(editorCommand.width, editorCommand.height);
     return;

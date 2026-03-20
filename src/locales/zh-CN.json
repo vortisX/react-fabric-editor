@@ -164,6 +164,20 @@
     "canvasWidthShort": "W",
     "canvasHeightShort": "H"
   },
+  "groupPanel": {
+    "groupInfo": "组合信息",
+    "groupChildren": "组内图层",
+    "ungroup": "拆分组合",
+    "editing": "正在编辑组内图层",
+    "notEditing": "当前为整组选择状态",
+    "doubleClickHint": "双击画布中的组合可进入或退出组内编辑。",
+    "enterEditing": "进入组编辑",
+    "exitEditing": "退出组编辑",
+    "boundsX": "X",
+    "boundsY": "Y",
+    "boundsWidth": "宽",
+    "boundsHeight": "高"
+  },
   "zoom": {
     "zoomIn": "放大",
     "zoomOut": "缩小",
