@@ -58,12 +58,18 @@ export interface MutationOptions {
   origin?: EditorCommandOrigin;
 }
 
+export interface CanvasPreviewSize {
+  width: number;
+  height: number;
+}
+
 export interface EditorState {
   document: DesignDocument | null;
   activeLayerId: string | null;
   currentPageId: string | null;
   editingGroupIds: string[];
   history: DocumentHistory;
+  canvasPreviewSize: CanvasPreviewSize | null;
   zoom: number;
   fitRequest: number;
   editorCommand: EditorCommand | null;
@@ -71,6 +77,8 @@ export interface EditorState {
   initDocument: (doc: DesignDocument) => void;
   setActiveLayer: (id: string | null, origin?: EditorCommandOrigin) => void;
   setCurrentPageId: (id: string | null) => void;
+  setCanvasPreviewSize: (width: number, height: number) => void;
+  clearCanvasPreviewSize: () => void;
   setCanvasSizePx: (
     width: number,
     height: number,

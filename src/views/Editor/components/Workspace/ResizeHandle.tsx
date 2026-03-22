@@ -78,14 +78,18 @@ export const WorkspaceResizeHandle = ({
       deltaY: lastDeltaYRef.current,
     });
 
+    const widthDelta = widthPx - startWidthRef.current;
+    const heightDelta = heightPx - startHeightRef.current;
     const slotOffsetX =
-      edge === 'left' ? widthPx - startWidthRef.current : 0;
+      edge === 'left' || edge === 'right' ? widthDelta / 2 : 0;
     const slotOffsetY =
-      edge === 'top' ? heightPx - startHeightRef.current : 0;
+      edge === 'top' || edge === 'bottom' ? heightDelta / 2 : 0;
 
     return {
       widthPx,
       heightPx,
+      widthDelta,
+      heightDelta,
       slotOffsetX,
       slotOffsetY,
       slotOffsetXPx: slotOffsetX * zoom,
@@ -116,8 +120,8 @@ export const WorkspaceResizeHandle = ({
       previewCanvasRef.current,
       snapshot.widthPx,
       snapshot.heightPx,
-      0,
-      0,
+      snapshot.slotOffsetX,
+      snapshot.slotOffsetY,
     );
 
     if (hasCommitPreview) {
@@ -131,8 +135,8 @@ export const WorkspaceResizeHandle = ({
       startHeight: startHeightRef.current,
       deltaX: lastDeltaXRef.current,
       deltaY: lastDeltaYRef.current,
-      offsetX: 0,
-      offsetY: 0,
+      offsetX: snapshot.slotOffsetX,
+      offsetY: snapshot.slotOffsetY,
     });
 
     if (hasCommitPreview) {

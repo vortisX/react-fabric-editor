@@ -11,6 +11,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   currentPageId: initialDoc.pages[0].pageId,
   editingGroupIds: [],
   history: { past: [], future: [] },
+  canvasPreviewSize: null,
   zoom: 1,
   fitRequest: 0,
   editorCommand: null,
@@ -26,6 +27,7 @@ export const useEditorStore = create<EditorState>((set) => ({
       activeLayerId: null,
       editingGroupIds: [],
       history: { past: [], future: [] },
+      canvasPreviewSize: null,
       ...emitCommand(state, {
         type: "document:load",
         document: cloneDocument(doc),
@@ -47,6 +49,14 @@ export const useEditorStore = create<EditorState>((set) => ({
     }),
   /** 设置当前激活页面 id。 */
   setCurrentPageId: (id) => set({ currentPageId: id }),
+  setCanvasPreviewSize: (width, height) =>
+    set({
+      canvasPreviewSize: {
+        width: Math.round(width),
+        height: Math.round(height),
+      },
+    }),
+  clearCanvasPreviewSize: () => set({ canvasPreviewSize: null }),
   /**
    * 修改文档全局画布尺寸。
    * 如果来源是 UI，会继续发 canvas:resize 命令给 Engine；如果来源不是 UI，则只更新 Store。
@@ -60,11 +70,13 @@ export const useEditorStore = create<EditorState>((set) => ({
       if (origin !== "ui") {
         return {
           document: nextDocument,
+          canvasPreviewSize: null,
           history: buildHistory(state, options?.commit ?? false),
         };
       }
       return {
         document: nextDocument,
+        canvasPreviewSize: null,
         history: buildHistory(state, options?.commit ?? false),
         ...emitCommand(state, {
           type: "canvas:resize",
@@ -95,11 +107,13 @@ export const useEditorStore = create<EditorState>((set) => ({
         if (origin !== "ui") {
           return {
             document: nextDocument,
+            canvasPreviewSize: null,
             history: buildHistory(state, options?.commit ?? false),
           };
         }
         return {
           document: nextDocument,
+          canvasPreviewSize: null,
           history: buildHistory(state, options?.commit ?? false),
           ...emitCommand(state, {
             type: "canvas:resize-and-translate",

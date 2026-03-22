@@ -126,6 +126,32 @@ export const Workspace = () => {
   }, [applyWorkspacePreviewLayout, height, width]);
 
   /**
+   * 同步拖拽预览尺寸到 Store，供右侧 CanvasPanel 实时显示宽高数值。
+   */
+  const handleResizePreviewChange = useCallback(
+    (
+      nextWidth: number,
+      nextHeight: number,
+      offsetX: number,
+      offsetY: number,
+    ) => {
+      applyWorkspacePreviewLayout(nextWidth, nextHeight, offsetX, offsetY);
+      useEditorStore.getState().setCanvasPreviewSize(nextWidth, nextHeight);
+    },
+    [applyWorkspacePreviewLayout],
+  );
+
+  /**
+   * 结束拖拽预览时清理 DOM 预览与预览尺寸状态，恢复到真实画布状态。
+   */
+  const handleResizePreviewEnd = useCallback(() => {
+    setIsResizePreviewActive(false);
+    setIsCommitPreviewVisible(false);
+    useEditorStore.getState().clearCanvasPreviewSize();
+    resetWorkspacePreviewLayout();
+  }, [resetWorkspacePreviewLayout]);
+
+  /**
    * 首次挂载时初始化 Fabric Engine，并在卸载时释放资源。
    */
   useEffect(() => initializeWorkspaceEngine(canvasRef.current), []);
@@ -285,22 +311,11 @@ export const Workspace = () => {
                 onPreviewStart={() => {
                   setIsResizePreviewActive(true);
                 }}
-                onPreviewChange={(nextWidth, nextHeight, offsetX, offsetY) => {
-                  applyWorkspacePreviewLayout(
-                    nextWidth,
-                    nextHeight,
-                    offsetX,
-                    offsetY,
-                  );
-                }}
+                onPreviewChange={handleResizePreviewChange}
                 onCommitPreviewChange={(active) => {
                   setIsCommitPreviewVisible(active);
                 }}
-                onPreviewEnd={() => {
-                  setIsResizePreviewActive(false);
-                  setIsCommitPreviewVisible(false);
-                  resetWorkspacePreviewLayout();
-                }}
+                onPreviewEnd={handleResizePreviewEnd}
               />
               <WorkspaceResizeHandle
                 edge="right"
@@ -310,22 +325,11 @@ export const Workspace = () => {
                 onPreviewStart={() => {
                   setIsResizePreviewActive(true);
                 }}
-                onPreviewChange={(nextWidth, nextHeight, offsetX, offsetY) => {
-                  applyWorkspacePreviewLayout(
-                    nextWidth,
-                    nextHeight,
-                    offsetX,
-                    offsetY,
-                  );
-                }}
+                onPreviewChange={handleResizePreviewChange}
                 onCommitPreviewChange={(active) => {
                   setIsCommitPreviewVisible(active);
                 }}
-                onPreviewEnd={() => {
-                  setIsResizePreviewActive(false);
-                  setIsCommitPreviewVisible(false);
-                  resetWorkspacePreviewLayout();
-                }}
+                onPreviewEnd={handleResizePreviewEnd}
               />
               <WorkspaceResizeHandle
                 edge="bottom"
@@ -335,22 +339,11 @@ export const Workspace = () => {
                 onPreviewStart={() => {
                   setIsResizePreviewActive(true);
                 }}
-                onPreviewChange={(nextWidth, nextHeight, offsetX, offsetY) => {
-                  applyWorkspacePreviewLayout(
-                    nextWidth,
-                    nextHeight,
-                    offsetX,
-                    offsetY,
-                  );
-                }}
+                onPreviewChange={handleResizePreviewChange}
                 onCommitPreviewChange={(active) => {
                   setIsCommitPreviewVisible(active);
                 }}
-                onPreviewEnd={() => {
-                  setIsResizePreviewActive(false);
-                  setIsCommitPreviewVisible(false);
-                  resetWorkspacePreviewLayout();
-                }}
+                onPreviewEnd={handleResizePreviewEnd}
               />
               <WorkspaceResizeHandle
                 edge="left"
@@ -360,22 +353,11 @@ export const Workspace = () => {
                 onPreviewStart={() => {
                   setIsResizePreviewActive(true);
                 }}
-                onPreviewChange={(nextWidth, nextHeight, offsetX, offsetY) => {
-                  applyWorkspacePreviewLayout(
-                    nextWidth,
-                    nextHeight,
-                    offsetX,
-                    offsetY,
-                  );
-                }}
+                onPreviewChange={handleResizePreviewChange}
                 onCommitPreviewChange={(active) => {
                   setIsCommitPreviewVisible(active);
                 }}
-                onPreviewEnd={() => {
-                  setIsResizePreviewActive(false);
-                  setIsCommitPreviewVisible(false);
-                  resetWorkspacePreviewLayout();
-                }}
+                onPreviewEnd={handleResizePreviewEnd}
               />
               <div ref={canvasLayerRef} className="absolute inset-0 z-0 overflow-hidden">
                 <canvas ref={canvasRef} className="absolute left-0 top-0" />
