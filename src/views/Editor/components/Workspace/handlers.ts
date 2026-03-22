@@ -139,6 +139,14 @@ export const applyWorkspaceEditorCommand = (
     return;
   }
 
+  if (editorCommand.type === 'group:refresh') {
+    engineInstance.refreshGroupLayer(
+      editorCommand.groupId,
+      editorCommand.preserveSelection,
+    );
+    return;
+  }
+
   if (editorCommand.type === 'canvas:resize') {
     engineInstance.resizeCanvas(editorCommand.width, editorCommand.height);
     return;

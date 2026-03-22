@@ -170,6 +170,11 @@ export class EditorEngine {
   public closeGroupEditing(shouldSelectGroup = true): void {
     void this.exitGroupEditing(shouldSelectGroup);
   }
+
+  /** ? Workspace ????????????????????????????? */
+  public refreshGroupLayer(groupId: string, preserveSelection = true): void {
+    void this.normalizeGroupObject(groupId, preserveSelection);
+  }
   /**
    * 导出当前场景为栅格图 DataURL。
    * 导出时会临时把 viewport 归一为文档坐标系，避免把工作区缓冲层一并导出出去。

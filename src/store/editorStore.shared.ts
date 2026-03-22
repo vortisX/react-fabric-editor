@@ -498,6 +498,7 @@ export const buildLayerReorderCommand = (
 
   if (
     activeLayer?.type === "group" &&
+    activeLayer.id !== layerId &&
     !editingGroupIds.includes(activeLayer.id) &&
     branchContainsLayerId(activeLayer, layerId)
   ) {
