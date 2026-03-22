@@ -36,6 +36,11 @@ interface NormalizeGroupObjectParams {
   preserveSelection: boolean;
 }
 
+interface GroupBoundsSnapshot {
+  left: number;
+  top: number;
+}
+
 /** 把当前编辑栈同步到 Store，供图层树等 UI 判断“哪一层已被展开到画布顶层”。 */
 const syncEditingGroupIds = (stack: GroupEditingEntry[]): void => {
   useEditorStore.setState({
@@ -59,6 +64,19 @@ const createEditingChildObjects = async (
     editableObject.editingParentGroupId = groupId;
     return editableObject;
   });
+};
+
+/** 对齐重建前后的组合包围盒左上角，避免 Group 归一化后出现肉眼可见的跳动。 */
+const alignGroupObjectToBounds = (
+  groupObject: FabricGroupLayer,
+  bounds: GroupBoundsSnapshot,
+): void => {
+  const currentBounds = groupObject.getBoundingRect();
+  groupObject.set({
+    left: (groupObject.left ?? currentBounds.left) + bounds.left - currentBounds.left,
+    top: (groupObject.top ?? currentBounds.top) + bounds.top - currentBounds.top,
+  });
+  groupObject.setCoords();
 };
 
 /** 清空全部组编辑上下文，常用于整文档重载或引擎销毁。 */
@@ -156,6 +174,7 @@ export const normalizeVisibleGroupObject = async ({
   const shouldReselect =
     preserveSelection && canvas.getActiveObject() === currentGroup;
   const parentEditingGroupId = currentGroup.editingParentGroupId;
+  const previousBounds = currentGroup.getBoundingRect();
   canvas.remove(currentGroup);
 
   const normalizedGroup = await createGroupObject({
@@ -163,8 +182,11 @@ export const normalizeVisibleGroupObject = async ({
     createChildObject: createFabricObjectFromLayer,
   });
   normalizedGroup.editingParentGroupId = parentEditingGroupId;
+  alignGroupObjectToBounds(normalizedGroup, {
+    left: previousBounds.left,
+    top: previousBounds.top,
+  });
   canvas.insertAt(objectIndex, normalizedGroup as FabricGroupLayer);
-  normalizedGroup.setCoords();
 
   if (shouldReselect) {
     canvas.setActiveObject(normalizedGroup);
