@@ -16,14 +16,6 @@ const Icon: React.FC<IconProps & { d: string }> = ({ d, className, ...props }) =
 export const UndoIcon: React.FC<IconProps> = (props) => <Icon d="M3 10h10a5 5 0 015 5v0a5 5 0 01-5 5H3M3 10l4-4M3 10l4 4" {...props} />;
 /** 重做图标。 */
 export const RedoIcon: React.FC<IconProps> = (props) => <Icon d="M21 10H11a5 5 0 00-5 5v0a5 5 0 005 5h10M21 10l-4-4M21 10l-4 4" {...props} />;
-/** 预览/播放图标。 */
-export const PlayIcon: React.FC<IconProps> = (props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
-    className={cn('w-4 h-4', props.className)} {...props}>
-    <rect x="2" y="2" width="20" height="20" rx="2" />
-    <path d="M10 8l6 4-6 4V8z" fill="currentColor" stroke="none" />
-  </svg>
-);
 
 // ===== LeftPanel Icons =====
 /** 栅格/模板入口图标。 */

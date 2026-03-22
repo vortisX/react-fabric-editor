@@ -2,7 +2,6 @@
   "header": {
     "undo": "Undo (Ctrl+Z)",
     "redo": "Redo (Ctrl+Y)",
-    "preview": "Preview",
     "export": "Export"
   },
   "exportDialog": {

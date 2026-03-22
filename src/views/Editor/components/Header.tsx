@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button, Select, Tooltip } from "../../../components/ui";
-import { PlayIcon, RedoIcon, UndoIcon } from "../../../components/ui/Icons";
+import { RedoIcon, UndoIcon } from "../../../components/ui/Icons";
 import { LANGUAGES } from "../../../locales";
 import { useEditorStore } from "../../../store/useEditorStore";
 
@@ -55,8 +55,6 @@ export const Header = () => {
           </Tooltip>
 
           <div className="mx-3 h-4 w-px bg-gray-300"></div>
-
-          <Button icon={<PlayIcon />}>{t("header.preview")}</Button>
           <Button
             variant="primary"
             onClick={() => {

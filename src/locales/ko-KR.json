@@ -2,7 +2,6 @@
   "header": {
     "undo": "되돌리기 (Ctrl+Z)",
     "redo": "다시 실행 (Ctrl+Y)",
-    "preview": "미리보기",
     "export": "내보내기"
   },
   "exportDialog": {

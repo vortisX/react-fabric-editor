@@ -2,7 +2,6 @@
   "header": {
     "undo": "復原 (Ctrl+Z)",
     "redo": "重做 (Ctrl+Y)",
-    "preview": "預覽",
     "export": "匯出作品"
   },
   "exportDialog": {
