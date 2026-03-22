@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { buildBranchLayerUpdateCommands, buildHistory, cloneDocument, emitCommand, getCurrentPage, groupDocumentLayers, initialDoc, moveDocumentLayer, moveDocumentLayerByStep, replaceDocumentLayer, shouldClearActiveLayerAfterVisibilityChange, translatePageLayers, ungroupDocumentLayer, updateCanvasGlobalSize, updateDocumentLayer, updateDocumentLayerLock, updateDocumentLayerVisibility, type EditorState } from "./editorStore.shared";
+import { buildBranchLayerUpdateCommands, buildHistory, buildLayerReorderCommand, cloneDocument, emitCommand, getCurrentPage, groupDocumentLayers, initialDoc, moveDocumentLayer, moveDocumentLayerByStep, replaceDocumentLayer, shouldClearActiveLayerAfterVisibilityChange, translatePageLayers, ungroupDocumentLayer, updateCanvasGlobalSize, updateDocumentLayer, updateDocumentLayerLock, updateDocumentLayerVisibility, type EditorState } from "./editorStore.shared";
 export type { EditorCommand, EditorCommandOrigin } from "./editorStore.shared";
 /**
  * 编辑器全局 Store。
@@ -340,11 +340,16 @@ export const useEditorStore = create<EditorState>((set) => ({
       return {
         document: nextDocument,
         history: buildHistory(state, options?.commit ?? true),
-        ...emitCommand(state, {
-          type: "document:load",
-          document: cloneDocument(nextDocument),
-          activeLayerId: state.activeLayerId,
-        }),
+        ...emitCommand(
+          state,
+          buildLayerReorderCommand(
+            nextDocument,
+            state.currentPageId,
+            layerId,
+            state.activeLayerId,
+            state.editingGroupIds,
+          ),
+        ),
       };
     }),
   /** 把图层在同级中上移一层。 */
@@ -361,11 +366,16 @@ export const useEditorStore = create<EditorState>((set) => ({
       return {
         document: nextDocument,
         history: buildHistory(state, options?.commit ?? true),
-        ...emitCommand(state, {
-          type: "document:load",
-          document: cloneDocument(nextDocument),
-          activeLayerId: state.activeLayerId,
-        }),
+        ...emitCommand(
+          state,
+          buildLayerReorderCommand(
+            nextDocument,
+            state.currentPageId,
+            layerId,
+            state.activeLayerId,
+            state.editingGroupIds,
+          ),
+        ),
       };
     }),
   /** 把图层在同级中下移一层。 */
@@ -382,11 +392,16 @@ export const useEditorStore = create<EditorState>((set) => ({
       return {
         document: nextDocument,
         history: buildHistory(state, options?.commit ?? true),
-        ...emitCommand(state, {
-          type: "document:load",
-          document: cloneDocument(nextDocument),
-          activeLayerId: state.activeLayerId,
-        }),
+        ...emitCommand(
+          state,
+          buildLayerReorderCommand(
+            nextDocument,
+            state.currentPageId,
+            layerId,
+            state.activeLayerId,
+            state.editingGroupIds,
+          ),
+        ),
       };
     }),
   /** 把同一父级下的多个图层组合成新的 group 节点。 */

@@ -163,12 +163,10 @@ export const applyWorkspaceEditorCommand = (
   }
 
   if (editorCommand.type === 'document:load') {
-    engineInstance.loadDocument(editorCommand.document);
-    if (editorCommand.activeLayerId) {
-      engineInstance.selectLayer(editorCommand.activeLayerId);
-    } else {
-      engineInstance.clearSelection();
-    }
+    engineInstance.loadDocument(
+      editorCommand.document,
+      editorCommand.activeLayerId,
+    );
     return;
   }
 

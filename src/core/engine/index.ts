@@ -12,7 +12,7 @@ import {
 } from "./groupAlignment";
 import { enterGroupEditing, exitCurrentGroupEditing, normalizeVisibleGroupObject, resetGroupEditingState, type GroupEditingEntry } from "./groupEditing";
 import { addImageLayerToCanvas, addTextLayerToCanvas, finalizeImageScale, loadLayerStackToCanvas } from "./layers";
-import { findObjectById, findTopLevelObjectById, isTopLevelGroupObject, readImageLayer } from "./queries";
+import { findEditingChildren, findObjectById, findTopLevelObjectById, isTopLevelGroupObject, readImageLayer } from "./queries";
 import { updateFabricLayerProps } from "./update";
 import type { FabricGroupLayer, FabricImageLayer, FabricLayerTarget, LayerMeasurement } from "./types";
 import { applyCanvasSize } from "./viewport";
@@ -20,6 +20,7 @@ export class EditorEngine {
   private canvas: Canvas | null = null;
   private backgroundAbort: AbortController | null = null;
   private syncTransformRaf: number | null = null;
+  private isDocumentLoading = false;
   /** 文档原始尺寸（不含 zoom） */
   private docWidth = 0;
   private docHeight = 0;
@@ -31,6 +32,7 @@ export class EditorEngine {
   private pendingLoadedGroupBounds:
     | { groupId: string; bounds: GroupBoundsSnapshot }
     | null = null;
+  private pendingLoadedSelectionId: string | null = null;
   /** 判断 Engine 是否已经完成 Fabric Canvas 初始化。 */
   public isReady(): boolean {
     return this.canvas !== null;
@@ -41,6 +43,7 @@ export class EditorEngine {
    */
   public init(canvasEl: HTMLCanvasElement, width: number, height: number): void {
     if (this.canvas) this.dispose();
+    this.isDocumentLoading = false;
     this.docWidth = width;
     this.docHeight = height;
     this.displayZoom = 1;
@@ -48,6 +51,7 @@ export class EditorEngine {
     this.workspaceViewportHeight = 0;
     this.editingGroupStack = [];
     this.pendingLoadedGroupBounds = null;
+    this.pendingLoadedSelectionId = null;
     resetGroupEditingState();
     this.canvas = createEditorCanvas(canvasEl, width, height);
     setupGlobalUI();
@@ -64,8 +68,10 @@ export class EditorEngine {
     if (!this.canvas) return;
     disposeEditorCanvas(this.canvas);
     this.canvas = null;
+    this.isDocumentLoading = false;
     this.editingGroupStack = [];
     this.pendingLoadedGroupBounds = null;
+    this.pendingLoadedSelectionId = null;
     resetGroupEditingState();
   }
   /** 向当前画布新增图片图层，并返回标准化后的尺寸测量结果。 */
@@ -303,8 +309,13 @@ export class EditorEngine {
    * 加载完整文档到 Engine。
    * 当前实现先以第一页为准恢复背景和图层栈。
    */
-  public loadDocument(doc: DesignDocument): void {
+  public loadDocument(
+    doc: DesignDocument,
+    activeLayerId: string | null = null,
+  ): void {
     if (!this.canvas) return;
+    this.preparePendingLoadedState(activeLayerId);
+    this.isDocumentLoading = true;
     this.editingGroupStack = [];
     resetGroupEditingState();
     this.canvas.clear();
@@ -315,12 +326,11 @@ export class EditorEngine {
     }
     if (page?.layers.length) {
       void loadLayerStackToCanvas(this.canvas, page.layers).then(() => {
-        this.applyPendingLoadedGroupBounds();
+        this.finalizeDocumentLoad();
       });
       return;
     }
-    this.pendingLoadedGroupBounds = null;
-    this.canvas.requestRenderAll();
+    this.finalizeDocumentLoad();
   }
   /** 更新文档真实尺寸，并同步刷新 Fabric 画布显示区域。 */
   public resizeCanvas(width: number, height: number): void {
@@ -368,7 +378,10 @@ export class EditorEngine {
     if (!this.canvas) return;
     bindEngineEvents({
       canvas: this.canvas,
-      onSelectionChanged: handleSelectionChanged,
+      onSelectionChanged: (target) => {
+        if (this.isDocumentLoading) return;
+        handleSelectionChanged(target);
+      },
       onScaling: (event) =>
         handleScaling({
           canvas: this.canvas,
@@ -480,6 +493,58 @@ export class EditorEngine {
       this.canvas.requestRenderAll();
     }
     this.pendingLoadedGroupBounds = null;
+  }
+  /** 记录下次 document:load 需要恢复的选中态与组边界。 */
+  private preparePendingLoadedState(activeLayerId: string | null): void {
+    this.pendingLoadedSelectionId = activeLayerId;
+    if (!this.canvas || !activeLayerId) return;
+
+    const groupObject = findTopLevelObjectById(this.canvas, activeLayerId);
+    if (isTopLevelGroupObject(groupObject)) {
+      const bounds = groupObject.getBoundingRect();
+      this.pendingLoadedGroupBounds = {
+        groupId: activeLayerId,
+        bounds: {
+          left: bounds.left,
+          top: bounds.top,
+        },
+      };
+      return;
+    }
+
+    const editingChildren = findEditingChildren(this.canvas, activeLayerId);
+    const editingBounds = measureObjectsBounds(editingChildren);
+    if (!editingBounds) return;
+
+    this.pendingLoadedGroupBounds = {
+      groupId: activeLayerId,
+      bounds: editingBounds,
+    };
+  }
+  /** 在文档异步重载结束后统一恢复组位置与选中态。 */
+  private finalizeDocumentLoad(): void {
+    this.applyPendingLoadedGroupBounds();
+    this.applyPendingLoadedSelection();
+    this.isDocumentLoading = false;
+  }
+  /** 在图层恢复完成后再恢复 Fabric 选中对象，避免重载途中丢失焦点。 */
+  private applyPendingLoadedSelection(): void {
+    if (!this.canvas) return;
+
+    const nextSelectedLayerId = this.pendingLoadedSelectionId;
+    this.pendingLoadedSelectionId = null;
+
+    if (nextSelectedLayerId) {
+      const target = findObjectById(this.canvas, nextSelectedLayerId);
+      if (target) {
+        this.canvas.setActiveObject(target);
+        this.canvas.requestRenderAll();
+        return;
+      }
+    }
+
+    this.canvas.discardActiveObject();
+    this.canvas.requestRenderAll();
   }
   /** 把当前文档尺寸、zoom 与 viewport 尺寸统一应用到 Fabric Canvas。 */
   private applyCanvasSize(shouldRender = true): void {

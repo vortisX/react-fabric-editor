@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next";
 
+import { ensureFontLoaded } from "../../../constants/fonts";
 import { engineInstance } from "../../../core/engine";
 import { resolveSelectableLayerId } from "../../../core/layers/layerTree";
 import { useEditorStore } from "../../../store/useEditorStore";
@@ -44,7 +45,11 @@ export const createDefaultTextLayer = (
 /** 鏂板涓€涓粯璁ゆ枃鏈浘灞傦紝骞朵氦缁?Store/Engine 鍚庣画钀戒綅銆?*/
 export const addDefaultTextLayer = (t: TFunction): void => {
   const state = useEditorStore.getState();
-  state.addLayer(createDefaultTextLayer(state.document, t));
+  const nextLayer = createDefaultTextLayer(state.document, t);
+
+  void ensureFontLoaded(nextLayer.fontFamily).finally(() => {
+    useEditorStore.getState().addLayer(nextLayer);
+  });
 };
 
 /** 鎵撳紑绯荤粺鏂囦欢閫夋嫨鍣ㄥ苟鎶婂浘鐗囪鎴?dataURL 鍥惧眰銆?*/

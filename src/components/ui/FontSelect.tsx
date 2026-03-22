@@ -79,7 +79,7 @@ export function FontSelect({ value, onChange, options, className }: FontSelectPr
         onClick={() => setOpen(!open)}
         className="w-full h-7 px-2 text-xs bg-[#f5f5f5] rounded border border-transparent hover:border-gray-300 flex items-center justify-between cursor-pointer transition-colors"
       >
-        <span className="truncate" style={{ fontFamily: value }}>
+        <span className="truncate">
           {selected?.label ?? value}
         </span>
         <svg
@@ -121,7 +121,6 @@ export function FontSelect({ value, onChange, options, className }: FontSelectPr
                 >
                   <span
                     className="text-[15px] leading-snug truncate"
-                    style={{ fontFamily: opt.value }}
                   >
                     {opt.label}
                   </span>

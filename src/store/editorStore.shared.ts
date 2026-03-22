@@ -40,6 +40,7 @@ export type EditorSingleCommand =
   | { type: "layers:translate"; offsetX: number; offsetY: number }
   | { type: "group:edit-enter"; groupId: string }
   | { type: "group:edit-exit" }
+  | { type: "group:refresh"; groupId: string; preserveSelection: boolean }
   | { type: "selection:set"; layerId: string | null };
 
 /** Engine 閸涙垝鎶ら崗浣筋啅閸楁洘娼幍褑顢戦敍灞肩瘍閸忎浇顔忛幍褰掑櫤妞ゅ搫绨幍褑顢戦妴?*/
@@ -482,6 +483,38 @@ export const shouldClearActiveLayerAfterVisibilityChange = (
 };
 
 /** 閹跺﹥鐓囨稉顏勬禈鐏炲倸鍨庨弨顖氭躬閺堚偓閺傜増鏋冨锝勮厬閻ㄥ嫬褰剧€涙劗濮搁幀浣芥祮閹广垺鍨氭晶鐐哄櫤閸氬本顒為崨鎴掓姢閵?*/
+/** ?????????????? Engine ?????????????????? */
+export const buildLayerReorderCommand = (
+  doc: DesignDocument,
+  pageId: string,
+  layerId: string,
+  activeLayerId: string | null,
+  editingGroupIds: string[],
+): EditorSingleCommand => {
+  const page = getCurrentPage(doc, pageId);
+  const activeLayer = activeLayerId
+    ? findLayerById(page?.layers ?? [], activeLayerId)
+    : undefined;
+
+  if (
+    activeLayer?.type === "group" &&
+    !editingGroupIds.includes(activeLayer.id) &&
+    branchContainsLayerId(activeLayer, layerId)
+  ) {
+    return {
+      type: "group:refresh",
+      groupId: activeLayer.id,
+      preserveSelection: true,
+    };
+  }
+
+  return {
+    type: "document:load",
+    document: cloneDocument(doc),
+    activeLayerId,
+  };
+};
+
 export const buildBranchLayerUpdateCommands = (
   doc: DesignDocument,
   pageId: string,
