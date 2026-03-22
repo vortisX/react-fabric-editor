@@ -28,22 +28,11 @@ interface ApplyWorkspaceZoomParams {
 
 const WHEEL_ZOOM_SENSITIVITY = 0.001;
 
-let zoomAnimationRaf: number | null = null;
-let zoomAnimationTarget: number | null = null;
-
 /**
- * 缁堟褰撳墠浠嶅湪杩涜鐨勭缉鏀惧姩鐢汇€?
- * Fit 浼氱洿鎺ユ妸 zoom 鍐欐垚绮剧‘鍊硷紱濡傛灉涓嶅厛鍙栨秷鏃у姩鐢伙紝涓婁竴杞寜閽?婊氳疆缂╂斁鐨勭洰鏍囧€?
- * 浼氬湪涓嬩竴甯ф妸 zoom 鍐嶆鎷夎蛋锛屽鑷粹€滈€傚簲鐢诲竷鈥濇棤娉曠ǔ瀹氬洖鍒版纭櫨鍒嗘瘮銆?
+ * ???????
+ * ???????????????????????????????
  */
-const stopWorkspaceZoomAnimation = (): void => {
-  if (zoomAnimationRaf !== null) {
-    cancelAnimationFrame(zoomAnimationRaf);
-  }
-
-  zoomAnimationRaf = null;
-  zoomAnimationTarget = null;
-};
+const stopWorkspaceZoomAnimation = (): void => {};
 
 /**
  * 鏍规嵁鎷栨嫿杈逛笌褰撳墠缂╂斁鍊硷紝鎶婂睆骞曚綅绉绘崲绠楁垚涓嬩竴甯х殑鏂囨。鍍忕礌灏哄銆?
@@ -366,49 +355,9 @@ export const centerWorkspaceViewport = (
  * 鐢ㄥ崟涓€鍔ㄧ敾寰幆鎶婂綋鍓?zoom 骞虫粦杩藉埌鐩爣 zoom銆?
  * 杩炵画婊氳疆杈撳叆鏃朵笉浼氬弽澶嶉噸鍚姩鐢伙紝鑰屾槸鎸佺画杩借釜鏈€鏂扮洰鏍囧€硷紝鍑忓皯椤挎尗鎰熴€?
  */
-const animateWorkspaceZoom = (
-  nextZoom: number,
-): void => {
-  const currentZoom = useEditorStore.getState().zoom;
-  if (Math.abs(nextZoom - currentZoom) < 1e-6 && zoomAnimationRaf === null) {
-    return;
-  }
-
-  zoomAnimationTarget = nextZoom;
-  if (zoomAnimationRaf !== null) return;
-
-  /** 鍦ㄦ瘡涓€甯ч噷璇诲彇鏈€鏂?zoom锛屽苟鍚戞渶鏂扮洰鏍囧€煎钩婊戦€艰繎銆?*/
-  const step = () => {
-    const targetZoom = zoomAnimationTarget;
-    if (targetZoom === null) {
-      zoomAnimationRaf = null;
-      return;
-    }
-
-    const frameZoom = useEditorStore.getState().zoom;
-    const delta = targetZoom - frameZoom;
-    const nextFrameZoom = Math.abs(delta) < 0.002
-      ? targetZoom
-      : frameZoom + delta * 0.22;
-
-    useEditorStore.getState().setZoom(Math.round(nextFrameZoom * 1000) / 1000);
-
-    if (Math.abs(targetZoom - nextFrameZoom) < 1e-6) {
-      zoomAnimationRaf = null;
-      zoomAnimationTarget = null;
-      return;
-    }
-
-    zoomAnimationRaf = requestAnimationFrame(step);
-  };
-
-  zoomAnimationRaf = requestAnimationFrame(step);
-};
-
 /**
- * 搴旂敤宸ヤ綔鍖虹缉鏀剧洰鏍囥€?
- * 褰撳墠鍙礋璐ｅ彂璧风缉鏀惧姩鐢伙紱鐪熸鐨勬粴鍔ㄥ眳涓斁鍦?Workspace 缁勪欢鐨?layout 闃舵鎵ц锛?
- * 杩欐牱鍙互閬垮厤鈥滃厛缂╂斁涓€甯э紝鍐嶅洖涓竴甯р€濈殑鎶藉姩鎰熴€?
+ * ??????????
+ * ???????????????????? Fabric ???? backstore ????????
  */
 export const applyWorkspaceZoom = ({
   nextZoom,
@@ -416,16 +365,10 @@ export const applyWorkspaceZoom = ({
   const currentZoom = useEditorStore.getState().zoom;
   if (Math.abs(nextZoom - currentZoom) < 1e-6) return;
 
-  // 涓轰粈涔堢粺涓€璧板姩鐢伙細
-  // 鐢ㄦ埛宸茬粡纭缂╂斁涓績鍥哄畾鍦ㄥ伐浣滃尯涓ぎ锛屽洜姝よ繖閲岀洿鎺ュ zoom 鍋氱煭鏃剁紦鍔紝
-  // 鍏蜂綋鐨勫眳涓粴鍔ㄦ斁鍒?Workspace 鐨?layout 闃舵鎵ц锛岄伩鍏嶆瘡甯у厛閿欎綅鍐嶅洖姝ｄ骇鐢熸娊鍔ㄣ€?
-  animateWorkspaceZoom(nextZoom);
+  stopWorkspaceZoomAnimation();
+  useEditorStore.getState().setZoom(Math.round(nextZoom * 1000) / 1000);
 };
 
-/**
- * 璇诲彇褰撳墠宸ヤ綔鍖虹敾妗嗗湪瑙嗗彛涓殑浣嶇疆銆?
- * 杩欎釜閿氱偣浼氬湪鎷栨嫿鏀瑰昂瀵稿墠缂撳瓨涓嬫潵锛岀敤浜庡悗缁粴鍔ㄨˉ鍋裤€?
- */
 export const readWorkspaceFrameAnchor = (
   frameElement: HTMLDivElement | null,
 ): WorkspaceFrameAnchor | null => {
