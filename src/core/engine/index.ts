@@ -376,7 +376,11 @@ export class EditorEngine {
   /** 提交组合图层的最终几何状态和子节点变换到 Store。 */
   private commitGroupTransform = (target: FabricGroupLayer): void => {
     syncGroupTransform(target);
-    void this.normalizeGroupObject(target.id, true);
+    const needsNormalization =
+      Math.abs((target.scaleX ?? 1) - 1) > 1e-3 ||
+      Math.abs((target.scaleY ?? 1) - 1) > 1e-3 ||
+      Math.abs(target.angle ?? 0) > 1e-3;
+    if (needsNormalization) void this.normalizeGroupObject(target.id, true);
   };
   /** 处理组合图层的双击进入/退出组内编辑。 */
   private handleDoubleClick = (target?: import("fabric").FabricObject): void => {
