@@ -1,5 +1,5 @@
-import { clampCanvasPx } from "../core/canvasMath";
-import { normalizeGroupLayer } from "../core/groupGeometry";
+import { clampCanvasPx } from "../core/canvas/canvasMath";
+import { normalizeGroupLayer } from "../core/layers/groupGeometry";
 import {
   branchContainsLayerId,
   findLayerById,
@@ -9,17 +9,17 @@ import {
   ungroupLayerInTree,
   updateLayerBranchById,
   updateLayerById,
-} from "../core/layerTree";
+} from "../core/layers/layerTree";
 import { round1 } from "../core/engine/helpers";
 import type { DesignDocument, GroupLayer, Layer, PageBackground } from "../types/schema";
 import { genId } from "../utils/uuid";
 
-/** 标记一次状态变更来自哪里，用于决定是否需要反向发命令到 Engine。 */
+/** 閺嶅洩顔囨稉鈧▎锛勫Ц閹礁褰夐弴瀛樻降閼奉亜鎽㈤柌宀嬬礉閻劋绨崘鍐茬暰閺勵垰鎯侀棁鈧憰浣稿冀閸氭垵褰傞崨鎴掓姢閸?Engine閵?*/
 export type EditorCommandOrigin = "ui" | "engine" | "history" | "system";
 
 /**
- * Store 发往 Workspace/Engine 的基础命令类型。
- * React UI 只负责修改 Store；真正驱动 Fabric 的动作通过这组命令桥接出去。
+ * Store 閸欐垵绶?Workspace/Engine 閻ㄥ嫬鐔€绾偓閸涙垝鎶ょ猾璇茬€烽妴?
+ * React UI 閸欘亣绀嬬拹锝勬叏閺€?Store閿涙稓婀″锝夆攳閸?Fabric 閻ㄥ嫬濮╂担婊堚偓姘崇箖鏉╂瑧绮嶉崨鎴掓姢濡椼儲甯撮崙鍝勫箵閵?
  */
 export type EditorSingleCommand =
   | {
@@ -42,7 +42,7 @@ export type EditorSingleCommand =
   | { type: "group:edit-exit" }
   | { type: "selection:set"; layerId: string | null };
 
-/** Engine 命令允许单条执行，也允许批量顺序执行。 */
+/** Engine 閸涙垝鎶ら崗浣筋啅閸楁洘娼幍褑顢戦敍灞肩瘍閸忎浇顔忛幍褰掑櫤妞ゅ搫绨幍褑顢戦妴?*/
 export type EditorCommand =
   | EditorSingleCommand
   | { type: "commands:batch"; commands: EditorSingleCommand[] };
@@ -136,11 +136,11 @@ export interface EditorState {
   requestFit: () => void;
 }
 
-/** 编辑器初始文档，供首次进入页面或未加载外部文档时使用。 */
+/** 缂傛牞绶崳銊ュ灥婵鏋冨锝忕礉娓氭盯顩诲▎陇绻橀崗銉┿€夐棃銏″灗閺堫亜濮炴潪钘夘樆闁劍鏋冨锝嗘娴ｈ法鏁ら妴?*/
 export const initialDoc: DesignDocument = {
   version: "1.0.0",
   workId: "draft_001",
-  title: "未命名设计",
+  title: "Untitled Design",
   global: {
     width: 1000,
     height: 1000,
@@ -150,20 +150,20 @@ export const initialDoc: DesignDocument = {
   pages: [
     {
       pageId: "page_01",
-      name: "第 1 页",
+      name: "Page 1",
       background: { type: "color", value: "#F3F4F6" },
       layers: [],
     },
   ],
 };
 
-/** 深拷贝文档，避免历史栈与当前文档共享引用导致回退失真。 */
+/** 濞ｈ鲸瀚圭拹婵囨瀮濡楋綇绱濋柆鍨帳閸樺棗褰堕弽鍫滅瑢瑜版挸澧犻弬鍥ㄣ€傞崗鍙橀煩瀵洜鏁ょ€佃壈鍤ч崶鐐衡偓鈧径杈╂埂閵?*/
 export const cloneDocument = (doc: DesignDocument): DesignDocument =>
   structuredClone(doc);
 
 /**
- * 生成一条新的编辑命令，并递增 command id。
- * command id 的作用是让 React effect 即使收到相同内容命令，也能可靠感知到“这是一次新触发”。
+ * 閻㈢喐鍨氭稉鈧弶鈩冩煀閻ㄥ嫮绱潏鎴濇嚒娴犮倧绱濋獮鍫曗偓鎺戭杻 command id閵?
+ * command id 閻ㄥ嫪缍旈悽銊︽Ц鐠?React effect 閸楀厖濞囬弨璺哄煂閻╃鎮撻崘鍛啇閸涙垝鎶ら敍灞肩瘍閼宠棄褰查棃鐘冲妳閻儱鍩岄垾婊嗙箹閺勵垯绔村▎鈩冩煀鐟欙箑褰傞垾婵勨偓?
  */
 export const emitCommand = (
   state: Pick<EditorState, "editorCommandId">,
@@ -174,8 +174,8 @@ export const emitCommand = (
 });
 
 /**
- * 根据 commit 标记构建新的历史栈。
- * 只有明确的“操作完成”才允许把当前文档压入 past，实时拖拽等高频变更不会进入历史记录。
+ * 閺嶈宓?commit 閺嶅洩顔囬弸鍕紦閺傛壆娈戦崢鍡楀蕉閺嶅牄鈧?
+ * 閸欘亝婀侀弰搴ｂ€橀惃鍕ㄢ偓婊勬惙娴ｆ粌鐣幋鎰ㄢ偓婵囧閸忎浇顔忛幎濠傜秼閸撳秵鏋冨锝呭竾閸?past閿涘苯鐤勯弮鑸靛珛閹风晫鐡戞姗€顣堕崣妯绘纯娑撳秳绱版潻娑樺弳閸樺棗褰剁拋鏉跨秿閵?
  */
 export const buildHistory = (
   state: Pick<EditorState, "document" | "history">,
@@ -188,11 +188,11 @@ export const buildHistory = (
   };
 };
 
-/** 解析当前页；如果 currentPageId 丢失，则自动回退到第一页。 */
+/** 鐟欙絾鐎借ぐ鎾冲妞ょ绱辨俊鍌涚亯 currentPageId 娑撱垹銇戦敍灞藉灟閼奉亜濮╅崶鐐衡偓鈧崚鎵儑娑撯偓妞ょ偣鈧?*/
 export const getCurrentPage = (doc: DesignDocument, pageId: string | null) =>
   doc.pages.find((page) => page.pageId === pageId) ?? doc.pages[0];
 
-/** 递归平移单个图层；组合图层会连同全部后代一起移动，保持绝对坐标体系一致。 */
+/** 闁帒缍婇獮宕囆╅崡鏇氶嚋閸ユ儳鐪伴敍娑氱矋閸氬牆娴樼仦鍌欑窗鏉╃偛鎮撻崗銊╁劥閸氬簼鍞稉鈧挧椋幮╅崝顭掔礉娣囨繃瀵旂紒婵嗩嚠閸ф劖鐖ｆ担鎾堕兇娑撯偓閼锋番鈧?*/
 const translateLayerTree = (
   layer: Layer,
   offsetX: number,
@@ -217,8 +217,8 @@ const translateLayerTree = (
 };
 
 /**
- * 更新文档的全局画布尺寸。
- * 这里只修改 global.width/global.height，不处理图层平移等附加逻辑。
+ * 閺囧瓨鏌婇弬鍥ㄣ€傞惃鍕弿鐏炩偓閻㈣绔风亸鍝勵嚟閵?
+ * 鏉╂瑩鍣烽崣顏冩叏閺€?global.width/global.height閿涘奔绗夋径鍕倞閸ユ儳鐪伴獮宕囆╃粵澶愭閸旂娀鈧槒绶妴?
  */
 export const updateCanvasGlobalSize = (
   doc: DesignDocument,
@@ -242,8 +242,8 @@ export const updateCanvasGlobalSize = (
 };
 
 /**
- * 平移指定页面中的全部图层。
- * 常用于从左/上边调整文档尺寸时，把现有图层整体向内挪动，保持视觉内容位置稳定。
+ * 楠炲磭些閹稿洤鐣炬い鐢告桨娑擃厾娈戦崗銊╁劥閸ユ儳鐪伴妴?
+ * 鐢摜鏁ゆ禍搴濈矤瀹?娑撳﹨绔熺拫鍐╂殻閺傚洦銆傜亸鍝勵嚟閺冭绱濋幎濠勫箛閺堝娴樼仦鍌涙殻娴ｆ挸鎮滈崘鍛皳閸旑煉绱濇穱婵囧瘮鐟欏棜顫庨崘鍛啇娴ｅ秶鐤嗙粙鍐茬暰閵?
  */
 export const translatePageLayers = (
   doc: DesignDocument,
@@ -268,7 +268,7 @@ export const translatePageLayers = (
   return hasChanged ? { ...doc, pages } : null;
 };
 
-/** 更新指定页面中的单个图层。 */
+/** 閺囧瓨鏌婇幐鍥х暰妞ょ敻娼版稉顓犳畱閸楁洑閲滈崶鎯х湴閵?*/
 export const updateDocumentLayer = (
   doc: DesignDocument,
   pageId: string,
@@ -296,7 +296,7 @@ export const updateDocumentLayer = (
   return hasChanged ? { ...doc, pages } : null;
 };
 
-/** 用完整的新图层节点替换树中的旧节点。 */
+/** 閻劌鐣弫瀵告畱閺傛澘娴樼仦鍌濆Ν閻愯娴涢幑銏＄埐娑擃厾娈戦弮褑濡悙骞库偓?*/
 export const replaceDocumentLayer = (
   doc: DesignDocument,
   pageId: string,
@@ -326,7 +326,7 @@ export const replaceDocumentLayer = (
   return hasChanged ? { ...doc, pages } : null;
 };
 
-/** 更新当前页内整条图层分支的显隐状态。 */
+/** 閺囧瓨鏌婅ぐ鎾冲妞ら潧鍞撮弫瀛樻蒋閸ユ儳鐪伴崚鍡樻暜閻ㄥ嫭妯夐梾鎰Ц閹降鈧?*/
 export const updateDocumentLayerVisibility = (
   doc: DesignDocument,
   pageId: string,
@@ -349,7 +349,7 @@ export const updateDocumentLayerVisibility = (
   return hasChanged ? { ...doc, pages } : null;
 };
 
-/** 更新当前页内整条图层分支的锁定状态。 */
+/** 閺囧瓨鏌婅ぐ鎾冲妞ら潧鍞撮弫瀛樻蒋閸ユ儳鐪伴崚鍡樻暜閻ㄥ嫰鏀ｇ€规氨濮搁幀浣碘偓?*/
 export const updateDocumentLayerLock = (
   doc: DesignDocument,
   pageId: string,
@@ -372,7 +372,7 @@ export const updateDocumentLayerLock = (
   return hasChanged ? { ...doc, pages } : null;
 };
 
-/** 重排当前页图层树中的节点。 */
+/** 闁插秵甯撹ぐ鎾冲妞ら潧娴樼仦鍌涚埐娑擃厾娈戦懞鍌滃仯閵?*/
 export const moveDocumentLayer = (
   doc: DesignDocument,
   pageId: string,
@@ -392,7 +392,7 @@ export const moveDocumentLayer = (
   return hasChanged ? { ...doc, pages } : null;
 };
 
-/** 在同一父级内把图层节点移动一层。 */
+/** 閸︺劌鎮撴稉鈧悥鍓侀獓閸愬懏濡搁崶鎯х湴閼哄倻鍋ｇ粔璇插З娑撯偓鐏炲倶鈧?*/
 export const moveDocumentLayerByStep = (
   doc: DesignDocument,
   pageId: string,
@@ -411,7 +411,7 @@ export const moveDocumentLayerByStep = (
   return hasChanged ? { ...doc, pages } : null;
 };
 
-/** 把当前页中同父级的多个节点打包成组合图层。 */
+/** 閹跺﹤缍嬮崜宥夈€夋稉顓炴倱閻栧墎楠囬惃鍕樋娑擃亣濡悙瑙勫ⅵ閸栧懏鍨氱紒鍕値閸ユ儳鐪伴妴?*/
 export const groupDocumentLayers = (
   doc: DesignDocument,
   pageId: string,
@@ -448,7 +448,7 @@ export const groupDocumentLayers = (
   return groupId ? { document: { ...doc, pages }, groupId } : null;
 };
 
-/** 拆分当前页中的组合图层。 */
+/** 閹峰棗鍨庤ぐ鎾冲妞ゅ吀鑵戦惃鍕矋閸氬牆娴樼仦鍌樷偓?*/
 export const ungroupDocumentLayer = (
   doc: DesignDocument,
   pageId: string,
@@ -466,7 +466,7 @@ export const ungroupDocumentLayer = (
   return hasChanged ? { ...doc, pages } : null;
 };
 
-/** 判断分支显隐变化后是否需要清空当前选中图层。 */
+/** 閸掋倖鏌囬崚鍡樻暜閺勯箖娈ｉ崣妯哄閸氬孩妲搁崥锕傛付鐟曚焦绔荤粚鍝勭秼閸撳秹鈧鑵戦崶鎯х湴閵?*/
 export const shouldClearActiveLayerAfterVisibilityChange = (
   doc: DesignDocument,
   pageId: string,
@@ -481,7 +481,7 @@ export const shouldClearActiveLayerAfterVisibilityChange = (
   return !!branch && branchContainsLayerId(branch, activeLayerId);
 };
 
-/** 把某个图层分支在最新文档中的叶子状态转换成增量同步命令。 */
+/** 閹跺﹥鐓囨稉顏勬禈鐏炲倸鍨庨弨顖氭躬閺堚偓閺傜増鏋冨锝勮厬閻ㄥ嫬褰剧€涙劗濮搁幀浣芥祮閹广垺鍨氭晶鐐哄櫤閸氬本顒為崨鎴掓姢閵?*/
 export const buildBranchLayerUpdateCommands = (
   doc: DesignDocument,
   pageId: string,

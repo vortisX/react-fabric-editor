@@ -1,12 +1,12 @@
 import { useEditorStore } from '../../../../../store/useEditorStore';
-import { CANVAS_PRESETS, type CanvasPresetId } from '../../../../../core/canvasPresets';
-import { presetToPx, convertUnitToPx } from '../../../../../core/canvasMath';
-import { CANVAS_MIN_PX, CANVAS_MAX_PX, type CanvasUnit } from '../../../../../core/constants';
+import { CANVAS_PRESETS, type CanvasPresetId } from '../../../../../core/canvas/canvasPresets';
+import { presetToPx, convertUnitToPx } from '../../../../../core/canvas/canvasMath';
+import { CANVAS_MIN_PX, CANVAS_MAX_PX, type CanvasUnit } from '../../../../../core/config/constants';
 import type { FillStyle, GradientFill, PageBackground } from '../../../../../types/schema';
 
 /**
- * 把 Schema 里的页面背景转换成 FillPicker 可消费的填充结构。
- * 图片背景暂时视为纯白填充，因为当前 FillPicker 不负责编辑背景图。
+ * 闁?Schema 闂佹彃鐬煎▓鎴炪亜閻㈠憡妗ㄩ柤鍐叉湰濞呮瑦娼浣稿簥闁?FillPicker 闁告瑯鍨辩粔椋庢嫻閸︻厽鐣卞┑澶樺亜閸樻牜绱掗幘瀵糕偓顖炲Υ?
+ * 闁搞儱澧芥晶鏍嚄鐏炵偓鐝柡鍡楀€瑰鍌滄喆閸℃洝绀嬬紒缁㈠灣濞呇勭箙椤愩垹甯犻柨娑樿嫰濞叉粍绋夐崫鍕Ъ闁?FillPicker 濞戞挸绉风粈瀣嫻閿濆洨妞介弶鍫熷灱閸庢寮查姘闁?
  */
 export function normalizeFillFromBackground(bg: PageBackground): FillStyle {
   if (bg.type === 'color') return { type: 'solid', color: bg.value };
@@ -14,16 +14,16 @@ export function normalizeFillFromBackground(bg: PageBackground): FillStyle {
   return { type: 'solid', color: '#ffffff' };
 }
 
-/** 把 FillPicker 返回的填充结构重新转换成可落库的页面背景数据。 */
+/** 闁?FillPicker 閺夆晜鏌ㄥú鏍儍閸曨偓缍栭柛蹇撴噽缁劑寮搁崟顖氭闁哄倹濯藉ù鍡涘箲閵忊€崇亣闁告瑯鍨甸幆銈嗘償閹捐埖鐣卞銈囨暬濞间即鎳楃仦鐐彲闁轰胶澧楀畵渚€濡?*/
 export function nextBackgroundFromFill(fill: FillStyle): PageBackground {
   if (fill.type === 'solid') return { type: 'color', value: fill.color };
-  // 渐变类型：fill 本身即为 GradientFill，直接包装成 GradientBackground
+  // 婵炴挻鍔曡ぐ澶岀尵鐠囪尙鈧兘鏁嶅鐖刲l 闁哄牜鍓濋棅鈺呭础閸忓懓绀?GradientFill闁挎稑鐬煎ú鍧楀箳閵夈儱鐦堕悷浣告噺閸?GradientBackground
   return { type: 'gradient', value: fill as GradientFill };
 }
 
 /**
- * 处理画布预设切换。
- * 这里直接通过 getState() 更新 Store，保持处理逻辑与 React 生命周期解耦。
+ * 濠㈣泛瀚幃濠囨偨鐠囪尙顏村Λ鏉垮椤旀洟宕氶崶銊ュ簥闁?
+ * 閺夆晜鐟╅崳鐑芥儎鐎涙ê澶嶉梺顐ｄ亢缁?getState() 闁哄洤鐡ㄩ弻?Store闁挎稑濂旂换姘跺箰娴ｅ壊妲遍柣鐐叉閳ь剚妲掔欢顐ｇ▔?React 闁汇垻鍠庨幊锟犲川閵婏附鍩傞悷娆欑秬閳ь剨璐熼埀?
  */
 export function handlePresetChange(presetId: CanvasPresetId): void {
   const preset = CANVAS_PRESETS.find((p) => p.id === presetId);
@@ -35,13 +35,13 @@ export function handlePresetChange(presetId: CanvasPresetId): void {
   const { setCanvasUnit, setCanvasSizePx, requestFit } = useEditorStore.getState();
   setCanvasUnit(preset.unit);
   setCanvasSizePx(next.widthPx, next.heightPx, { commit: true });
-  // 切换预设后自动适应画布，防止画布过大或过小。
+  // 闁告帒娲﹀畷鍙夛紣閸曨噮鍟庨柛姘唉閸ゆ粓宕濋妸鈹惧亾閸屾氨瀹夐柣銏ｎ嚙缁旂兘鏁嶅畝鍕╂慨婵勫灮閺佸墽鏁崘顓犵畺濠㈠爢鍕仐閺夆晛娲ら惃顒勫Υ?
   requestFit();
 }
 
 /**
- * 处理手动输入的画布尺寸。
- * 校验失败时返回 i18n key，成功时返回 null，翻译工作由调用方通过 `t()` 完成。
+ * 濠㈣泛瀚幃濠囧箥鐎ｎ亜袟閺夊牊鎸搁崣鍡涙儍閸曨厽鏆伴悽顖氬暙閺勫倻鈧灚鎮堕埀?
+ * 闁哄稄绻濋悰娆愬緞鏉堫偉袝闁哄啯鍎肩换鎴﹀炊?i18n key闁挎稑鏈崹姘跺礉閻斿憡顦ч弶鈺傛煥濞?null闁挎稑鐬奸悙鏇犳嫚閹存繀绱ｅù锝嗙矌閺佽京鎷崘顏呮殢闁哄倸缍婇埀顒佷亢缁?`t()` 閻庣懓鏈崹姘跺Υ?
  */
 export function applyDimensionChange(
   kind: 'width' | 'height',

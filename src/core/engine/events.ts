@@ -9,8 +9,8 @@ import {
 import { i18n } from "../../locales";
 import { useEditorStore } from "../../store/useEditorStore";
 import type { BaseLayer, GroupLayer, TextLayer } from "../../types/schema";
-import { CustomTextbox } from "../CustomTextbox";
-import { THEME_PRIMARY } from "../constants";
+import { CustomTextbox } from "../text/CustomTextbox";
+import { THEME_PRIMARY } from "../config/constants";
 import { round1 } from "./helpers";
 import { readFabricGroupSnapshot } from "./groupLayer";
 import { readLayer } from "./queries";

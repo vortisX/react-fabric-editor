@@ -1,4 +1,4 @@
-import type { CanvasUnit } from './constants';
+import type { CanvasUnit } from '../config/constants';
 
 export type CanvasPresetId =
   | 'custom'

@@ -1,4 +1,4 @@
-import { findLayerById } from '../../../../../core/layerTree';
+import { findLayerById } from '../../../../../core/layers/layerTree';
 import { useEditorStore } from '../../../../../store/useEditorStore';
 import { handleImagePropChange, type ImagePropChangeHandler } from './Layer.handlers';
 import {
@@ -12,9 +12,9 @@ import {
 
 import type { ImageLayer } from '../../../../../types/schema';
 
-/** 图片图层属性面板：点击图片图层时展示 */
+/** 鍥剧墖鍥惧眰灞炴€ч潰鏉匡細鐐瑰嚮鍥剧墖鍥惧眰鏃跺睍绀?*/
 export const ImagePanel = () => {
-  // 精确订阅 activeLayer，避免无关状态变更触发重渲染。
+  // 绮剧‘璁㈤槄 activeLayer锛岄伩鍏嶆棤鍏崇姸鎬佸彉鏇磋Е鍙戦噸娓叉煋銆?
   const activeLayer = useEditorStore((state) => {
     if (!state.activeLayerId || !state.document) return null;
     const page =
@@ -25,7 +25,7 @@ export const ImagePanel = () => {
 
   if (!activeLayer || activeLayer.type !== 'image') return null;
 
-  /** 把面板里的字段改动统一转交给纯 TS handlers，保持 React 组件尽量轻。 */
+  /** 鎶婇潰鏉块噷鐨勫瓧娈垫敼鍔ㄧ粺涓€杞氦缁欑函 TS handlers锛屼繚鎸?React 缁勪欢灏介噺杞汇€?*/
   const onPropChange: ImagePropChangeHandler = (key, value) => {
     handleImagePropChange(activeLayer.id, key, value);
   };

@@ -1,6 +1,6 @@
 import type { Canvas } from "fabric";
 import type { DesignDocument, ImageLayer, PageBackground, TextLayer } from "../../types/schema";
-import { setupGlobalUI } from "../EditorUI";
+import { setupGlobalUI } from "../controls/EditorUI";
 import { applyBackground } from "./background";
 import { createEditorCanvas, disposeEditorCanvas } from "./canvas";
 import { bindEngineEvents, handleModified, handleResizing, handleScaling, handleSelectionChanged, handleTextChanged, syncGroupTransform, syncLayerTransform, syncLiveTransform } from "./events";

@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 
 import { getEditorSurfacePadding } from '../../../../core/engine/workspace';
-import type { DragEdge } from '../../../../core/canvasMath';
+import type { DragEdge } from '../../../../core/canvas/canvasMath';
 import type { PageBackground } from '../../../../types/schema';
 
 export const MIN_ZOOM = 0.1;

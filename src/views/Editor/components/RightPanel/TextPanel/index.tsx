@@ -1,4 +1,4 @@
-import { findLayerById } from '../../../../../core/layerTree';
+import { findLayerById } from '../../../../../core/layers/layerTree';
 import { useEditorStore } from '../../../../../store/useEditorStore';
 import { handlePropChange, type PropChangeHandler } from './Layer.handlers';
 import {
@@ -10,9 +10,9 @@ import {
 } from './Sections';
 import type { TextLayer } from '../../../../../types/schema';
 
-/** 文本面板：点击文本图层或新增文本时展示，包含图层位置、排版、颜色、边框等属性 */
+/** 鏂囨湰闈㈡澘锛氱偣鍑绘枃鏈浘灞傛垨鏂板鏂囨湰鏃跺睍绀猴紝鍖呭惈鍥惧眰浣嶇疆銆佹帓鐗堛€侀鑹层€佽竟妗嗙瓑灞炴€?*/
 export const TextPanel = () => {
-  // 精确订阅 activeLayer，避免 canvas resize / background 变更触发面板重渲染。
+  // 绮剧‘璁㈤槄 activeLayer锛岄伩鍏?canvas resize / background 鍙樻洿瑙﹀彂闈㈡澘閲嶆覆鏌撱€?
   const activeLayer = useEditorStore((state) => {
     if (!state.activeLayerId || !state.document) return null;
     const page =
@@ -23,7 +23,7 @@ export const TextPanel = () => {
 
   if (!activeLayer) return null;
 
-  /** 把文本面板的字段修改统一下发给纯 TS handlers，保持视图层只关心展示。 */
+  /** 鎶婃枃鏈潰鏉跨殑瀛楁淇敼缁熶竴涓嬪彂缁欑函 TS handlers锛屼繚鎸佽鍥惧眰鍙叧蹇冨睍绀恒€?*/
   const onPropChange: PropChangeHandler = (key, value) => {
     handlePropChange(activeLayer.id, key, value);
   };

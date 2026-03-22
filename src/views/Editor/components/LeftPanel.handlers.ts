@@ -1,12 +1,12 @@
 import type { TFunction } from "i18next";
 
 import { engineInstance } from "../../../core/engine";
-import { resolveSelectableLayerId } from "../../../core/layerTree";
+import { resolveSelectableLayerId } from "../../../core/layers/layerTree";
 import { useEditorStore } from "../../../store/useEditorStore";
 import type { ImageLayer, Layer, TextLayer } from "../../../types/schema";
 import { genId } from "../../../utils/uuid";
 
-/** 根据当前文档尺寸生成默认文本图层。 */
+/** 鏍规嵁褰撳墠鏂囨。灏哄鐢熸垚榛樿鏂囨湰鍥惧眰銆?*/
 export const createDefaultTextLayer = (
   documentState: ReturnType<typeof useEditorStore.getState>["document"],
   t: TFunction,
@@ -41,13 +41,13 @@ export const createDefaultTextLayer = (
   };
 };
 
-/** 新增一个默认文本图层，并交给 Store/Engine 后续落位。 */
+/** 鏂板涓€涓粯璁ゆ枃鏈浘灞傦紝骞朵氦缁?Store/Engine 鍚庣画钀戒綅銆?*/
 export const addDefaultTextLayer = (t: TFunction): void => {
   const state = useEditorStore.getState();
   state.addLayer(createDefaultTextLayer(state.document, t));
 };
 
-/** 打开系统文件选择器并把图片读成 dataURL 图层。 */
+/** 鎵撳紑绯荤粺鏂囦欢閫夋嫨鍣ㄥ苟鎶婂浘鐗囪鎴?dataURL 鍥惧眰銆?*/
 export const openImageLayerPicker = (t: TFunction): void => {
   const input = window.document.createElement("input");
   input.type = "file";
@@ -86,7 +86,7 @@ export const openImageLayerPicker = (t: TFunction): void => {
   input.click();
 };
 
-/** 在图层树中选中某个节点，并同步真正可编辑的叶子图层到 Store。 */
+/** 鍦ㄥ浘灞傛爲涓€変腑鏌愪釜鑺傜偣锛屽苟鍚屾鐪熸鍙紪杈戠殑鍙跺瓙鍥惧眰鍒?Store銆?*/
 export const selectTreeLayer = (layer: Layer): void => {
   const state = useEditorStore.getState();
   if (state.editingGroupIds.includes(layer.id)) {
@@ -103,7 +103,7 @@ export const selectTreeLayer = (layer: Layer): void => {
   state.setActiveLayer(selectableLayerId);
 };
 
-/** 切换图层树节点的显隐状态。 */
+/** 鍒囨崲鍥惧眰鏍戣妭鐐圭殑鏄鹃殣鐘舵€併€?*/
 export const toggleTreeLayerVisibility = (
   layerId: string,
   visible: boolean,
@@ -111,7 +111,7 @@ export const toggleTreeLayerVisibility = (
   useEditorStore.getState().toggleLayerVisibility(layerId, visible);
 };
 
-/** 切换图层树节点的锁定状态。 */
+/** 鍒囨崲鍥惧眰鏍戣妭鐐圭殑閿佸畾鐘舵€併€?*/
 export const toggleTreeLayerLock = (
   layerId: string,
   locked: boolean,
@@ -119,7 +119,7 @@ export const toggleTreeLayerLock = (
   useEditorStore.getState().toggleLayerLock(layerId, locked);
 };
 
-/** 将节点在图层树中拖到新的父级与索引位置。 */
+/** 灏嗚妭鐐瑰湪鍥惧眰鏍戜腑鎷栧埌鏂扮殑鐖剁骇涓庣储寮曚綅缃€?*/
 export const moveTreeLayer = (
   layerId: string,
   parentId: string | null,
@@ -128,17 +128,17 @@ export const moveTreeLayer = (
   useEditorStore.getState().moveLayer(layerId, parentId, index);
 };
 
-/** 把节点在当前父级内上移一层。 */
+/** 鎶婅妭鐐瑰湪褰撳墠鐖剁骇鍐呬笂绉讳竴灞傘€?*/
 export const moveTreeLayerUp = (layerId: string): void => {
   useEditorStore.getState().moveLayerUp(layerId);
 };
 
-/** 把节点在当前父级内下移一层。 */
+/** 鎶婅妭鐐瑰湪褰撳墠鐖剁骇鍐呬笅绉讳竴灞傘€?*/
 export const moveTreeLayerDown = (layerId: string): void => {
   useEditorStore.getState().moveLayerDown(layerId);
 };
 
-/** 把当前多选图层打包成一个新的组合图层。 */
+/** 鎶婂綋鍓嶅閫夊浘灞傛墦鍖呮垚涓€涓柊鐨勭粍鍚堝浘灞傘€?*/
 export const groupTreeLayers = (
   layerIds: string[],
   groupName: string,
@@ -150,7 +150,7 @@ export const groupTreeLayers = (
   return groupId;
 };
 
-/** 拆分某个组合图层。 */
+/** 鎷嗗垎鏌愪釜缁勫悎鍥惧眰銆?*/
 export const ungroupTreeLayer = (layerId: string): void => {
   useEditorStore.getState().ungroupLayer(layerId);
 };

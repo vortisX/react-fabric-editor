@@ -1,7 +1,7 @@
 import { type FabricObject } from "fabric";
 
 import type { BaseLayer } from "../../types/schema";
-import { CustomTextbox } from "../CustomTextbox";
+import { CustomTextbox } from "../text/CustomTextbox";
 
 /** 把 Schema 中的显隐/锁定状态转换成 Fabric 交互属性。 */
 export const buildLayerInteractionProps = ({

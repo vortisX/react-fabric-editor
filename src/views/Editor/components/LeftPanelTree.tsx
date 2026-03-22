@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 import { ImageIcon, TypeIcon } from "../../../components/ui/Icons";
-import { isGroupLayer } from "../../../core/layerTree";
+import { isGroupLayer } from "../../../core/layers/layerTree";
 import type { Layer } from "../../../types/schema";
 import { cn } from "../../../utils/cn";
 import {

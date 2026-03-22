@@ -1,8 +1,8 @@
 import { Textbox, FabricObject } from 'fabric';
-import type { TextLayer } from '../types/schema';
-import { fillStyleToFabric } from './engine/fill';
-import { buildLayerInteractionProps } from './engine/interaction';
-import { applyLayerControls, drawRoundedRect } from './layerControls';
+import type { TextLayer } from '../../types/schema';
+import { fillStyleToFabric } from '../engine/fill';
+import { buildLayerInteractionProps } from '../engine/interaction';
+import { applyLayerControls, drawRoundedRect } from '../controls/layerControls';
 
 // ==================== 自定义文本框 ====================
 

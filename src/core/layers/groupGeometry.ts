@@ -1,4 +1,4 @@
-import type { GroupLayer, Layer } from "../types/schema";
+import type { GroupLayer, Layer } from "../../types/schema";
 
 /** 标准化后的轴对齐边界盒。 */
 export interface LayerBounds {

@@ -4,7 +4,7 @@ import { Layers3 } from "lucide-react";
 
 import { Tooltip } from "../../../components/ui";
 import { GridIcon, ImageIcon, TypeIcon } from "../../../components/ui/Icons";
-import { canGroupLayers, collectGroupIds, findLayerById } from "../../../core/layerTree";
+import { canGroupLayers, collectGroupIds, findLayerById } from "../../../core/layers/layerTree";
 import { useEditorStore } from "../../../store/useEditorStore";
 import type { Layer } from "../../../types/schema";
 import { cn } from "../../../utils/cn";
@@ -17,7 +17,7 @@ import {
 } from "./LeftPanel.handlers";
 import { LayerTree, type LayerDropTarget } from "./LeftPanelTree";
 
-/** 编辑器左侧栏，负责工具入口、多选分组和图层树状态编排。 */
+/** 缂栬緫鍣ㄥ乏渚ф爮锛岃礋璐ｅ伐鍏峰叆鍙ｃ€佸閫夊垎缁勫拰鍥惧眰鏍戠姸鎬佺紪鎺掋€?*/
 export const LeftPanel = () => {
   const { t } = useTranslation();
   const document = useEditorStore((state) => state.document);
@@ -39,13 +39,13 @@ export const LeftPanel = () => {
     [layers, selectedIds],
   );
 
-  /** 当画布侧改变选中图层时，把树选中态同步到对应叶子节点。 */
+  /** 褰撶敾甯冧晶鏀瑰彉閫変腑鍥惧眰鏃讹紝鎶婃爲閫変腑鎬佸悓姝ュ埌瀵瑰簲鍙跺瓙鑺傜偣銆?*/
   useEffect(() => {
     if (!activeLayerId) return;
     setSelectedIds([activeLayerId]);
   }, [activeLayerId]);
 
-  /** 新创建或新加载的组合图层默认展开，减少用户额外点开成本。 */
+  /** 鏂板垱寤烘垨鏂板姞杞界殑缁勫悎鍥惧眰榛樿灞曞紑锛屽噺灏戠敤鎴烽澶栫偣寮€鎴愭湰銆?*/
   useEffect(() => {
     setExpandedGroupIds((previous) => {
       const next = new Set(previous);
@@ -56,7 +56,7 @@ export const LeftPanel = () => {
     });
   }, [allGroupIds]);
 
-  /** 处理图层树单选或 Ctrl/Cmd 多选，并同步真正可编辑的叶子图层。 */
+  /** 澶勭悊鍥惧眰鏍戝崟閫夋垨 Ctrl/Cmd 澶氶€夛紝骞跺悓姝ョ湡姝ｅ彲缂栬緫鐨勫彾瀛愬浘灞傘€?*/
   const handleSelect = (layer: Layer, event: ReactMouseEvent<HTMLDivElement>) => {
     const isMultiSelect = event.metaKey || event.ctrlKey;
     if (!isMultiSelect) {
@@ -71,9 +71,9 @@ export const LeftPanel = () => {
 
     setSelectedIds(nextSelectedIds);
 
-    // 这里不能把 Store 更新放进 setSelectedIds 的函数式 updater。
-    // React 会在渲染阶段执行 updater，若此时再触发 Zustand/React 更新，
-    // 就会出现 “Cannot update a component while rendering” 的告警。
+    // 杩欓噷涓嶈兘鎶?Store 鏇存柊鏀捐繘 setSelectedIds 鐨勫嚱鏁板紡 updater銆?
+    // React 浼氬湪娓叉煋闃舵鎵ц updater锛岃嫢姝ゆ椂鍐嶈Е鍙?Zustand/React 鏇存柊锛?
+    // 灏变細鍑虹幇 鈥淐annot update a component while rendering鈥?鐨勫憡璀︺€?
     if (nextSelectedIds.length === 1) {
       const selectedLayer = findLayerById(layers, nextSelectedIds[0]) ?? null;
       if (selectedLayer) selectTreeLayer(selectedLayer);
@@ -83,7 +83,7 @@ export const LeftPanel = () => {
     useEditorStore.getState().setActiveLayer(null);
   };
 
-  /** 处理组合图层展开/收起。 */
+  /** 澶勭悊缁勫悎鍥惧眰灞曞紑/鏀惰捣銆?*/
   const handleToggleExpanded = (groupId: string) => {
     setExpandedGroupIds((previous) => {
       const next = new Set(previous);
@@ -93,12 +93,12 @@ export const LeftPanel = () => {
     });
   };
 
-  /** 更新当前拖拽高亮的落点。 */
+  /** 鏇存柊褰撳墠鎷栨嫿楂樹寒鐨勮惤鐐广€?*/
   const handleDragOver = (target: LayerDropTarget) => {
     setDropTarget(target);
   };
 
-  /** 在拖拽释放时把节点真正移动到目标位置。 */
+  /** 鍦ㄦ嫋鎷介噴鏀炬椂鎶婅妭鐐圭湡姝ｇЩ鍔ㄥ埌鐩爣浣嶇疆銆?*/
   const handleDrop = (target: LayerDropTarget) => {
     if (!draggingLayerId) return;
     moveTreeLayer(draggingLayerId, target.parentId, target.index);
@@ -106,7 +106,7 @@ export const LeftPanel = () => {
     setDropTarget(null);
   };
 
-  /** 启动原生拖拽，并确保树上保持当前节点为选中态。 */
+  /** 鍚姩鍘熺敓鎷栨嫿锛屽苟纭繚鏍戜笂淇濇寔褰撳墠鑺傜偣涓洪€変腑鎬併€?*/
   const handleDragStart = (layerId: string) => {
     setDraggingLayerId(layerId);
     setSelectedIds((previous) =>
@@ -114,13 +114,13 @@ export const LeftPanel = () => {
     );
   };
 
-  /** 结束拖拽后清理视觉态，避免残留高亮。 */
+  /** 缁撴潫鎷栨嫿鍚庢竻鐞嗚瑙夋€侊紝閬垮厤娈嬬暀楂樹寒銆?*/
   const handleDragEnd = () => {
     setDraggingLayerId(null);
     setDropTarget(null);
   };
 
-  /** 把当前多选节点组合成一个新的 group。 */
+  /** 鎶婂綋鍓嶅閫夎妭鐐圭粍鍚堟垚涓€涓柊鐨?group銆?*/
   const handleGroupSelection = () => {
     const groupId = groupTreeLayers(
       selectedIds,

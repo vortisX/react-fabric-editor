@@ -1,6 +1,6 @@
 import { Canvas } from "fabric";
 
-import { CURSORS } from "../constants";
+import { CURSORS } from "../config/constants";
 import { getEditorSurfaceSize, getEditorViewportTransform } from "./workspace";
 
 interface FabricCanvasControlInternals {
@@ -8,7 +8,7 @@ interface FabricCanvasControlInternals {
 }
 
 /**
- * 创建编辑器专用的 Fabric Canvas，并应用统一的初始 viewport 与交互光标。
+ * 閸掓稑缂撶紓鏍帆閸ｃ劋绗撻悽銊ф畱 Fabric Canvas閿涘苯鑻熸惔鏃傛暏缂佺喍绔撮惃鍕灥婵?viewport 娑撳簼姘︽禍鎺戝帨閺嶅洢鈧?
  */
 export const createEditorCanvas = (
   canvasEl: HTMLCanvasElement,
@@ -27,14 +27,14 @@ export const createEditorCanvas = (
     moveCursor: CURSORS.move,
   });
 
-  // 初始 viewport 带有编辑区 padding，确保后续缩放时一开始就有完整缓冲层空间。
+  // 閸掓繂顫?viewport 鐢附婀佺紓鏍帆閸?padding閿涘瞼鈥樻穱婵嗘倵缂侇厾缂夐弨鐐娑撯偓瀵偓婵姘ㄩ張澶婄暚閺佸绱﹂崘鎻掔湴缁屾椽妫块妴?
   canvas.setViewportTransform(getEditorViewportTransform(1, 0, 0));
   (canvas as unknown as Canvas & FabricCanvasControlInternals).skipControlsDrawing =
     true;
   return canvas;
 };
 
-/** 释放 Fabric Canvas 的事件与 DOM 资源，供编辑器卸载时调用。 */
+/** 闁插﹥鏂?Fabric Canvas 閻ㄥ嫪绨ㄦ禒鏈电瑢 DOM 鐠у嫭绨敍灞肩返缂傛牞绶崳銊ュ祻鏉炶姤妞傜拫鍐暏閵?*/
 export const disposeEditorCanvas = (canvas: Canvas): void => {
   canvas.off();
   canvas.dispose();

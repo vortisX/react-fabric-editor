@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button, Slider } from "../../../../../components/ui";
-import { findLayerById } from "../../../../../core/layerTree";
+import { findLayerById } from "../../../../../core/layers/layerTree";
 import { useEditorStore } from "../../../../../store/useEditorStore";
 import type { GroupLayer, Layer } from "../../../../../types/schema";
 import {

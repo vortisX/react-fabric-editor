@@ -5,7 +5,7 @@ import {
   ROT_CORNERS,
   HIT_CENTER,
   HIT_SIZE,
-} from './constants';
+} from '../config/constants';
 
 
 

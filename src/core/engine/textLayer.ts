@@ -2,7 +2,7 @@ import { Textbox, type Canvas, type FabricObject } from "fabric";
 
 import { useEditorStore } from "../../store/useEditorStore";
 import type { FillStyle, TextLayer } from "../../types/schema";
-import { CustomTextbox } from "../CustomTextbox";
+import { CustomTextbox } from "../text/CustomTextbox";
 import { fillStyleToFabric } from "./fill";
 import { LAYOUT_KEYS } from "./helpers";
 import type { LayerMeasurement } from "./types";

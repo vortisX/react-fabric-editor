@@ -1,7 +1,7 @@
 import { Group, type FabricObject } from "fabric";
 
-import { applyLayerControls } from "../layerControls";
-import { normalizeGroupLayer } from "../groupGeometry";
+import { applyLayerControls } from "../controls/layerControls";
+import { normalizeGroupLayer } from "../layers/groupGeometry";
 import type { GroupLayer, ImageLayer, Layer, TextLayer } from "../../types/schema";
 import { alignGroupObjectToBounds } from "./groupAlignment";
 import { round1 } from "./helpers";

@@ -1,6 +1,6 @@
 import { config, FabricObject, Textbox } from "fabric";
-import { SUPPORTED_FONTS } from "../constants/fonts";
-import { EDITOR_GLOBAL_STYLE } from "./constants";
+import { SUPPORTED_FONTS } from "../../constants/fonts";
+import { EDITOR_GLOBAL_STYLE } from "../config/constants";
 
 // ==========================================
 // 字体加载

@@ -1,7 +1,7 @@
 import { FabricImage, Group, type Canvas, type FabricObject } from "fabric";
 
 import type { ImageLayer } from "../../types/schema";
-import { SCHEMA_TO_FABRIC } from "../constants";
+import { SCHEMA_TO_FABRIC } from "../config/constants";
 import {
   buildTextLayerProps,
   handleTextLayoutUpdate,

@@ -6,8 +6,8 @@ import {
 } from "fabric";
 
 import type { ImageLayer } from "../../types/schema";
-import { EDITOR_GLOBAL_STYLE } from "../constants";
-import { applyLayerControls } from "../layerControls";
+import { EDITOR_GLOBAL_STYLE } from "../config/constants";
+import { applyLayerControls } from "../controls/layerControls";
 import { round1 } from "./helpers";
 import { buildLayerInteractionProps } from "./interaction";
 import type { FabricImageLayer, LayerMeasurement } from "./types";

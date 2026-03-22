@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 
-import type { DragEdge } from '../../../../core/canvasMath';
+import type { DragEdge } from '../../../../core/canvas/canvasMath';
 import { useEditorStore } from '../../../../store/useEditorStore';
 
 import {
@@ -26,8 +26,8 @@ interface WorkspaceResizeHandleProps {
 }
 
 /**
- * 工作区边缘拖拽手柄。
- * 负责把用户的指针拖拽转换成画布尺寸预览、位移补偿以及最终提交。
+ * 宸ヤ綔鍖鸿竟缂樻嫋鎷芥墜鏌勩€?
+ * 璐熻矗鎶婄敤鎴风殑鎸囬拡鎷栨嫿杞崲鎴愮敾甯冨昂瀵搁瑙堛€佷綅绉昏ˉ鍋夸互鍙婃渶缁堟彁浜ゃ€?
  */
 export const WorkspaceResizeHandle = ({
   edge,
@@ -51,7 +51,7 @@ export const WorkspaceResizeHandle = ({
   const lastDeltaXRef = useRef(0);
   const lastDeltaYRef = useRef(0);
 
-  /** 组件卸载时清理所有残留 rAF，避免异步回调继续操作已卸载的节点。 */
+  /** 缁勪欢鍗歌浇鏃舵竻鐞嗘墍鏈夋畫鐣?rAF锛岄伩鍏嶅紓姝ュ洖璋冪户缁搷浣滃凡鍗歌浇鐨勮妭鐐广€?*/
   useEffect(
     () => () => {
       if (rafRef.current !== null) {
@@ -65,8 +65,8 @@ export const WorkspaceResizeHandle = ({
   );
 
   /**
-   * 根据当前拖拽位移应用尺寸预览或最终提交。
-   * `commit=false` 时只更新视觉预览，`commit=true` 时会触发 Store 提交与最终 overlay 预览。
+   * 鏍规嵁褰撳墠鎷栨嫿浣嶇Щ搴旂敤灏哄棰勮鎴栨渶缁堟彁浜ゃ€?
+   * `commit=false` 鏃跺彧鏇存柊瑙嗚棰勮锛宍commit=true` 鏃朵細瑙﹀彂 Store 鎻愪氦涓庢渶缁?overlay 棰勮銆?
    */
   const applyResize = (commit: boolean) => {
     const anchor = readWorkspaceFrameAnchor(frameRef.current);
@@ -89,8 +89,8 @@ export const WorkspaceResizeHandle = ({
 
     compensationRafRef.current = requestAnimationFrame(() => {
       compensationRafRef.current = null;
-      // 为什么先恢复 viewport 锚点：
-      // 当左/上边缩小时，画框左上角会移动，如果不先补偿滚动位置，用户会感觉当前视口内容被突然推走。
+      // 涓轰粈涔堝厛鎭㈠ viewport 閿氱偣锛?
+      // 褰撳乏/涓婅竟缂╁皬鏃讹紝鐢绘宸︿笂瑙掍細绉诲姩锛屽鏋滀笉鍏堣ˉ鍋挎粴鍔ㄤ綅缃紝鐢ㄦ埛浼氭劅瑙夊綋鍓嶈鍙ｅ唴瀹硅绐佺劧鎺ㄨ蛋銆?
       restoreWorkspaceViewportAnchor(
         viewportRef.current,
         frameRef.current,
@@ -106,9 +106,9 @@ export const WorkspaceResizeHandle = ({
       const offsetX = deltaLeft / zoom;
       const offsetY = deltaTop / zoom;
 
-      // 为什么这里做阈值清洗：
-      // DOM 布局与浮点缩放会引入极小抖动，如果把 0.01 这类噪声也提交到 Store，
-      // 会造成预览和历史记录里出现肉眼看不见、但持续累积的偏移。
+      // 涓轰粈涔堣繖閲屽仛闃堝€兼竻娲楋細
+      // DOM 甯冨眬涓庢诞鐐圭缉鏀句細寮曞叆鏋佸皬鎶栧姩锛屽鏋滄妸 0.01 杩欑被鍣０涔熸彁浜ゅ埌 Store锛?
+      // 浼氶€犳垚棰勮鍜屽巻鍙茶褰曢噷鍑虹幇鑲夌溂鐪嬩笉瑙併€佷絾鎸佺画绱Н鐨勫亸绉汇€?
       const sanitizedOffsetX = Math.abs(offsetX) >= 0.05 ? offsetX : 0;
       const sanitizedOffsetY = Math.abs(offsetY) >= 0.05 ? offsetY : 0;
 
@@ -127,8 +127,8 @@ export const WorkspaceResizeHandle = ({
       if (hasCommitPreview) {
         onCommitPreviewChange(true);
         onPreviewOffsetChange(0, 0);
-        // 为什么等真实 Fabric 渲染完成再关预览：
-        // 避免 overlay 提前消失，导致用户在 commit 瞬间看到真实 buffer 还没准备好的闪烁。
+        // 涓轰粈涔堢瓑鐪熷疄 Fabric 娓叉煋瀹屾垚鍐嶅叧棰勮锛?
+        // 閬垮厤 overlay 鎻愬墠娑堝け锛屽鑷寸敤鎴峰湪 commit 鐬棿鐪嬪埌鐪熷疄 buffer 杩樻病鍑嗗濂界殑闂儊銆?
         finishWorkspaceResizePreviewAfterRender(() => {
           onCommitPreviewChange(false);
           onPreviewEnd();
@@ -159,7 +159,7 @@ export const WorkspaceResizeHandle = ({
       role="slider"
       aria-label={`canvas-resize-${edge}`}
       onPointerDown={(event) => {
-        // 进入拖拽前先接管 pointer，避免指针移出手柄后丢失后续 move/up 事件。
+        // 杩涘叆鎷栨嫿鍓嶅厛鎺ョ pointer锛岄伩鍏嶆寚閽堢Щ鍑烘墜鏌勫悗涓㈠け鍚庣画 move/up 浜嬩欢銆?
         event.preventDefault();
         event.stopPropagation();
         (event.currentTarget as HTMLDivElement).setPointerCapture(event.pointerId);
@@ -180,8 +180,8 @@ export const WorkspaceResizeHandle = ({
         lastDeltaXRef.current = event.clientX - startXRef.current;
         lastDeltaYRef.current = event.clientY - startYRef.current;
 
-        // 为什么 move 过程要节流到 rAF：
-        // 指针移动频率可能远高于浏览器绘制频率，直接同步会让预览更新过于密集并拖慢主线程。
+        // 涓轰粈涔?move 杩囩▼瑕佽妭娴佸埌 rAF锛?
+        // 鎸囬拡绉诲姩棰戠巼鍙兘杩滈珮浜庢祻瑙堝櫒缁樺埗棰戠巼锛岀洿鎺ュ悓姝ヤ細璁╅瑙堟洿鏂拌繃浜庡瘑闆嗗苟鎷栨參涓荤嚎绋嬨€?
         if (rafRef.current !== null) return;
 
         rafRef.current = requestAnimationFrame(() => {
@@ -192,7 +192,7 @@ export const WorkspaceResizeHandle = ({
       onPointerUp={(event) => {
         if (pointerIdRef.current !== event.pointerId) return;
 
-        // 指针抬起时立刻收尾，并把最后一次位移提交为正式结果。
+        // 鎸囬拡鎶捣鏃剁珛鍒绘敹灏撅紝骞舵妸鏈€鍚庝竴娆′綅绉绘彁浜や负姝ｅ紡缁撴灉銆?
         event.preventDefault();
         event.stopPropagation();
 
@@ -212,7 +212,7 @@ export const WorkspaceResizeHandle = ({
       onPointerCancel={(event) => {
         if (pointerIdRef.current !== event.pointerId) return;
 
-        // pointer cancel 通常表示浏览器中断了本次手势，这里必须完整撤销预览态。
+        // pointer cancel 閫氬父琛ㄧず娴忚鍣ㄤ腑鏂簡鏈鎵嬪娍锛岃繖閲屽繀椤诲畬鏁存挙閿€棰勮鎬併€?
         event.preventDefault();
         event.stopPropagation();
 

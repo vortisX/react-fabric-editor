@@ -1,4 +1,4 @@
-import { CANVAS_MAX_PX, CANVAS_MIN_PX, MM_PER_CM, MM_PER_IN, PX_TO_MM, type CanvasUnit } from './constants';
+import { CANVAS_MAX_PX, CANVAS_MIN_PX, MM_PER_CM, MM_PER_IN, PX_TO_MM, type CanvasUnit } from '../config/constants';
 import { CANVAS_PRESETS, type CanvasPresetId } from './canvasPresets';
 
 /** 把画布尺寸限制在系统允许的像素范围内。 */

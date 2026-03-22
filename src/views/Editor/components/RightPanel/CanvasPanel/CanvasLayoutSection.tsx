@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, FillPicker, Select } from '../../../../../components/ui';
 import type { PageBackground } from '../../../../../types/schema';
-import { CANVAS_MAX_PX, CANVAS_MIN_PX, type CanvasUnit } from '../../../../../core/constants';
-import { CANVAS_PRESETS } from '../../../../../core/canvasPresets';
-import { convertPxToUnit, matchCanvasPresetId } from '../../../../../core/canvasMath';
+import { CANVAS_MAX_PX, CANVAS_MIN_PX, type CanvasUnit } from '../../../../../core/config/constants';
+import { CANVAS_PRESETS } from '../../../../../core/canvas/canvasPresets';
+import { convertPxToUnit, matchCanvasPresetId } from '../../../../../core/canvas/canvasMath';
 import { useEditorStore } from '../../../../../store/useEditorStore';
 import {
   normalizeFillFromBackground,
@@ -13,13 +13,13 @@ import {
   applyDimensionChange,
 } from './CanvasLayout.handlers';
 
-/** 把数值按指定小数位四舍五入，供非 px 单位显示时复用。 */
+/** 闁硅泛锕ラ弳鐔煎磹閸忕厧鐦婚柟绋挎搐閻ｅ墽浜歌箛鏃€娈跺ù锝呯Т濞叉捇鎳滃鍕畨闁稿繈鍎荤槐婵囩瑹濞戙垺濮?px 闁告娲戠紞鍛村及閸撗佷粵闁哄啳娉涢ˇ鏌ユ偨閵婏絺鍋?*/
 function roundTo(n: number, digits: number) {
   const m = Math.pow(10, digits);
   return Math.round(n * m) / m;
 }
 
-/** 画布面板分区标题。 */
+/** 闁汇垼顕х粩鐑芥閵忊剝绶查柛鎺戞鐏忣垶寮介崶顒夋毌闁?*/
 function SectionHeader({ title }: { title: string }) {
   return (
     <div className="flex justify-between items-center px-4 py-2 bg-white mt-1">
@@ -29,8 +29,8 @@ function SectionHeader({ title }: { title: string }) {
 }
 
 /**
- * 带实时输入的数字框。
- * 输入过程会先更新本地字符串，再通过 rAF 节流把可解析数值回传给外层。
+ * 閻㈩垽绠戦悿鍕籍閹壆缈婚柛蹇嬪劤濞堟垿寮弶璺ㄦ憻婵℃妫庨埀?
+ * 閺夊牊鎸搁崣鍡樻交閸モ斁鏌ゅù鍏艰壘閸樻盯寮寸€涙ɑ鐓€闁哄牜鍓欏﹢瀵糕偓娑欘殘椤戜焦绋夌拠褏绀夐柛鎰Ч閳ь剚淇虹换?rAF 闁煎搫鍊圭粊锕傚箮婵犲倸璁查悷娆欑稻閻庝粙寮弶搴撳亾閻撳孩绀€濞磋偐濮风划鐗堝緞閺嵮呮勾闁?
  */
 function RealtimeNumberInput(props: {
   value: number;
@@ -53,8 +53,8 @@ function RealtimeNumberInput(props: {
       onChange={(e) => {
         const next = e.target.value;
         setLocal(next);
-        // 为什么用 rAF 包一层：
-        // 连续输入时可以把同一帧内的多次字符变化合并，减少外层 Store 更新频率。
+        // 濞戞捁妗ㄧ划鍫熺▕閸垺鏆?rAF 闁告牕鎳嶇粩瀵镐沪閸岋妇绐?
+        // 閺夆晝鍋熼悽缁樻綇閹惧啿寮抽柡鍐硾瑜板弶绂掗妷锕€惟闁告艾濂旂粩瀵告暜瑜嶉崬鎾儍閸曨偒妯嬫繛鍡忊偓宕囨憻缂佹绠戣ぐ澶愬礌閺嵮勫€ゆ鐐额啇缁辨繈宕欒箛鎾舵瘜濠㈣埖鐗曢惇?Store 闁哄洤鐡ㄩ弻濠冿紣閹寸姴鑺抽柕?
         if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
         rafRef.current = requestAnimationFrame(() => {
           rafRef.current = null;
@@ -71,8 +71,8 @@ function RealtimeNumberInput(props: {
 }
 
 /**
- * 画布全局设置区。
- * 负责处理预设尺寸、宽高单位切换、背景设置以及撤销/重做入口。
+ * 闁汇垼顕х粩鐑藉礂閵娿儳婀伴悹浣稿⒔閻ゅ棝宕犻幁鎺嗗亾?
+ * 閻犳劗鍠曢惌妤佸緞閸曨厽鍊炲Λ鏉垮椤旀洜浜搁崫鍕靛殶闁靛棔绀侀鏃€顨囧Ο鍝勭濞达絽绉撮崹蹇涘箲椤兘鍋撴担钘夊壒闁哄拋鍨甸鏇犵磾椤旇绨伴柛娆忥攻閹告瑩鏌ㄩ埀?闂佹彃绉存禒娑㈠礂閵夈儱缍撻柕?
  */
 export function CanvasLayoutSection() {
   const { t } = useTranslation();
@@ -121,19 +121,19 @@ export function CanvasLayoutSection() {
   if (!hasDocument) return null;
   const safeBackground: PageBackground = background ?? { type: 'color', value: '#ffffff' };
 
-  /** 处理宽度输入，并把校验错误翻译成可直接展示的文案。 */
+  /** 濠㈣泛瀚幃濠勨偓纭呮鐎硅櫕娼忛幘鍐插汲闁挎稑鑻懟鐔煎箮婵犲啰澧″Δ鐘茬焸閺佸﹦鎷犻婊呭€抽悹鍥ㄥ灦閸ㄦ岸宕ｉ婊勭函闁规亽鍎遍惈宥囩矆閾忚鐣遍柡鍌氭处椤㈠秹濡?*/
   const handleWidthChange = (v: number | null) => {
     const errKey = applyDimensionChange('width', v, unit);
     setWidthError(errKey ? t(errKey, { min: CANVAS_MIN_PX, max: CANVAS_MAX_PX }) : null);
   };
 
-  /** 处理高度输入，并把校验错误翻译成可直接展示的文案。 */
+  /** 濠㈣泛瀚幃濠冾殗濡搫顔婇弶鍫熸尭閸欏棝鏁嶇仦鍊熷珯闁硅泛锕ラ悧搴㈩殽瀹€鍕櫓閻犲浂鍨抽悙鏇犳嫚閹寸偛鐏囬柛娆樺灣濞插潡骞掗妷銉ф綌缂佲偓閾忚鐣遍柡鍌氭处椤㈠秹濡?*/
   const handleHeightChange = (v: number | null) => {
     const errKey = applyDimensionChange('height', v, unit);
     setHeightError(errKey ? t(errKey, { min: CANVAS_MIN_PX, max: CANVAS_MAX_PX }) : null);
   };
 
-  /** 切换尺寸单位时先清空错误态，避免沿用旧单位下的错误提示。 */
+  /** 闁告帒娲﹀畷鑼焊閸濆嫷鍤熼柛妤佹磻缂嶅懘寮捄鍝勫弗婵炴挸鎳愰埞鏍煥濞嗘帩鍤栭柟顑跨筏缁辨繈鏌嗛崹顔煎赋婵炲矁娉曢弫銈夊籍瑜嶅畷鐔告媴瀹ュ嫮鐟撻柣銊ュ閺佸﹦鎷犻娑樼倒缂佲偓閹巻鍋?*/
   const handleUnitChange = (val: string) => {
     setWidthError(null);
     setHeightError(null);
@@ -189,7 +189,7 @@ export function CanvasLayoutSection() {
             onChange={(mode) => {
               if (mode === 'image') {
                 if (safeBackground.type === 'image') return;
-                // 先写入空 url 的 image 背景，占住模式；真正图片资源由后续文件选择填充。
+                // 闁稿繐鐗嗛崯鎾诲礂閵壯€鏁?url 闁?image 闁煎啿鏈▍娆撴晬鐏炶棄绐楀ù锝呯箲鑶╃€殿喖楠忕槐閬嶆儑閻斿壊鍔€闁搞儱澧芥晶鏍導閸曨剛鐖遍柣銏犲船閹绱掗鐔哥€ù鐘茬埣閳ь剙顦扮€氥劍绻呴銏犲笭闁?
                 setPageBackground({ type: 'image', url: '', fit: 'cover' });
                 return;
               }
@@ -212,8 +212,8 @@ export function CanvasLayoutSection() {
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
-                  // 为什么读成 dataURL：
-                  // 当前背景图先以内存资源方式接入，避免引入额外上传流程也能立即预览。
+                  // 濞戞捁妗ㄧ划鍫熺▕閸綆鍤㈤柟?dataURL闁?
+                  // 鐟滅増鎸告晶鐘绘嚄鐏炵偓鐝柛銉﹀劤閸樻稒绂掗妷銉ユ暥閻庢稒顭堢粊顐⑩攦閹邦厽鐓欑€殿喖绻戠敮鎾礂閵夘垳绀夐梺顒€鐏濋崢銈咁嚕閺囩偛寮冲Λ鐗堢箓椤︾粯绋夋繝浣虹倞婵炵繝鑳堕埢鍏肩▕閻旇鍘寸紒鏂款儏瀹撳棙锛愰崟顕呮綌闁?
                   const reader = new FileReader();
                   reader.onload = () => {
                     const url = String(reader.result || '');

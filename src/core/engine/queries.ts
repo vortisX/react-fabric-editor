@@ -1,9 +1,9 @@
-import { findLayerById } from "../layerTree";
+import { findLayerById } from "../layers/layerTree";
 import { Group, type FabricObject } from "fabric";
 
 import { useEditorStore } from "../../store/useEditorStore";
 import type { GroupLayer, ImageLayer, Layer } from "../../types/schema";
-import { CustomTextbox } from "../CustomTextbox";
+import { CustomTextbox } from "../text/CustomTextbox";
 import type { EditableFabricObject, FabricGroupLayer } from "./types";
 
 /** 从当前页 Schema 中读取指定 id 的图片图层，供图片属性更新时补全上下文。 */

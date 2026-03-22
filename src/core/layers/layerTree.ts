@@ -1,4 +1,4 @@
-import type { GroupLayer, Layer } from "../types/schema";
+import type { GroupLayer, Layer } from "../../types/schema";
 import { normalizeGroupLayer } from "./groupGeometry";
 
 /** 叶子图层只包含真正会映射到 Fabric 对象的文本层和图片层。 */
