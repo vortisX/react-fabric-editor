@@ -1,8 +1,9 @@
-import { Group, Point, type FabricObject } from "fabric";
+import { Group, type FabricObject } from "fabric";
 
 import { applyLayerControls } from "../layerControls";
 import { normalizeGroupLayer } from "../groupGeometry";
 import type { GroupLayer, ImageLayer, Layer, TextLayer } from "../../types/schema";
+import { alignGroupObjectToBounds } from "./groupAlignment";
 import { round1 } from "./helpers";
 import { buildLayerInteractionProps } from "./interaction";
 import type { FabricGroupLayer, FabricLayerTarget } from "./types";
@@ -21,7 +22,7 @@ interface ReadGroupSnapshotParams {
 const isFabricGroupLayer = (target: FabricObject): target is FabricGroupLayer =>
   target instanceof Group && typeof (target as FabricLayerTarget).id === "string";
 
-/** 从 Fabric 对象读取当前总缩放。 */
+/** 从 Fabric 对象读取当前总缩放，保证嵌套组下仍能拿到真实缩放值。 */
 const getAbsoluteScale = (target: FabricObject): { x: number; y: number } => {
   const scale = target.getObjectScaling();
   return {
@@ -53,31 +54,33 @@ const readGroupLayerSnapshot = ({
   if (!storeLayer || storeLayer.type !== "group") return null;
   const bounds = target.getBoundingRect();
 
-  const children = target.getObjects().map((child) => {
-    const childId = (child as FabricLayerTarget).id;
-    if (!childId) return null;
+  const children = target.getObjects()
+    .map((child) => {
+      const childId = (child as FabricLayerTarget).id;
+      if (!childId) return null;
 
-    if (isFabricGroupLayer(child)) {
-      return readGroupLayerSnapshot({ target: child, readStoreLayer });
-    }
+      if (isFabricGroupLayer(child)) {
+        return readGroupLayerSnapshot({ target: child, readStoreLayer });
+      }
 
-    const childStoreLayer = readStoreLayer(childId);
-    if (!childStoreLayer || childStoreLayer.type === "group") return null;
+      const childStoreLayer = readStoreLayer(childId);
+      if (!childStoreLayer || childStoreLayer.type === "group") return null;
 
-    const geometry = readLeafGeometry(child);
-    if (childStoreLayer.type === "text") {
+      const geometry = readLeafGeometry(child);
+      if (childStoreLayer.type === "text") {
+        return {
+          ...childStoreLayer,
+          ...geometry,
+          fontSize: round1((child as unknown as { fontSize?: number }).fontSize ?? 12),
+        } as TextLayer;
+      }
+
       return {
         ...childStoreLayer,
         ...geometry,
-        fontSize: round1((child as unknown as { fontSize?: number }).fontSize ?? 12),
-      } as TextLayer;
-    }
-
-    return {
-      ...childStoreLayer,
-      ...geometry,
-    } as ImageLayer;
-  }).filter((child): child is Layer => child !== null);
+      } as ImageLayer;
+    })
+    .filter((child): child is Layer => child !== null);
 
   return normalizeGroupLayer({
     ...storeLayer,
@@ -114,15 +117,11 @@ export const createGroupObject = async ({
     angle: 0,
     originX: "left",
     originY: "top",
+  });
+  alignGroupObjectToBounds(group, {
     left: normalizedLayer.x,
     top: normalizedLayer.y,
   });
-  group.setPositionByOrigin(
-    new Point(normalizedLayer.x, normalizedLayer.y),
-    "left",
-    "top",
-  );
-  group.setCoords();
   applyLayerControls(group);
   return group;
 };
@@ -136,3 +135,4 @@ export const readFabricGroupSnapshot = (
     target,
     readStoreLayer,
   });
+

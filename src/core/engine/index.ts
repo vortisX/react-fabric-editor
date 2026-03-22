@@ -5,6 +5,11 @@ import { applyBackground } from "./background";
 import { createEditorCanvas, disposeEditorCanvas } from "./canvas";
 import { bindEngineEvents, handleModified, handleResizing, handleScaling, handleSelectionChanged, handleTextChanged, syncGroupTransform, syncLayerTransform, syncLiveTransform } from "./events";
 import { fillStyleToFabric } from "./fill";
+import {
+  alignGroupObjectToBounds,
+  measureObjectsBounds,
+  type GroupBoundsSnapshot,
+} from "./groupAlignment";
 import { enterGroupEditing, exitCurrentGroupEditing, normalizeVisibleGroupObject, resetGroupEditingState, type GroupEditingEntry } from "./groupEditing";
 import { addImageLayerToCanvas, addTextLayerToCanvas, finalizeImageScale, loadLayerStackToCanvas } from "./layers";
 import { findObjectById, findTopLevelObjectById, isTopLevelGroupObject, readImageLayer } from "./queries";
@@ -23,6 +28,9 @@ export class EditorEngine {
   private workspaceViewportWidth = 0;
   private workspaceViewportHeight = 0;
   private editingGroupStack: GroupEditingEntry[] = [];
+  private pendingLoadedGroupBounds:
+    | { groupId: string; bounds: GroupBoundsSnapshot }
+    | null = null;
   /** 判断 Engine 是否已经完成 Fabric Canvas 初始化。 */
   public isReady(): boolean {
     return this.canvas !== null;
@@ -39,6 +47,7 @@ export class EditorEngine {
     this.workspaceViewportWidth = 0;
     this.workspaceViewportHeight = 0;
     this.editingGroupStack = [];
+    this.pendingLoadedGroupBounds = null;
     resetGroupEditingState();
     this.canvas = createEditorCanvas(canvasEl, width, height);
     setupGlobalUI();
@@ -56,6 +65,7 @@ export class EditorEngine {
     disposeEditorCanvas(this.canvas);
     this.canvas = null;
     this.editingGroupStack = [];
+    this.pendingLoadedGroupBounds = null;
     resetGroupEditingState();
   }
   /** 向当前画布新增图片图层，并返回标准化后的尺寸测量结果。 */
@@ -129,6 +139,20 @@ export class EditorEngine {
     if (!this.canvas) return;
     this.canvas.discardActiveObject();
     this.canvas.requestRenderAll();
+  }
+  /** 记录下次 document:load 后组合图层应恢复到的旧包围盒位置。 */
+  public preserveNextLoadedGroupBoundsFromLayers(
+    groupId: string,
+    layerIds: string[],
+  ): void {
+    if (!this.canvas || layerIds.length === 0) return;
+    const bounds = measureObjectsBounds(
+      layerIds
+        .map((layerId) => findObjectById(this.canvas, layerId))
+        .filter((object): object is import("fabric").FabricObject => !!object),
+    );
+    if (!bounds) return;
+    this.pendingLoadedGroupBounds = { groupId, bounds };
   }
 
   /** 供 Workspace 命令桥调用：显式进入指定组合的组内编辑。 */
@@ -290,9 +314,12 @@ export class EditorEngine {
       this.setBackground(page.background, doc.global.width, doc.global.height);
     }
     if (page?.layers.length) {
-      void loadLayerStackToCanvas(this.canvas, page.layers);
+      void loadLayerStackToCanvas(this.canvas, page.layers).then(() => {
+        this.applyPendingLoadedGroupBounds();
+      });
       return;
     }
+    this.pendingLoadedGroupBounds = null;
     this.canvas.requestRenderAll();
   }
   /** 更新文档真实尺寸，并同步刷新 Fabric 画布显示区域。 */
@@ -443,6 +470,17 @@ export class EditorEngine {
   private setSyncTransformRaf = (value: number | null): void => {
     this.syncTransformRaf = value;
   };
+  /** 在整文档重载后把新创建的组合图层对齐回操作前的真实位置。 */
+  private applyPendingLoadedGroupBounds(): void {
+    if (!this.canvas || !this.pendingLoadedGroupBounds) return;
+    const { groupId, bounds } = this.pendingLoadedGroupBounds;
+    const groupObject = findTopLevelObjectById(this.canvas, groupId);
+    if (isTopLevelGroupObject(groupObject)) {
+      alignGroupObjectToBounds(groupObject, bounds);
+      this.canvas.requestRenderAll();
+    }
+    this.pendingLoadedGroupBounds = null;
+  }
   /** 把当前文档尺寸、zoom 与 viewport 尺寸统一应用到 Fabric Canvas。 */
   private applyCanvasSize(shouldRender = true): void {
     if (!this.canvas) return;
@@ -498,3 +536,4 @@ export class EditorEngine {
 }
 export const engineInstance = new EditorEngine();
 export { fillStyleToFabric };
+

@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next";
 
+import { engineInstance } from "../../../core/engine";
 import { resolveSelectableLayerId } from "../../../core/layerTree";
 import { useEditorStore } from "../../../store/useEditorStore";
 import type { ImageLayer, Layer, TextLayer } from "../../../types/schema";
@@ -141,7 +142,13 @@ export const moveTreeLayerDown = (layerId: string): void => {
 export const groupTreeLayers = (
   layerIds: string[],
   groupName: string,
-): string | null => useEditorStore.getState().groupLayers(layerIds, groupName);
+): string | null => {
+  const groupId = useEditorStore.getState().groupLayers(layerIds, groupName);
+  if (groupId) {
+    engineInstance.preserveNextLoadedGroupBoundsFromLayers(groupId, layerIds);
+  }
+  return groupId;
+};
 
 /** 拆分某个组合图层。 */
 export const ungroupTreeLayer = (layerId: string): void => {

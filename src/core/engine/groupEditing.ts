@@ -1,7 +1,13 @@
-import type { Canvas, FabricObject } from "fabric";
+import type { Canvas } from "fabric";
 
 import { useEditorStore } from "../../store/useEditorStore";
 import { createGroupObject } from "./groupLayer";
+import {
+  alignGroupObjectToBounds,
+  captureObjectSceneSnapshots,
+  measureObjectsBounds,
+  restoreObjectSceneSnapshots,
+} from "./groupAlignment";
 import { createFabricObjectFromLayer } from "./layers";
 import {
   findEditingChildren,
@@ -36,18 +42,7 @@ interface NormalizeGroupObjectParams {
   preserveSelection: boolean;
 }
 
-interface GroupBoundsSnapshot {
-  left: number;
-  top: number;
-}
-
-interface ObjectSceneSnapshot {
-  left: number;
-  top: number;
-  angle: number;
-}
-
-/** 把当前编辑栈同步到 Store，供图层树等 UI 判断“哪一层已被展开到画布顶层”。 */
+/** 把当前编辑栈同步到 Store，供图层树等 UI 判断哪一层已被展开到画布顶层。 */
 const syncEditingGroupIds = (stack: GroupEditingEntry[]): void => {
   useEditorStore.setState({
     editingGroupIds: stack.map((entry) => entry.groupId),
@@ -70,74 +65,6 @@ const createEditingChildObjects = async (
     editableObject.editingParentGroupId = groupId;
     return editableObject;
   });
-};
-
-/** 记录组合内直接子节点当前的场景坐标，保证进入组编辑后子节点不会整体漂移。 */
-const captureDirectChildSceneSnapshots = (
-  groupObject: FabricGroupLayer,
-): Map<string, ObjectSceneSnapshot> => {
-  const snapshots = new Map<string, ObjectSceneSnapshot>();
-
-  groupObject.getObjects().forEach((child) => {
-    const childId = (child as EditableFabricObject).id;
-    if (!childId) return;
-
-    const point = child.getXY();
-    snapshots.set(childId, {
-      left: point.x,
-      top: point.y,
-      angle: child.getTotalAngle(),
-    });
-  });
-
-  return snapshots;
-};
-
-/** 把新创建的顶层编辑子节点对齐回切换前的场景坐标，避免进组时出现跳动。 */
-const restoreEditingChildrenScene = (
-  childObjects: EditableFabricObject[],
-  snapshots: Map<string, ObjectSceneSnapshot>,
-): void => {
-  childObjects.forEach((object) => {
-    const objectId = object.id;
-    if (!objectId) return;
-
-    const snapshot = snapshots.get(objectId);
-    if (!snapshot) return;
-
-    object.set({
-      left: snapshot.left,
-      top: snapshot.top,
-      angle: snapshot.angle,
-    });
-    object.setCoords();
-  });
-};
-
-/** 对齐重建前后的组合包围盒左上角，避免 Group 归一化后出现肉眼可见的跳动。 */
-const alignGroupObjectToBounds = (
-  groupObject: FabricGroupLayer,
-  bounds: GroupBoundsSnapshot,
-): void => {
-  const currentBounds = groupObject.getBoundingRect();
-  groupObject.set({
-    left: (groupObject.left ?? currentBounds.left) + bounds.left - currentBounds.left,
-    top: (groupObject.top ?? currentBounds.top) + bounds.top - currentBounds.top,
-  });
-  groupObject.setCoords();
-};
-
-/** 读取一组顶层对象当前包围盒左上角，用于退出组编辑后恢复视觉位置。 */
-const measureObjectsBounds = (
-  objects: FabricObject[],
-): GroupBoundsSnapshot | null => {
-  if (objects.length === 0) return null;
-
-  const boundsList = objects.map((object) => object.getBoundingRect());
-  return {
-    left: Math.min(...boundsList.map((bounds) => bounds.left)),
-    top: Math.min(...boundsList.map((bounds) => bounds.top)),
-  };
 };
 
 /** 清空全部组编辑上下文，常用于整文档重载或引擎销毁。 */
@@ -165,9 +92,11 @@ export const enterGroupEditing = async ({
     insertIndex,
     parentGroupId: stack[stack.length - 1]?.groupId ?? null,
   };
-  const childSnapshots = captureDirectChildSceneSnapshots(currentGroupObject);
+  const childSnapshots = captureObjectSceneSnapshots(
+    currentGroupObject.getObjects() as EditableFabricObject[],
+  );
   const childObjects = await createEditingChildObjects(groupId);
-  restoreEditingChildrenScene(childObjects, childSnapshots);
+  restoreObjectSceneSnapshots(childObjects, childSnapshots);
 
   canvas.remove(currentGroupObject);
   childObjects.forEach((object, index) => {
@@ -225,7 +154,7 @@ export const exitCurrentGroupEditing = async ({
   return nextStack;
 };
 
-/** 用 Store 中的标准化快照重建当前可见组合对象，避免多次缩放后残留 scale 误差。 */
+/** 用 Store 中标准化后的 group 快照重建当前可见组合对象，避免多次缩放后残留 scale 误差。 */
 export const normalizeVisibleGroupObject = async ({
   canvas,
   groupId,
@@ -259,3 +188,4 @@ export const normalizeVisibleGroupObject = async ({
 
   canvas.requestRenderAll();
 };
+
