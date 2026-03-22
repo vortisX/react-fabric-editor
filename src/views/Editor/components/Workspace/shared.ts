@@ -129,7 +129,7 @@ export const getWorkspaceCanvasSlotStyle = (
 export const edgeToClassName = (edge: DragEdge, isActive: boolean): string => {
   const colorClass = isActive ? 'bg-[#18a0fb]' : 'bg-gray-400 hover:bg-[#18a0fb]';
   const common =
-    'absolute rounded-full opacity-90 shadow-[0_4px_12px_rgba(0,0,0,0.18)] transition-colors duration-200';
+    'absolute z-20 rounded-full opacity-90 shadow-[0_4px_12px_rgba(0,0,0,0.18)] transition-colors duration-200';
 
   if (edge === 'left') {
     return `${common} ${colorClass} top-1/2 -left-3 h-10 w-2 -translate-y-1/2 cursor-ew-resize`;

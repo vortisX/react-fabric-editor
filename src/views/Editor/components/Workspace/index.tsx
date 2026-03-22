@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { useEditorStore } from '../../../../store/useEditorStore';
 import { ZoomControls } from './ZoomControls';
@@ -22,7 +22,7 @@ import {
 
 /**
  * 编辑器主工作区。
- * 负责承载 Fabric canvas、工作区缩放、尺寸拖拽预览、滚动容器与缓冲层同步。
+ * 负责承载 Fabric canvas、工作区缩放、拖拽预览与滚动容器同步。
  */
 export const Workspace = () => {
   const width = useEditorStore((state) => state.document?.global.width ?? 0);
@@ -43,86 +43,180 @@ export const Workspace = () => {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const commitPreviewCanvasRef = useRef<HTMLCanvasElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const canvasSlotRef = useRef<HTMLDivElement>(null);
+  const canvasLayerRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
-  const [resizePreview, setResizePreview] = useState<{
-    width: number;
-    height: number;
-  } | null>(null);
-  const [previewOffset, setPreviewOffset] = useState({ x: 0, y: 0 });
   const [isCommitPreviewVisible, setIsCommitPreviewVisible] = useState(false);
+  const [isResizePreviewActive, setIsResizePreviewActive] = useState(false);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
 
-  const displayWidth = resizePreview?.width ?? width;
-  const displayHeight = resizePreview?.height ?? height;
-  const zoomedWidth = displayWidth * zoom;
-  const zoomedHeight = displayHeight * zoom;
+  const zoomedWidth = width * zoom;
+  const zoomedHeight = height * zoom;
 
   const containerStyle = useMemo(
     () => getWorkspaceContainerStyle(zoomedWidth, zoomedHeight, background),
     [zoomedWidth, zoomedHeight, background],
   );
 
-  /** 首次挂载时初始化 Fabric Engine，并在卸载时释放资源。 */
+  /**
+   * 命令式更新工作区 DOM 预览，避免拖拽过程中每帧触发 React 重渲染。
+   */
+  const applyWorkspacePreviewLayout = useCallback(
+    (
+      previewWidth: number,
+      previewHeight: number,
+      slotOffsetX = 0,
+      slotOffsetY = 0,
+    ) => {
+      const previewZoomedWidth = previewWidth * zoom;
+      const previewZoomedHeight = previewHeight * zoom;
+      const nextScrollAreaStyle = getWorkspaceScrollAreaStyle(
+        previewZoomedWidth,
+        previewZoomedHeight,
+        zoom,
+        viewportSize.width,
+        viewportSize.height,
+      );
+      const nextCanvasSlotStyle = getWorkspaceCanvasSlotStyle(
+        previewZoomedWidth,
+        previewZoomedHeight,
+        zoom,
+        viewportSize.width,
+        viewportSize.height,
+      );
+      const nextFrameStyle = getWorkspaceContainerStyle(
+        previewZoomedWidth,
+        previewZoomedHeight,
+        background,
+      );
+
+      if (scrollAreaRef.current) {
+        Object.assign(scrollAreaRef.current.style, nextScrollAreaStyle);
+      }
+      if (canvasSlotRef.current) {
+        Object.assign(canvasSlotRef.current.style, {
+          ...nextCanvasSlotStyle,
+          left: `${Number.parseFloat(nextCanvasSlotStyle.left as string) - slotOffsetX}px`,
+          top: `${Number.parseFloat(nextCanvasSlotStyle.top as string) - slotOffsetY}px`,
+        });
+      }
+      if (frameRef.current) {
+        Object.assign(frameRef.current.style, {
+          ...nextFrameStyle,
+          position: 'absolute',
+          top: '0px',
+          left: '0px',
+        });
+      }
+      if (canvasLayerRef.current) {
+        canvasLayerRef.current.style.transform = '';
+        canvasLayerRef.current.style.willChange = '';
+      }
+    },
+    [background, viewportSize.height, viewportSize.width, zoom],
+  );
+
+  /**
+   * 回到 Store 当前真实尺寸对应的稳定布局。
+   */
+  const resetWorkspacePreviewLayout = useCallback(() => {
+    applyWorkspacePreviewLayout(width, height);
+  }, [applyWorkspacePreviewLayout, height, width]);
+
+  /**
+   * 首次挂载时初始化 Fabric Engine，并在卸载时释放资源。
+   */
   useEffect(() => initializeWorkspaceEngine(canvasRef.current), []);
 
-  /** 当 Store 发出新的编辑命令时，把命令桥接到 Fabric Engine。 */
+  /**
+   * 当 Store 发出新的编辑命令时，把命令桥接给 Fabric Engine。
+   */
   useLayoutEffect(() => {
     applyWorkspaceEditorCommand(editorCommand);
   }, [editorCommand, editorCommandId]);
 
-  /** 当前页面背景变化后，立即同步到工作区的 Fabric 渲染层。 */
+  /**
+   * 背景变化后，同步到工作区的 Fabric 场景。
+   */
   useLayoutEffect(() => {
     syncWorkspaceBackground(width, height);
   }, [background, width, height]);
 
-  /** 每次 zoom 变化都同步到 Engine，保证 Fabric buffer 与显示尺寸一致。 */
+  /**
+   * zoom 变化后同步到 Engine，保证 Fabric buffer 与显示尺寸一致。
+   */
   useLayoutEffect(() => {
     syncWorkspaceZoom(zoom);
   }, [zoom]);
 
-  /** 每次 zoom 变化后，把画布重新置于工作区中心，符合当前产品交互定义。 */
+  /**
+   * 当真实尺寸、缩放或视口变化时，把预览 DOM 回写到稳定状态。
+   */
+  useLayoutEffect(() => {
+    if (isResizePreviewActive) return;
+    resetWorkspacePreviewLayout();
+  }, [isResizePreviewActive, resetWorkspacePreviewLayout]);
+
+  /**
+   * zoom 变化后重新把画布居中到工作区视口。
+   */
   useLayoutEffect(() => {
     if (!viewportRef.current) return;
     centerWorkspaceViewport(viewportRef.current);
   }, [zoom]);
 
-  /** 工作区可视区域变化后，把最新 viewport 尺寸同步给 Engine。 */
+  /**
+   * 工作区可视区域变化后，把最新 viewport 尺寸同步给 Engine。
+   */
   useLayoutEffect(() => {
     syncWorkspaceViewportSize(viewportSize.width, viewportSize.height);
   }, [viewportSize]);
 
-  /** 首次进入编辑器时自动执行一次“适应画布”。 */
+  /**
+   * 首次进入编辑器时自动执行一次“适应画布”。
+   */
   useEffect(() => {
     fitWorkspaceToViewport(viewportRef.current);
   }, []);
 
-  /** 当外部发起 Fit 请求时，重新计算并应用适应画布缩放。 */
+  /**
+   * 外部触发 Fit 请求时，重新计算并应用适应画布缩放。
+   */
   useEffect(() => {
     if (fitRequest === 0) return;
     fitWorkspaceToViewport(viewportRef.current);
   }, [fitRequest]);
 
-  /** 点击工作区空白区域时清空当前选中图层。 */
+  /**
+   * 点击工作区空白区域时清空当前选中图层。
+   */
   useEffect(() => {
     const viewportElement = viewportRef.current;
     if (!viewportElement) return undefined;
     return bindWorkspaceSelectionClear(viewportElement);
   }, []);
 
-  /** 绑定工作区滚轮缩放行为。 */
+  /**
+   * 绑定工作区滚轮缩放行为。
+   */
   useEffect(() => {
     const viewportElement = viewportRef.current;
     if (!viewportElement) return undefined;
     return bindWorkspaceWheelZoom(viewportElement);
   }, []);
 
-  /** 监听工作区容器尺寸，给缓冲层计算提供实时 viewport 宽高。 */
+  /**
+   * 监听工作区容器尺寸，给 viewport 与缓冲层计算提供实时可视尺寸。
+   */
   useEffect(() => {
     const viewportElement = viewportRef.current;
     if (!viewportElement) return undefined;
 
-    /** 读取工作区当前可视尺寸，并写入本地 state。 */
+    /**
+     * 读取工作区当前可视尺寸，并写入本地 state。
+     */
     const updateViewportSize = () => {
       setViewportSize({
         width: viewportElement.clientWidth,
@@ -132,7 +226,9 @@ export const Workspace = () => {
 
     updateViewportSize();
 
-    /** 当工作区本身尺寸变化时，重新读取可视区域大小。 */
+    /**
+     * 工作区尺寸变化后重新读取可视区大小。
+     */
     const observer = new ResizeObserver(() => {
       updateViewportSize();
     });
@@ -151,8 +247,8 @@ export const Workspace = () => {
         ref={viewportRef}
         className="workspace-viewport flex-1 overflow-auto bg-[#f0f0f0]"
       >
-        {/* 滚动区域只负责提供布局空间与 padding，不直接承载 Fabric 实例。 */}
         <div
+          ref={scrollAreaRef}
           style={getWorkspaceScrollAreaStyle(
             zoomedWidth,
             zoomedHeight,
@@ -161,8 +257,8 @@ export const Workspace = () => {
             viewportSize.height,
           )}
         >
-          {/* 画布槽位根据当前 padding 绝对定位，保证画布始终处于工作区几何中心。 */}
           <div
+            ref={canvasSlotRef}
             style={getWorkspaceCanvasSlotStyle(
               zoomedWidth,
               zoomedHeight,
@@ -181,26 +277,29 @@ export const Workspace = () => {
                 left: 0,
               }}
             >
-              {/* 四条边各自挂一个拖拽手柄，用于交互式调整文档尺寸。 */}
               <WorkspaceResizeHandle
                 edge="top"
                 zoom={zoom}
                 previewCanvasRef={commitPreviewCanvasRef}
                 viewportRef={viewportRef}
-                frameRef={frameRef}
-                onPreviewSizeChange={(nextWidth, nextHeight) => {
-                  setResizePreview({ width: nextWidth, height: nextHeight });
+                onPreviewStart={() => {
+                  setIsResizePreviewActive(true);
                 }}
-                onPreviewOffsetChange={(offsetX, offsetY) => {
-                  setPreviewOffset({ x: offsetX, y: offsetY });
+                onPreviewChange={(nextWidth, nextHeight, offsetX, offsetY) => {
+                  applyWorkspacePreviewLayout(
+                    nextWidth,
+                    nextHeight,
+                    offsetX,
+                    offsetY,
+                  );
                 }}
                 onCommitPreviewChange={(active) => {
                   setIsCommitPreviewVisible(active);
                 }}
                 onPreviewEnd={() => {
+                  setIsResizePreviewActive(false);
                   setIsCommitPreviewVisible(false);
-                  setResizePreview(null);
-                  setPreviewOffset({ x: 0, y: 0 });
+                  resetWorkspacePreviewLayout();
                 }}
               />
               <WorkspaceResizeHandle
@@ -208,20 +307,24 @@ export const Workspace = () => {
                 zoom={zoom}
                 previewCanvasRef={commitPreviewCanvasRef}
                 viewportRef={viewportRef}
-                frameRef={frameRef}
-                onPreviewSizeChange={(nextWidth, nextHeight) => {
-                  setResizePreview({ width: nextWidth, height: nextHeight });
+                onPreviewStart={() => {
+                  setIsResizePreviewActive(true);
                 }}
-                onPreviewOffsetChange={(offsetX, offsetY) => {
-                  setPreviewOffset({ x: offsetX, y: offsetY });
+                onPreviewChange={(nextWidth, nextHeight, offsetX, offsetY) => {
+                  applyWorkspacePreviewLayout(
+                    nextWidth,
+                    nextHeight,
+                    offsetX,
+                    offsetY,
+                  );
                 }}
                 onCommitPreviewChange={(active) => {
                   setIsCommitPreviewVisible(active);
                 }}
                 onPreviewEnd={() => {
+                  setIsResizePreviewActive(false);
                   setIsCommitPreviewVisible(false);
-                  setResizePreview(null);
-                  setPreviewOffset({ x: 0, y: 0 });
+                  resetWorkspacePreviewLayout();
                 }}
               />
               <WorkspaceResizeHandle
@@ -229,20 +332,24 @@ export const Workspace = () => {
                 zoom={zoom}
                 previewCanvasRef={commitPreviewCanvasRef}
                 viewportRef={viewportRef}
-                frameRef={frameRef}
-                onPreviewSizeChange={(nextWidth, nextHeight) => {
-                  setResizePreview({ width: nextWidth, height: nextHeight });
+                onPreviewStart={() => {
+                  setIsResizePreviewActive(true);
                 }}
-                onPreviewOffsetChange={(offsetX, offsetY) => {
-                  setPreviewOffset({ x: offsetX, y: offsetY });
+                onPreviewChange={(nextWidth, nextHeight, offsetX, offsetY) => {
+                  applyWorkspacePreviewLayout(
+                    nextWidth,
+                    nextHeight,
+                    offsetX,
+                    offsetY,
+                  );
                 }}
                 onCommitPreviewChange={(active) => {
                   setIsCommitPreviewVisible(active);
                 }}
                 onPreviewEnd={() => {
+                  setIsResizePreviewActive(false);
                   setIsCommitPreviewVisible(false);
-                  setResizePreview(null);
-                  setPreviewOffset({ x: 0, y: 0 });
+                  resetWorkspacePreviewLayout();
                 }}
               />
               <WorkspaceResizeHandle
@@ -250,39 +357,32 @@ export const Workspace = () => {
                 zoom={zoom}
                 previewCanvasRef={commitPreviewCanvasRef}
                 viewportRef={viewportRef}
-                frameRef={frameRef}
-                onPreviewSizeChange={(nextWidth, nextHeight) => {
-                  setResizePreview({ width: nextWidth, height: nextHeight });
+                onPreviewStart={() => {
+                  setIsResizePreviewActive(true);
                 }}
-                onPreviewOffsetChange={(offsetX, offsetY) => {
-                  setPreviewOffset({ x: offsetX, y: offsetY });
+                onPreviewChange={(nextWidth, nextHeight, offsetX, offsetY) => {
+                  applyWorkspacePreviewLayout(
+                    nextWidth,
+                    nextHeight,
+                    offsetX,
+                    offsetY,
+                  );
                 }}
                 onCommitPreviewChange={(active) => {
                   setIsCommitPreviewVisible(active);
                 }}
                 onPreviewEnd={() => {
+                  setIsResizePreviewActive(false);
                   setIsCommitPreviewVisible(false);
-                  setResizePreview(null);
-                  setPreviewOffset({ x: 0, y: 0 });
+                  resetWorkspacePreviewLayout();
                 }}
               />
-              <div
-                className="absolute inset-0 overflow-visible"
-                style={{
-                  // 为什么预览偏移作用在 canvas 包裹层：
-                  // 这样能让真实 Fabric buffer 保持稳定，只在视觉层做位移预览，减少重建成本。
-                  transform: `translate(${previewOffset.x}px, ${previewOffset.y}px)`,
-                  willChange:
-                    previewOffset.x !== 0 || previewOffset.y !== 0
-                      ? 'transform'
-                      : undefined,
-                }}
-              >
+              <div ref={canvasLayerRef} className="absolute inset-0 z-0 overflow-hidden">
                 <canvas ref={canvasRef} className="absolute left-0 top-0" />
               </div>
               <canvas
                 ref={commitPreviewCanvasRef}
-                className={`pointer-events-none absolute left-0 top-0 ${
+                className={`pointer-events-none absolute left-0 top-0 z-10 ${
                   isCommitPreviewVisible ? 'opacity-100' : 'opacity-0'
                 }`}
                 aria-hidden="true"
@@ -292,7 +392,6 @@ export const Workspace = () => {
         </div>
       </div>
 
-      {/* 工作区缩放控件固定在右下角，独立于 Fabric 渲染树。 */}
       <ZoomControls />
     </main>
   );

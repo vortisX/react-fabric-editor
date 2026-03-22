@@ -18,6 +18,8 @@ interface ApplyCanvasResizeFromDragParams {
 interface WorkspaceFrameAnchor {
   left: number;
   top: number;
+  right: number;
+  bottom: number;
 }
 
 interface ApplyWorkspaceZoomParams {
@@ -429,8 +431,8 @@ export const readWorkspaceFrameAnchor = (
 ): WorkspaceFrameAnchor | null => {
   if (!frameElement) return null;
 
-  const { left, top } = frameElement.getBoundingClientRect();
-  return { left, top };
+  const { left, top, right, bottom } = frameElement.getBoundingClientRect();
+  return { left, top, right, bottom };
 };
 
 /**
@@ -441,12 +443,15 @@ export const restoreWorkspaceViewportAnchor = (
   viewportElement: HTMLDivElement | null,
   frameElement: HTMLDivElement | null,
   anchor: WorkspaceFrameAnchor | null,
+  edge: DragEdge,
 ): void => {
   if (!viewportElement || !frameElement || !anchor) return;
 
-  const { left, top } = frameElement.getBoundingClientRect();
-  const deltaLeft = left - anchor.left;
-  const deltaTop = top - anchor.top;
+  const { left, top, right, bottom } = frameElement.getBoundingClientRect();
+  const deltaLeft =
+    edge === 'left' ? right - anchor.right : left - anchor.left;
+  const deltaTop =
+    edge === 'top' ? bottom - anchor.bottom : top - anchor.top;
 
   if (deltaLeft !== 0) {
     viewportElement.scrollLeft += deltaLeft;
