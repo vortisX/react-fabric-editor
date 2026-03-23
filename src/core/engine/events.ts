@@ -222,6 +222,10 @@ export const handleResizing = (
   target: FabricObject,
   queueLiveTransform: (target: FabricLayerTarget) => void,
 ): void => {
+  if (target instanceof CustomTextbox) {
+    target.initDimensions();
+    target.autoFitHeight();
+  }
   queueLiveTransform(target as FabricLayerTarget);
 };
 
@@ -338,7 +342,7 @@ export const syncLiveTransform = ({
     };
 
     // 文本图层额外同步 fontSize（缩放过程中字号会随尺寸变化）
-    if (target instanceof Textbox) {
+    if (target instanceof CustomTextbox) {
       const isCornerScaling = scaleX !== 1 || scaleY !== 1;
       if (isCornerScaling) {
         const scale = (scaleX + scaleY) / 2;
@@ -348,6 +352,9 @@ export const syncLiveTransform = ({
       } else {
         (updates as Partial<TextLayer>).fontSize = round1(target.fontSize ?? 12);
       }
+      // 添加文本尺寸实时同步
+      updates.width = round1(target.width ?? 0);
+      updates.height = round1(target.height ?? 0);
     }
 
     state.updateLayer(target.id, updates as Partial<TextLayer>, {
