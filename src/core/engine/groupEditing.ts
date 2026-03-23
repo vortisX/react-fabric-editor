@@ -122,24 +122,28 @@ export const exitCurrentGroupEditing = async ({
 
   const editingChildren = findEditingChildren(canvas, currentEntry.groupId);
   const editingBounds = measureObjectsBounds(editingChildren);
+  const groupLayer = readGroupLayer(currentEntry.groupId);
+  let groupObject: import("fabric").FabricObject | null = null;
+  if (groupLayer) {
+    groupObject = await createGroupObject({
+      layer: groupLayer,
+      createChildObject: createFabricObjectFromLayer,
+    });
+  }
+
+  // 确保新对象创建完成后，再同步执行移除和插入，避免画面闪烁
   if (editingChildren.length > 0) {
     canvas.remove(...editingChildren);
   }
 
-  const groupLayer = readGroupLayer(currentEntry.groupId);
-  if (groupLayer) {
-    const groupObject = await createGroupObject({
-      layer: groupLayer,
-      createChildObject: createFabricObjectFromLayer,
-    });
-
+  if (groupObject) {
     if (currentEntry.parentGroupId) {
       (groupObject as EditableFabricObject).editingParentGroupId =
         currentEntry.parentGroupId;
     }
 
     if (editingBounds) {
-      alignGroupObjectToBounds(groupObject, editingBounds);
+      alignGroupObjectToBounds(groupObject as FabricGroupLayer, editingBounds);
     }
     canvas.insertAt(currentEntry.insertIndex, groupObject as FabricGroupLayer);
     if (shouldSelectGroup) {
@@ -164,17 +168,21 @@ export const normalizeVisibleGroupObject = async ({
   const currentGroup = findTopLevelObjectById(canvas, groupId);
   if (!groupLayer || !isTopLevelGroupObject(currentGroup)) return;
 
+  // 1. 先异步创建新对象
+  const normalizedGroup = await createGroupObject({
+    layer: groupLayer,
+    createChildObject: createFabricObjectFromLayer,
+  });
+
+  // 2. 拿到所需状态后再同步做 DOM 操作
   const objectIndex = canvas.getObjects().indexOf(currentGroup);
   const shouldReselect =
     preserveSelection && canvas.getActiveObject() === currentGroup;
   const parentEditingGroupId = currentGroup.editingParentGroupId;
   const previousBounds = currentGroup.getBoundingRect();
+
   canvas.remove(currentGroup);
 
-  const normalizedGroup = await createGroupObject({
-    layer: groupLayer,
-    createChildObject: createFabricObjectFromLayer,
-  });
   normalizedGroup.editingParentGroupId = parentEditingGroupId;
   alignGroupObjectToBounds(normalizedGroup, {
     left: previousBounds.left,

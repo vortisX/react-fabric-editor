@@ -11,7 +11,7 @@ import {
   type GroupBoundsSnapshot,
 } from "./groupAlignment";
 import { enterGroupEditing, exitCurrentGroupEditing, normalizeVisibleGroupObject, resetGroupEditingState, type GroupEditingEntry } from "./groupEditing";
-import { addImageLayerToCanvas, addTextLayerToCanvas, finalizeImageScale, loadLayerStackToCanvas } from "./layers";
+import { addImageLayerToCanvas, addTextLayerToCanvas, finalizeImageScale, createFabricObjectFromLayer } from "./layers";
 import { findEditingChildren, findObjectById, findTopLevelObjectById, isTopLevelGroupObject, readImageLayer } from "./queries";
 import { updateFabricLayerProps } from "./update";
 import type { FabricGroupLayer, FabricImageLayer, FabricLayerTarget, LayerMeasurement } from "./types";
@@ -33,6 +33,8 @@ export class EditorEngine {
     | { groupId: string; bounds: GroupBoundsSnapshot }
     | null = null;
   private pendingLoadedSelectionId: string | null = null;
+  private documentLoadId = 0;
+
   /** 判断 Engine 是否已经完成 Fabric Canvas 初始化。 */
   public isReady(): boolean {
     return this.canvas !== null;
@@ -323,19 +325,48 @@ export class EditorEngine {
     this.isDocumentLoading = true;
     this.editingGroupStack = [];
     resetGroupEditingState();
-    this.canvas.clear();
-    this.resizeCanvas(doc.global.width, doc.global.height);
+    
+    const loadId = ++this.documentLoadId;
     const page = doc.pages[0];
-    if (page?.background) {
-      this.setBackground(page.background, doc.global.width, doc.global.height);
-    }
+
+    const finishLoad = () => {
+      if (loadId !== this.documentLoadId || !this.canvas) return;
+      this.finalizeDocumentLoad();
+    };
+
     if (page?.layers.length) {
-      void loadLayerStackToCanvas(this.canvas, page.layers).then(() => {
-        this.finalizeDocumentLoad();
+      // 预加载所有图层对象（异步）
+      void Promise.all(
+        page.layers.map((layer) =>
+          createFabricObjectFromLayer(layer).catch(() => null)
+        )
+      ).then((results) => {
+        if (loadId !== this.documentLoadId || !this.canvas) return;
+        
+        // 确保在所有资源就绪后再清除画布，避免闪烁
+        this.canvas.clear();
+        this.resizeCanvas(doc.global.width, doc.global.height);
+        if (page?.background) {
+          this.setBackground(page.background, doc.global.width, doc.global.height);
+        }
+
+        const objects = results.filter((obj): obj is import("fabric").FabricObject => !!obj);
+        for (const obj of objects) {
+          this.canvas.add(obj);
+          obj.setCoords();
+        }
+        this.canvas.requestRenderAll();
+        finishLoad();
       });
       return;
     }
-    this.finalizeDocumentLoad();
+
+    this.canvas.clear();
+    this.resizeCanvas(doc.global.width, doc.global.height);
+    if (page?.background) {
+      this.setBackground(page.background, doc.global.width, doc.global.height);
+    }
+    finishLoad();
   }
   /** 更新文档真实尺寸，并同步刷新 Fabric 画布显示区域。 */
   public resizeCanvas(width: number, height: number): void {
