@@ -341,6 +341,36 @@ export const bindWorkspaceWheelZoom = (
 };
 
 /**
+ * 绑定工作区全局键盘快捷键（如 Delete 删除图层）。
+ */
+export const bindWorkspaceKeyboardShortcuts = (): (() => void) => {
+  const onKeyDown = (event: KeyboardEvent) => {
+    // 忽略输入框内的按键，防止误删图层
+    const target = event.target as HTMLElement;
+    const isInput =
+      target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.isContentEditable;
+    
+    if (isInput) return;
+
+    if (event.key === 'Delete' || event.key === 'Backspace') {
+      const state = useEditorStore.getState();
+      const activeLayerId = state.activeLayerId;
+      if (activeLayerId) {
+        event.preventDefault();
+        state.removeLayer(activeLayerId, { commit: true });
+      }
+    }
+  };
+
+  document.addEventListener('keydown', onKeyDown);
+  return () => {
+    document.removeEventListener('keydown', onKeyDown);
+  };
+};
+
+/**
  * 把工作区滚动位置直接置为水平/垂直中心。
  * 该函数只负责滚动条位置，不负责改 zoom。
  */
