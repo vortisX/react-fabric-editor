@@ -36,8 +36,11 @@ Zustand Store (`src/store/useEditorStore.ts`) 负责全盘状态：
 ## 4. 画布引擎与性能规范 (Fabric Engine Specifications)
 
 * **Fabric v7 API**：严格使用 Fabric.js 7.x 的 ES Module 语法（如 `import { Canvas, Textbox, FabricImage } from "fabric"`）。
+* **坐标系与锚点基准 (Origin Anchors)**：Fabric v7 默认锚点发生了改变。在初始化自定义图层（如 `CustomTextbox`、`FabricImageLayer` 等）时，必须显式声明 `originX: 'left'` 和 `originY: 'top'`，以确保坐标计算和 Schema 中的 x/y 属性严格保持左上角对齐。
+* **防闪烁与异步渲染 (Anti-Flicker & Async Rendering)**：当执行图层组合/解组、层级调整、或全盘 `document:load` 等操作时，由于图片等资源需要异步加载，**必须先通过 `Promise.all` 等待所有图层实例在内存中加载就绪后，再执行同步的 `canvas.remove/insertAt/clear` 和 `canvas.add` 操作**。绝不能先清空画布再等待异步加载，否则会导致明显的视觉闪烁。
 * **高频渲染优化**：调用更新时，**永远使用 `canvas.requestRenderAll()`** 而不是同步的 `canvas.renderAll()`。
 * **缩放重置策略 (Scale Normalization)**：Fabric 默认通过改变 `scaleX/scaleY` 来缩放对象。引擎在捕获到缩放事件时，**必须**将 `scale` 转换为实际的 `width/height/fontSize` 存入 Store，并强制将对象的 `scaleX/scaleY` 重置为 `1`。这保证了导出的 JSON 始终是标准尺寸。
+* **实时变形与面板更新 (Live Transform Sync)**：处理 `object:moving` 和 `object:resizing` 高频交互时，如果涉及尺寸变动的图层（尤其是 `CustomTextbox`），必须在触发节流更新 (`syncLiveTransform`) 前调用 `initDimensions()` 和 `autoFitHeight()`，并且必须将实时的 `width`、`height` 包含在节流 payload 中同步给 Store，以确保 React 属性面板能够实时反馈拖拽/变形的数据。
 * **工作区缩放职责边界**：
   * `Store.zoom` 表示工作区显示缩放，而不是文档真实尺寸。
   * `Workspace` 负责滚轮、右下角百分比按钮、Fit 等缩放交互，以及视口居中与过渡动画。
