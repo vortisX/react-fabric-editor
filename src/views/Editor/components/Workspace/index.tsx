@@ -148,8 +148,15 @@ export const Workspace = () => {
     setIsResizePreviewActive(false);
     setIsCommitPreviewVisible(false);
     useEditorStore.getState().clearCanvasPreviewSize();
-    resetWorkspacePreviewLayout();
-  }, [resetWorkspacePreviewLayout]);
+    
+    // 强制从 Store 获取最新尺寸，避免因闭包捕获旧尺寸导致松手时画布“抽搐”。
+    const documentState = useEditorStore.getState().document;
+    if (documentState) {
+      applyWorkspacePreviewLayout(documentState.global.width, documentState.global.height);
+    } else {
+      resetWorkspacePreviewLayout();
+    }
+  }, [applyWorkspacePreviewLayout, resetWorkspacePreviewLayout]);
 
   /**
    * 首次挂载时初始化 Fabric Engine，并在卸载时释放资源。
