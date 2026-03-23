@@ -62,17 +62,11 @@ export const createDefaultTextLayer = (
     lockMovement: false,
 
     content: t("leftPanel.defaultTextContent"),
-
     fontFamily: "AaKuangPaiShouShu-2",
-
     fontSize,
-
     fontWeight: "normal",
-
     fill: "#333333",
-
-    textAlign: "left",
-
+    textAlign: "center",
   };
 
 };
