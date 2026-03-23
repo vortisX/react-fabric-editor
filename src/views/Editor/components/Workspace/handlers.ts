@@ -377,8 +377,8 @@ export const readWorkspaceFrameAnchor = (
 };
 
 /**
- * 鍦ㄥ伐浣滃尯灏哄璋冩暣鍚庢仮澶嶈鍙ｆ粴鍔ㄤ綅缃紝灏介噺淇濇寔鐢ㄦ埛褰撳墠鐪嬪埌鐨勫唴瀹逛笉璺冲姩銆?
- * 杩欓噷閫氳繃姣旇緝 resize 鍓嶅悗鐨?frame 浣嶇疆宸紝鍙嶆帹闇€瑕佽ˉ鍋跨殑 scroll 浣嶇Щ銆?
+ * 在工作区尺寸调整后恢复视口滚动位置，尽量保持用户当前看到的内容不跳动。
+ * 这里通过比较 resize 前后的 frame 位置差，反推需要补偿的 scroll 位移。
  */
 export const restoreWorkspaceViewportAnchor = (
   viewportElement: HTMLDivElement | null,

@@ -5,8 +5,8 @@ import { CANVAS_MIN_PX, CANVAS_MAX_PX, type CanvasUnit } from '../../../../../co
 import type { FillStyle, GradientFill, PageBackground } from '../../../../../types/schema';
 
 /**
- * 闁?Schema 闂佹彃鐬煎▓鎴炪亜閻㈠憡妗ㄩ柤鍐叉湰濞呮瑦娼浣稿簥闁?FillPicker 闁告瑯鍨辩粔椋庢嫻閸︻厽鐣卞┑澶樺亜閸樻牜绱掗幘瀵糕偓顖炲Υ?
- * 闁搞儱澧芥晶鏍嚄鐏炵偓鐝柡鍡楀€瑰鍌滄喆閸℃洝绀嬬紒缁㈠灣濞呇勭箙椤愩垹甯犻柨娑樿嫰濞叉粍绋夐崫鍕Ъ闁?FillPicker 濞戞挸绉风粈瀣嫻閿濆洨妞介弶鍫熷灱閸庢寮查姘闁?
+ * 将 Schema 中的 PageBackground 转换为 FillPicker 所需的 FillStyle
+ * 处理纯色与渐变背景，确保 FillPicker 能正确解析与展示
  */
 export function normalizeFillFromBackground(bg: PageBackground): FillStyle {
   if (bg.type === 'color') return { type: 'solid', color: bg.value };
@@ -14,16 +14,18 @@ export function normalizeFillFromBackground(bg: PageBackground): FillStyle {
   return { type: 'solid', color: '#ffffff' };
 }
 
-/** 闁?FillPicker 閺夆晜鏌ㄥú鏍儍閸曨偓缍栭柛蹇撴噽缁劑寮搁崟顖氭闁哄倹濯藉ù鍡涘箲閵忊€崇亣闁告瑯鍨甸幆銈嗘償閹捐埖鐣卞銈囨暬濞间即鎳楃仦鐐彲闁轰胶澧楀畵渚€濡?*/
+/** 
+ * 根据 FillPicker 返回的 FillStyle 构造下一个 PageBackground 对象
+ */
 export function nextBackgroundFromFill(fill: FillStyle): PageBackground {
   if (fill.type === 'solid') return { type: 'color', value: fill.color };
-  // 婵炴挻鍔曡ぐ澶岀尵鐠囪尙鈧兘鏁嶅鐖刲l 闁哄牜鍓濋棅鈺呭础閸忓懓绀?GradientFill闁挎稑鐬煎ú鍧楀箳閵夈儱鐦堕悷浣告噺閸?GradientBackground
+  // 如果是渐变，因为 schema 里的 gradient 类型和 FillStyle 里的 gradient 数据结构一致
   return { type: 'gradient', value: fill as GradientFill };
 }
 
 /**
- * 濠㈣泛瀚幃濠囨偨鐠囪尙顏村Λ鏉垮椤旀洟宕氶崶銊ュ簥闁?
- * 閺夆晜鐟╅崳鐑芥儎鐎涙ê澶嶉梺顐ｄ亢缁?getState() 闁哄洤鐡ㄩ弻?Store闁挎稑濂旂换姘跺箰娴ｅ壊妲遍柣鐐叉閳ь剚妲掔欢顐ｇ▔?React 闁汇垻鍠庨幊锟犲川閵婏附鍩傞悷娆欑秬閳ь剨璐熼埀?
+ * 处理预设尺寸下拉框的切换事件
+ * 内部直接通过 getState() 操作 Store，避免把逻辑堆在 React 组件里
  */
 export function handlePresetChange(presetId: CanvasPresetId): void {
   const preset = CANVAS_PRESETS.find((p) => p.id === presetId);
@@ -35,13 +37,13 @@ export function handlePresetChange(presetId: CanvasPresetId): void {
   const { setCanvasUnit, setCanvasSizePx, requestFit } = useEditorStore.getState();
   setCanvasUnit(preset.unit);
   setCanvasSizePx(next.widthPx, next.heightPx, { commit: true });
-  // 闁告帒娲﹀畷鍙夛紣閸曨噮鍟庨柛姘唉閸ゆ粓宕濋妸鈹惧亾閸屾氨瀹夐柣銏ｎ嚙缁旂兘鏁嶅畝鍕╂慨婵勫灮閺佸墽鏁崘顓犵畺濠㈠爢鍕仐閺夆晛娲ら惃顒勫Υ?
+  // 切换预设后，画布尺寸通常会发生较大变化，因此自动触发一次适应画布操作
   requestFit();
 }
 
 /**
- * 濠㈣泛瀚幃濠囧箥鐎ｎ亜袟閺夊牊鎸搁崣鍡涙儍閸曨厽鏆伴悽顖氬暙閺勫倻鈧灚鎮堕埀?
- * 闁哄稄绻濋悰娆愬緞鏉堫偉袝闁哄啯鍎肩换鎴﹀炊?i18n key闁挎稑鏈崹姘跺礉閻斿憡顦ч弶鈺傛煥濞?null闁挎稑鐬奸悙鏇犳嫚閹存繀绱ｅù锝嗙矌閺佽京鎷崘顏呮殢闁哄倸缍婇埀顒佷亢缁?`t()` 閻庣懓鏈崹姘跺Υ?
+ * 处理画布宽度或高度输入框的数值修改
+ * 如果输入合法则提交到 Store，否则返回对应的错误文案 i18n key，让组件层去抛出提示
  */
 export function applyDimensionChange(
   kind: 'width' | 'height',
