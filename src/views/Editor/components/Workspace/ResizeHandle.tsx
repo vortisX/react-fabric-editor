@@ -242,6 +242,14 @@ export const WorkspaceResizeHandle = ({
         pointerIdRef.current = null;
         setIsActive(false);
       }}
-    />
+    >
+      {/* Inner indicator lines for better visual affordance */}
+      {(edge === 'left' || edge === 'right') && (
+        <div className={`h-5 w-0.5 rounded-full ${isActive ? 'bg-white/80' : 'bg-gray-300'}`} />
+      )}
+      {(edge === 'top' || edge === 'bottom') && (
+        <div className={`h-0.5 w-5 rounded-full ${isActive ? 'bg-white/80' : 'bg-gray-300'}`} />
+      )}
+    </div>
   );
 };

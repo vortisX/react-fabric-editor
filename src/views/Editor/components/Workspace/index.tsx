@@ -271,7 +271,17 @@ export const Workspace = () => {
     <main className="relative flex flex-1 flex-col overflow-hidden">
       <div
         ref={viewportRef}
-        className="workspace-viewport flex-1 overflow-auto bg-[#f0f0f0]"
+        className="workspace-viewport flex-1 overflow-auto bg-[#F4F5F7]"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(200, 205, 212, 0.4) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(200, 205, 212, 0.4) 1px, transparent 1px),
+            linear-gradient(rgba(200, 205, 212, 0.15) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(200, 205, 212, 0.15) 1px, transparent 1px)
+          `,
+          backgroundSize: '80px 80px, 80px 80px, 16px 16px, 16px 16px',
+          backgroundPosition: '-1px -1px, -1px -1px, -1px -1px, -1px -1px',
+        }}
       >
         <div
           ref={scrollAreaRef}
@@ -295,7 +305,7 @@ export const Workspace = () => {
           >
             <div
               ref={frameRef}
-              className="relative overflow-visible shadow-xl"
+              className="relative overflow-visible shadow-[0_0_0_1px_rgba(0,0,0,0.02),0_8px_32px_-4px_rgba(0,0,0,0.06),0_24px_64px_-12px_rgba(0,0,0,0.08)] bg-white"
               style={{
                 ...containerStyle,
                 position: 'absolute',

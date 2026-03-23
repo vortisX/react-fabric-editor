@@ -70,30 +70,31 @@ export const ZoomControls = () => {
   const pct = `${Math.round(zoom * 100)}%`;
 
   return (
-    <div className="absolute bottom-4 right-4 z-50 flex items-center gap-1 select-none">
+    <div className="absolute bottom-6 right-6 z-50 flex items-center select-none bg-white rounded-full shadow-[0_2px_12px_rgba(0,0,0,0.08)] border border-gray-200 p-1">
       {/* 缩放预设面板：向上弹出，跟随右下角百分比按钮。 */}
       {open && (
         <div
           ref={popoverRef}
-          className="absolute bottom-8 right-0 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[120px] overflow-hidden"
+          className="absolute bottom-12 right-0 bg-white rounded-xl shadow-xl border border-gray-100 py-1 min-w-[140px] overflow-hidden"
         >
           <button
-            className="w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100 transition-colors"
+            className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
             onClick={handleFit}
           >
             {t('zoom.fitCanvas')}
           </button>
-          <div className="border-t border-gray-100 my-1" />
+          <div className="border-t border-gray-100 my-1 mx-2" />
           {PRESET_ZOOMS.map((z) => (
             <button
               key={z}
               className={[
-                'w-full text-left px-3 py-1.5 text-xs transition-colors',
-                zoom === z ? 'text-blue-600 bg-blue-50 font-medium' : 'text-gray-700 hover:bg-gray-100',
+                'w-full text-left px-4 py-2 text-xs transition-colors flex items-center justify-between',
+                zoom === z ? 'text-blue-600 bg-blue-50/50 font-medium' : 'text-gray-700 hover:bg-gray-50',
               ].join(' ')}
               onClick={() => handlePreset(z)}
             >
-              {`${Math.round(z * 100)}%`}
+              <span>{`${Math.round(z * 100)}%`}</span>
+              {zoom === z && <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
             </button>
           ))}
         </div>
@@ -104,7 +105,7 @@ export const ZoomControls = () => {
         aria-label={t('zoom.zoomOut')}
         disabled={zoom <= MIN_ZOOM}
         onClick={handleZoomOut}
-        className="w-6 h-6 flex items-center justify-center rounded bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-base leading-none"
+        className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-lg leading-none"
       >
         −
       </button>
@@ -112,7 +113,7 @@ export const ZoomControls = () => {
       {/* 百分比按钮：展示当前 zoom 百分比，并负责打开/关闭预设面板。 */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="h-6 px-2 flex items-center justify-center rounded bg-white border border-gray-200 shadow-sm text-xs text-gray-700 hover:bg-gray-50 transition-colors tabular-nums min-w-[44px]"
+        className="h-8 px-3 flex items-center justify-center rounded-full text-xs font-medium text-gray-700 hover:bg-gray-100 transition-colors tabular-nums min-w-[56px]"
       >
         {pct}
       </button>
@@ -122,7 +123,7 @@ export const ZoomControls = () => {
         aria-label={t('zoom.zoomIn')}
         disabled={zoom >= MAX_ZOOM}
         onClick={handleZoomIn}
-        className="w-6 h-6 flex items-center justify-center rounded bg-white border border-gray-200 shadow-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-base leading-none"
+        className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-lg leading-none"
       >
         +
       </button>
