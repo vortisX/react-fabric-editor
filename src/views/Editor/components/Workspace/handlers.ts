@@ -121,6 +121,11 @@ export const applyWorkspaceEditorCommand = (
     return;
   }
 
+  if (editorCommand.type === 'layer:remove') {
+    engineInstance.removeLayer(editorCommand.layerId);
+    return;
+  }
+
   if (editorCommand.type === 'group:edit-enter') {
     engineInstance.openGroupEditing(editorCommand.groupId);
     return;

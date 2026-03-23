@@ -101,6 +101,23 @@ export class EditorEngine {
       readStoreLayer: () => readImageLayer(layerId),
     });
   }
+
+  /** 从 Fabric 画布中移除指定对象 */
+  public removeLayer(layerId: string): void {
+    if (!this.canvas) return;
+    const target = findObjectById(this.canvas, layerId);
+    if (!target) return;
+    
+    // 如果当前处于编辑态且被删除的是其内部对象，或者就是被编辑的组合本身，可能需要退出编辑态
+    // 这里简单处理：如果当前 activeObject 是要被删除的对象，先取消选中
+    if (this.canvas.getActiveObject() === target) {
+      this.canvas.discardActiveObject();
+    }
+    
+    this.canvas.remove(target);
+    this.canvas.requestRenderAll();
+  }
+
   /** 整体平移当前画布上的全部对象，常用于左/上边缩放画布后的补偿。 */
   public translateAllLayers(offsetX: number, offsetY: number): void {
     if (!this.canvas) return;

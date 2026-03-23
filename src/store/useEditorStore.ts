@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { buildBranchLayerUpdateCommands, buildHistory, buildLayerReorderCommand, cloneDocument, emitCommand, getCurrentPage, groupDocumentLayers, initialDoc, moveDocumentLayer, moveDocumentLayerByStep, replaceDocumentLayer, shouldClearActiveLayerAfterVisibilityChange, translatePageLayers, ungroupDocumentLayer, updateCanvasGlobalSize, updateDocumentLayer, updateDocumentLayerLock, updateDocumentLayerVisibility, type EditorState } from "./editorStore.shared";
+import { buildBranchLayerUpdateCommands, buildHistory, buildLayerReorderCommand, cloneDocument, emitCommand, getCurrentPage, groupDocumentLayers, initialDoc, moveDocumentLayer, moveDocumentLayerByStep, removeDocumentLayer, replaceDocumentLayer, shouldClearActiveLayerAfterVisibilityChange, translatePageLayers, ungroupDocumentLayer, updateCanvasGlobalSize, updateDocumentLayer, updateDocumentLayerLock, updateDocumentLayerVisibility, type EditorState } from "./editorStore.shared";
 export type { EditorCommand, EditorCommandOrigin } from "./editorStore.shared";
 /**
  * 编辑器全局 Store。
@@ -260,6 +260,32 @@ export const useEditorStore = create<EditorState>((set) => ({
         activeLayerId: layer.id,
         history: buildHistory(state, options?.commit ?? true),
         ...emitCommand(state, { type: "layer:add", layer }),
+      };
+    }),
+  /** 删除指定图层 */
+  removeLayer: (layerId, options) =>
+    set((state) => {
+      if (!state.document || !state.currentPageId) return state;
+      const nextDocument = removeDocumentLayer(
+        state.document,
+        state.currentPageId,
+        layerId,
+      );
+      if (!nextDocument) return state;
+      const origin = options?.origin ?? "ui";
+      const nextActiveLayerId = state.activeLayerId === layerId ? null : state.activeLayerId;
+      if (origin !== "ui") {
+        return {
+          document: nextDocument,
+          activeLayerId: nextActiveLayerId,
+          history: buildHistory(state, options?.commit ?? true),
+        };
+      }
+      return {
+        document: nextDocument,
+        activeLayerId: nextActiveLayerId,
+        history: buildHistory(state, options?.commit ?? true),
+        ...emitCommand(state, { type: "layer:remove", layerId }),
       };
     }),
   /** 切换图层或组合图层分支的显隐状态。 */

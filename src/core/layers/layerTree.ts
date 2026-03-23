@@ -402,3 +402,16 @@ export const moveLayerByStep = (
 
   return replaceChildrenAtParent(layers, location.parentId, nextSiblings);
 };
+
+/** 从树中移除指定图层。 */
+export const removeLayerById = (
+  layers: Layer[],
+  layerId: string,
+): Layer[] | null => {
+  const location = findLayerLocation(layers, layerId);
+  if (!location) return null;
+
+  const nextSiblings = [...location.siblings];
+  nextSiblings.splice(location.index, 1);
+  return replaceChildrenAtParent(layers, location.parentId, nextSiblings);
+};

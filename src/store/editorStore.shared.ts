@@ -6,6 +6,7 @@ import {
   groupLayersInTree,
   moveLayerByStep,
   moveLayerInTree,
+  removeLayerById,
   ungroupLayerInTree,
   updateLayerBranchById,
   updateLayerById,
@@ -36,6 +37,7 @@ export type EditorSingleCommand =
       offsetY: number;
     }
   | { type: "layer:add"; layer: Layer }
+  | { type: "layer:remove"; layerId: string }
   | { type: "layer:update"; layerId: string; payload: Partial<Layer> }
   | { type: "layers:translate"; offsetX: number; offsetY: number }
   | { type: "group:edit-enter"; groupId: string }
@@ -112,6 +114,7 @@ export interface EditorState {
     options?: MutationOptions,
   ) => void;
   addLayer: (layer: Layer, options?: MutationOptions) => void;
+  removeLayer: (layerId: string, options?: MutationOptions) => void;
   toggleLayerVisibility: (
     layerId: string,
     visible: boolean,
@@ -300,6 +303,26 @@ export const updateDocumentLayer = (
     });
 
     return layers ? { ...page, layers } : page;
+  });
+
+  return hasChanged ? { ...doc, pages } : null;
+};
+
+/** 从文档的指定页面中移除图层。 */
+export const removeDocumentLayer = (
+  doc: DesignDocument,
+  pageId: string,
+  layerId: string,
+): DesignDocument | null => {
+  let hasChanged = false;
+  const pages = doc.pages.map((page) => {
+    if (page.pageId !== pageId) return page;
+
+    const layers = removeLayerById(page.layers, layerId);
+    if (!layers) return page;
+
+    hasChanged = true;
+    return { ...page, layers };
   });
 
   return hasChanged ? { ...doc, pages } : null;
