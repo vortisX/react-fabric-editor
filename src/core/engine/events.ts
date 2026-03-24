@@ -219,9 +219,15 @@ export const handleScaling = ({
 
 /** 处理移动、旋转、resize 等实时变换，统一复用 live transform 节流同步。 */
 export const handleResizing = (
+  canvas: Canvas | null,
   target: FabricObject,
   queueLiveTransform: (target: FabricLayerTarget) => void,
 ): void => {
+  if (target instanceof CustomTextbox) {
+    target.initDimensions();
+    target.autoFitHeight();
+    canvas?.requestRenderAll();
+  }
   queueLiveTransform(target as FabricLayerTarget);
 };
 

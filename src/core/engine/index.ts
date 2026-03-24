@@ -394,7 +394,7 @@ export class EditorEngine {
           queueLiveTransform: this.queueLiveTransform,
         }),
       onResizing: (target) =>
-        handleResizing(target, this.queueLiveTransform),
+        handleResizing(this.canvas, target, this.queueLiveTransform),
       onModified: (event) =>
         handleModified({
           event,
