@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
-import { Tabs } from '../../../../components/ui';
+import { Tabs, CollapsiblePanel } from '../../../../components/ui';
 
 import { findLayerById } from '../../../../core/layers/layerTree';
 
@@ -51,7 +51,12 @@ export const RightPanel = () => {
 
   return (
 
-    <aside className="w-60 bg-white border-l border-gray-200 flex flex-col shrink-0 z-10 shadow-sm text-xs selection:bg-blue-100">
+    <CollapsiblePanel
+      position="right"
+      defaultWidth={240}
+      collapsedWidth={0}
+      className="border-l border-gray-200 text-xs selection:bg-blue-100"
+    >
 
       <Tabs
 
@@ -75,7 +80,7 @@ export const RightPanel = () => {
 
       />
 
-    </aside>
+    </CollapsiblePanel>
 
   );
 

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { Layers3 } from "lucide-react";
 
-import { Tooltip } from "../../../components/ui";
+import { Tooltip, CollapsiblePanel } from "../../../components/ui";
 
 import { GridIcon, ImageIcon, TypeIcon } from "../../../components/ui/Icons";
 
@@ -225,69 +225,75 @@ export const LeftPanel = () => {
 
   return (
 
-    <>
+    <CollapsiblePanel
+      position="left"
+      defaultWidth={344}
+      collapsedWidth={56}
+      className="border-r border-gray-200"
+      iconSlot={
+        <div className="flex w-14 shrink-0 flex-col items-center gap-4 border-r border-gray-200 bg-white py-4 h-full">
 
-      <aside className="z-10 flex w-14 shrink-0 flex-col items-center gap-4 border-r border-gray-200 bg-white py-4">
+          <Tooltip title={t("leftPanel.layerManagement")} placement="right">
 
-        <Tooltip title={t("leftPanel.layerManagement")} placement="right">
+            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-blue-50 text-lg text-blue-600">
 
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-blue-50 text-lg text-blue-600">
+              <GridIcon />
 
-            <GridIcon />
+            </div>
 
-          </div>
+          </Tooltip>
 
-        </Tooltip>
+          <Tooltip title={t("leftPanel.addText")} placement="right">
 
-        <Tooltip title={t("leftPanel.addText")} placement="right">
+            <button
 
-          <button
+              type="button"
 
-            type="button"
+              onClick={() => {
 
-            onClick={() => {
+                addDefaultTextLayer(t);
 
-              addDefaultTextLayer(t);
+              }}
 
-            }}
+              className="flex h-10 w-10 items-center justify-center rounded-md text-lg text-gray-500 transition-colors hover:bg-gray-100"
 
-            className="flex h-10 w-10 items-center justify-center rounded-md text-lg text-gray-500 transition-colors hover:bg-gray-100"
+            >
 
-          >
+              <TypeIcon />
 
-            <TypeIcon />
+            </button>
 
-          </button>
+          </Tooltip>
 
-        </Tooltip>
+          <Tooltip title={t("leftPanel.addImage")} placement="right">
 
-        <Tooltip title={t("leftPanel.addImage")} placement="right">
+            <button
 
-          <button
+              type="button"
 
-            type="button"
+              onClick={() => {
 
-            onClick={() => {
+                openImageLayerPicker(t);
 
-              openImageLayerPicker(t);
+              }}
 
-            }}
+              className="flex h-10 w-10 items-center justify-center rounded-md text-lg text-gray-500 transition-colors hover:bg-gray-100"
 
-            className="flex h-10 w-10 items-center justify-center rounded-md text-lg text-gray-500 transition-colors hover:bg-gray-100"
+            >
 
-          >
+              <ImageIcon />
 
-            <ImageIcon />
+            </button>
 
-          </button>
+          </Tooltip>
 
-        </Tooltip>
+        </div>
+      }
+    >
 
-      </aside>
+      <div className="flex w-72 shrink-0 flex-col h-full bg-white">
 
-      <aside className="z-10 flex w-72 shrink-0 flex-col border-r border-gray-200 bg-white shadow-sm">
-
-        <div className="flex h-12 items-center justify-between border-b border-gray-100 px-4">
+        <div className="flex h-12 shrink-0 items-center justify-between border-b border-gray-100 px-4">
 
           <div className="font-semibold text-gray-800">{t("leftPanel.layerTree")}</div>
 
@@ -365,9 +371,9 @@ export const LeftPanel = () => {
 
         </div>
 
-      </aside>
+      </div>
 
-    </>
+    </CollapsiblePanel>
 
   );
 
