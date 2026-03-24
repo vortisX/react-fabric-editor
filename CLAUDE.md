@@ -36,8 +36,10 @@ Zustand Store (`src/store/useEditorStore.ts`) 负责全盘状态：
 ## 4. 画布引擎与性能规范 (Fabric Engine Specifications)
 
 * **Fabric v7 API**：严格使用 Fabric.js 7.x 的 ES Module 语法（如 `import { Canvas, Textbox, FabricImage } from "fabric"`）。
+* **防闪烁与异步渲染 (Anti-Flicker & Async Rendering)**：当执行图层组合/解组、层级调整、或全盘 `document:load` 等操作时，由于图片等资源需要异步加载，**必须先通过 `Promise.all` 等待所有图层实例在内存中加载就绪后，再执行同步的 `canvas.remove/insertAt/clear` 和 `canvas.add` 操作**。绝不能先清空画布再等待异步加载，否则会导致明显的视觉闪烁。
 * **高频渲染优化**：调用更新时，**永远使用 `canvas.requestRenderAll()`** 而不是同步的 `canvas.renderAll()`。
 * **缩放重置策略 (Scale Normalization)**：Fabric 默认通过改变 `scaleX/scaleY` 来缩放对象。引擎在捕获到缩放事件时，**必须**将 `scale` 转换为实际的 `width/height/fontSize` 存入 Store，并强制将对象的 `scaleX/scaleY` 重置为 `1`。这保证了导出的 JSON 始终是标准尺寸。
+* **实时变形与排版同步 (Live Transform & Layout Sync)**：处理 `object:moving`、`object:scaling` 和 `object:resizing` 高频交互时，必须做节流更新。特别注意：**当拖拽文本框边缘改变宽度触发 `resizing` 时，必须在节流更新前调用 `target.initDimensions()` 和 `target.autoFitHeight()`，并立刻请求重绘 `canvas.requestRenderAll()`**，同时把重新计算后的真实 `width`、`height` 包含在 payload 中同步给 Store，确保 React 属性面板和画布表现完全一致。 
 * **工作区缩放职责边界**：
   * `Store.zoom` 表示工作区显示缩放，而不是文档真实尺寸。
   * `Workspace` 负责滚轮、右下角百分比按钮、Fit 等缩放交互，以及视口居中与过渡动画。
