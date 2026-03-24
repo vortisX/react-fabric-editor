@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { useEditorStore } from '../../../../store/useEditorStore';
+import { WorkspaceResizeHandle } from './ResizeHandle';
 import { ZoomControls } from './ZoomControls';
 import {
   applyWorkspaceEditorCommand,
@@ -13,7 +14,6 @@ import {
   syncWorkspaceViewportSize,
   syncWorkspaceZoom,
 } from './handlers';
-import { WorkspaceResizeHandle } from './ResizeHandle';
 import {
   getWorkspaceCanvasSlotStyle,
   getWorkspaceContainerStyle,
@@ -202,10 +202,18 @@ export const Workspace = () => {
 
   /**
    * 工作区可视区域变化后，把最新 viewport 尺寸同步给 Engine。
+   * 并在动画彻底结束后强制纠偏居中，确保最后位置绝对正确。
    */
   useLayoutEffect(() => {
     syncWorkspaceViewportSize(viewportSize.width, viewportSize.height);
-  }, [viewportSize]);
+    
+    // 使用 requestAnimationFrame 等待 DOM 完全稳定
+    requestAnimationFrame(() => {
+      if (viewportRef.current) {
+        centerWorkspaceViewport(viewportRef.current);
+      }
+    });
+  }, [viewportSize.width, viewportSize.height]);
 
   /**
    * 首次进入编辑器时自动执行一次“适应画布”。
@@ -261,16 +269,24 @@ export const Workspace = () => {
 
     /**
      * 工作区尺寸变化后重新读取可视区大小。
+     * 使用防抖，避免在面板折叠动画期间高频触发 React State 更新（导致掉帧）。
      */
+    let resizeTimer: number;
     const observer = new ResizeObserver(() => {
-      updateViewportSize();
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        updateViewportSize();
+      }, 300); // 匹配 CSS 过渡时间
     });
 
     observer.observe(viewportElement);
     return () => {
+      window.clearTimeout(resizeTimer);
       observer.disconnect();
     };
   }, []);
+
+
 
   if (!hasDocument) return null;
 
@@ -390,7 +406,7 @@ export const Workspace = () => {
           </div>
         </div>
       </div>
-
+      
       <ZoomControls />
     </main>
   );

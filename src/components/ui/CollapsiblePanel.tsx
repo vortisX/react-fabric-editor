@@ -53,6 +53,18 @@ export const CollapsiblePanel = forwardRef<CollapsiblePanelRef, CollapsiblePanel
       if (!isControlled) {
         setUncontrolledCollapsed(nextCollapsed);
       }
+
+      // 在折叠状态即将改变时，派发自定义事件通知 Workspace 进行预先补偿
+      // 传递宽度变化量 (deltaWidth)：如果展开，面板变宽，Workspace 变窄（负数）
+      // 如果收起，面板变窄，Workspace 变宽（正数）
+      const deltaWidth = nextCollapsed 
+        ? defaultWidth - collapsedWidth 
+        : collapsedWidth - defaultWidth;
+        
+      window.dispatchEvent(new CustomEvent('panel-collapse-start', { 
+        detail: { deltaWidth, position } 
+      }));
+
       onCollapseChange?.(nextCollapsed);
     };
 

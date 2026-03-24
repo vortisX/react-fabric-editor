@@ -273,14 +273,7 @@ export const fitWorkspaceToViewport = (
       // 为什么连续套两层 rAF：
       // 需要先等 React 和 Fabric 都完成一轮尺寸更新，再读取最新 scrollWidth/scrollHeight，
       // 否则很容易在旧布局基础上居中，造成“刚 fit 完又轻微跳一下”。
-      viewportElement.scrollLeft = Math.max(
-        (viewportElement.scrollWidth - viewportElement.clientWidth) / 2,
-        0,
-      );
-      viewportElement.scrollTop = Math.max(
-        (viewportElement.scrollHeight - viewportElement.clientHeight) / 2,
-        0,
-      );
+      centerWorkspaceViewport(viewportElement);
     });
   });
 };
@@ -342,14 +335,17 @@ export const bindWorkspaceWheelZoom = (
 export const centerWorkspaceViewport = (
   viewportElement: HTMLDivElement,
 ): void => {
-  viewportElement.scrollLeft = Math.max(
+  const targetLeft = Math.max(
     (viewportElement.scrollWidth - viewportElement.clientWidth) / 2,
-  0,
+    0,
   );
-  viewportElement.scrollTop = Math.max(
+  const targetTop = Math.max(
     (viewportElement.scrollHeight - viewportElement.clientHeight) / 2,
     0,
   );
+
+  viewportElement.scrollLeft = targetLeft;
+  viewportElement.scrollTop = targetTop;
 };
 
 /**

@@ -44,12 +44,10 @@ export const LeftPanel = () => {
   const activeLayerId = useEditorStore((state) => state.activeLayerId);
 
   const page =
-
     document?.pages.find((item) => item.pageId === currentPageId) ??
-
     document?.pages[0];
 
-  const layers = page?.layers ?? [];
+  const layers = useMemo(() => page?.layers ?? [], [page?.layers]);
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -71,30 +69,21 @@ export const LeftPanel = () => {
 
   /** 当画布侧改变选中图层时，把树选中态同步到对应叶子节点。 */
   useEffect(() => {
-
     if (!activeLayerId) return;
-
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedIds([activeLayerId]);
-
   }, [activeLayerId]);
 
   /** 新创建或新加载的组合图层默认展开，减少用户额外点开成本。 */
   useEffect(() => {
-
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setExpandedGroupIds((previous) => {
-
       const next = new Set(previous);
-
       allGroupIds.forEach((groupId) => {
-
         next.add(groupId);
-
       });
-
       return next;
-
     });
-
   }, [allGroupIds]);
 
   /** 处理图层树单选或 Ctrl/Cmd 多选，并同步真正可编辑的叶子图层。 */
