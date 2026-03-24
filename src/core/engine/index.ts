@@ -11,7 +11,7 @@ import {
   type GroupBoundsSnapshot,
 } from "./groupAlignment";
 import { enterGroupEditing, exitCurrentGroupEditing, normalizeVisibleGroupObject, resetGroupEditingState, type GroupEditingEntry } from "./groupEditing";
-import { addImageLayerToCanvas, addTextLayerToCanvas, finalizeImageScale, createFabricObjectFromLayer } from "./layers";
+import { addImageLayerToCanvas, addTextLayerToCanvas, finalizeImageScale, loadLayerStackToCanvas } from "./layers";
 import { findEditingChildren, findObjectById, findTopLevelObjectById, isTopLevelGroupObject, readImageLayer } from "./queries";
 import { updateFabricLayerProps } from "./update";
 import type { FabricGroupLayer, FabricImageLayer, FabricLayerTarget, LayerMeasurement } from "./types";
@@ -33,8 +33,6 @@ export class EditorEngine {
     | { groupId: string; bounds: GroupBoundsSnapshot }
     | null = null;
   private pendingLoadedSelectionId: string | null = null;
-  private documentLoadId = 0;
-
   /** 判断 Engine 是否已经完成 Fabric Canvas 初始化。 */
   public isReady(): boolean {
     return this.canvas !== null;
@@ -101,23 +99,6 @@ export class EditorEngine {
       readStoreLayer: () => readImageLayer(layerId),
     });
   }
-
-  /** 从 Fabric 画布中移除指定对象 */
-  public removeLayer(layerId: string): void {
-    if (!this.canvas) return;
-    const target = findObjectById(this.canvas, layerId);
-    if (!target) return;
-    
-    // 如果当前处于编辑态且被删除的是其内部对象，或者就是被编辑的组合本身，可能需要退出编辑态
-    // 这里简单处理：如果当前 activeObject 是要被删除的对象，先取消选中
-    if (this.canvas.getActiveObject() === target) {
-      this.canvas.discardActiveObject();
-    }
-    
-    this.canvas.remove(target);
-    this.canvas.requestRenderAll();
-  }
-
   /** 整体平移当前画布上的全部对象，常用于左/上边缩放画布后的补偿。 */
   public translateAllLayers(offsetX: number, offsetY: number): void {
     if (!this.canvas) return;
@@ -342,48 +323,19 @@ export class EditorEngine {
     this.isDocumentLoading = true;
     this.editingGroupStack = [];
     resetGroupEditingState();
-    
-    const loadId = ++this.documentLoadId;
-    const page = doc.pages[0];
-
-    const finishLoad = () => {
-      if (loadId !== this.documentLoadId || !this.canvas) return;
-      this.finalizeDocumentLoad();
-    };
-
-    if (page?.layers.length) {
-      // 预加载所有图层对象（异步）
-      void Promise.all(
-        page.layers.map((layer) =>
-          createFabricObjectFromLayer(layer).catch(() => null)
-        )
-      ).then((results) => {
-        if (loadId !== this.documentLoadId || !this.canvas) return;
-        
-        // 确保在所有资源就绪后再清除画布，避免闪烁
-        this.canvas.clear();
-        this.resizeCanvas(doc.global.width, doc.global.height);
-        if (page?.background) {
-          this.setBackground(page.background, doc.global.width, doc.global.height);
-        }
-
-        const objects = results.filter((obj): obj is import("fabric").FabricObject => !!obj);
-        for (const obj of objects) {
-          this.canvas.add(obj);
-          obj.setCoords();
-        }
-        this.canvas.requestRenderAll();
-        finishLoad();
-      });
-      return;
-    }
-
     this.canvas.clear();
     this.resizeCanvas(doc.global.width, doc.global.height);
+    const page = doc.pages[0];
     if (page?.background) {
       this.setBackground(page.background, doc.global.width, doc.global.height);
     }
-    finishLoad();
+    if (page?.layers.length) {
+      void loadLayerStackToCanvas(this.canvas, page.layers).then(() => {
+        this.finalizeDocumentLoad();
+      });
+      return;
+    }
+    this.finalizeDocumentLoad();
   }
   /** 更新文档真实尺寸，并同步刷新 Fabric 画布显示区域。 */
   public resizeCanvas(width: number, height: number): void {

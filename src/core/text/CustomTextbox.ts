@@ -218,8 +218,6 @@ export class CustomTextbox extends Textbox {
   static fromLayer(layer: TextLayer): CustomTextbox {
     const fabricFill = fillStyleToFabric(layer.fill, layer.width, layer.height ?? 0);
     const textbox = new CustomTextbox(layer.content, {
-      originX: 'left',
-      originY: 'top',
       left: layer.x,
       top: layer.y,
       width: layer.width,

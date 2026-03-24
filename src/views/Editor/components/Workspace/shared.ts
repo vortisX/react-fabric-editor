@@ -127,24 +127,21 @@ export const getWorkspaceCanvasSlotStyle = (
  * 这里统一管理尺寸拖拽手柄的视觉状态，避免 JSX 中散落大量条件类拼接。
  */
 export const edgeToClassName = (edge: DragEdge, isActive: boolean): string => {
-  const colorClass = isActive 
-    ? 'bg-blue-500 border-blue-600 shadow-[0_0_0_3px_rgba(59,130,246,0.2)]' 
-    : 'bg-white/90 backdrop-blur-sm border-gray-200 hover:border-blue-400 hover:bg-white hover:shadow-md';
-  
+  const colorClass = isActive ? 'bg-[#18a0fb]' : 'bg-gray-400 hover:bg-[#18a0fb]';
   const common =
-    'absolute z-20 rounded-full border shadow-sm transition-all duration-200 flex items-center justify-center';
+    'absolute z-20 rounded-full opacity-90 shadow-[0_4px_12px_rgba(0,0,0,0.18)] transition-colors duration-200';
 
   if (edge === 'left') {
-    return `${common} ${colorClass} top-1/2 -left-6 h-12 w-3 -translate-y-1/2 cursor-ew-resize`;
+    return `${common} ${colorClass} top-1/2 -left-3 h-10 w-2 -translate-y-1/2 cursor-ew-resize`;
   }
 
   if (edge === 'right') {
-    return `${common} ${colorClass} top-1/2 -right-6 h-12 w-3 -translate-y-1/2 cursor-ew-resize`;
+    return `${common} ${colorClass} top-1/2 -right-3 h-10 w-2 -translate-y-1/2 cursor-ew-resize`;
   }
 
   if (edge === 'top') {
-    return `${common} ${colorClass} left-1/2 -top-6 h-3 w-12 -translate-x-1/2 cursor-ns-resize`;
+    return `${common} ${colorClass} left-1/2 -top-3 h-2 w-10 -translate-x-1/2 cursor-ns-resize`;
   }
 
-  return `${common} ${colorClass} left-1/2 -bottom-6 h-3 w-12 -translate-x-1/2 cursor-ns-resize`;
+  return `${common} ${colorClass} left-1/2 -bottom-3 h-2 w-10 -translate-x-1/2 cursor-ns-resize`;
 };

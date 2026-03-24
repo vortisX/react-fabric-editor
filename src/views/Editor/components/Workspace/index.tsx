@@ -6,7 +6,6 @@ import {
   applyWorkspaceEditorCommand,
   bindWorkspaceSelectionClear,
   bindWorkspaceWheelZoom,
-  bindWorkspaceKeyboardShortcuts,
   centerWorkspaceViewport,
   fitWorkspaceToViewport,
   initializeWorkspaceEngine,
@@ -239,13 +238,6 @@ export const Workspace = () => {
     const viewportElement = viewportRef.current;
     if (!viewportElement) return undefined;
     return bindWorkspaceWheelZoom(viewportElement);
-  }, []);
-
-  /**
-   * 绑定全局键盘快捷键（如 Delete 删除）。
-   */
-  useEffect(() => {
-    return bindWorkspaceKeyboardShortcuts();
   }, []);
 
   /**

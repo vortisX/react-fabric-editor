@@ -121,11 +121,6 @@ export const applyWorkspaceEditorCommand = (
     return;
   }
 
-  if (editorCommand.type === 'layer:remove') {
-    engineInstance.removeLayer(editorCommand.layerId);
-    return;
-  }
-
   if (editorCommand.type === 'group:edit-enter') {
     engineInstance.openGroupEditing(editorCommand.groupId);
     return;
@@ -341,36 +336,6 @@ export const bindWorkspaceWheelZoom = (
 };
 
 /**
- * 绑定工作区全局键盘快捷键（如 Delete 删除图层）。
- */
-export const bindWorkspaceKeyboardShortcuts = (): (() => void) => {
-  const onKeyDown = (event: KeyboardEvent) => {
-    // 忽略输入框内的按键，防止误删图层
-    const target = event.target as HTMLElement;
-    const isInput =
-      target.tagName === 'INPUT' ||
-      target.tagName === 'TEXTAREA' ||
-      target.isContentEditable;
-    
-    if (isInput) return;
-
-    if (event.key === 'Delete' || event.key === 'Backspace') {
-      const state = useEditorStore.getState();
-      const activeLayerId = state.activeLayerId;
-      if (activeLayerId) {
-        event.preventDefault();
-        state.removeLayer(activeLayerId, { commit: true });
-      }
-    }
-  };
-
-  document.addEventListener('keydown', onKeyDown);
-  return () => {
-    document.removeEventListener('keydown', onKeyDown);
-  };
-};
-
-/**
  * 把工作区滚动位置直接置为水平/垂直中心。
  * 该函数只负责滚动条位置，不负责改 zoom。
  */
@@ -412,8 +377,8 @@ export const readWorkspaceFrameAnchor = (
 };
 
 /**
- * 在工作区尺寸调整后恢复视口滚动位置，尽量保持用户当前看到的内容不跳动。
- * 这里通过比较 resize 前后的 frame 位置差，反推需要补偿的 scroll 位移。
+ * 鍦ㄥ伐浣滃尯灏哄璋冩暣鍚庢仮澶嶈鍙ｆ粴鍔ㄤ綅缃紝灏介噺淇濇寔鐢ㄦ埛褰撳墠鐪嬪埌鐨勫唴瀹逛笉璺冲姩銆?
+ * 杩欓噷閫氳繃姣旇緝 resize 鍓嶅悗鐨?frame 浣嶇疆宸紝鍙嶆帹闇€瑕佽ˉ鍋跨殑 scroll 浣嶇Щ銆?
  */
 export const restoreWorkspaceViewportAnchor = (
   viewportElement: HTMLDivElement | null,
