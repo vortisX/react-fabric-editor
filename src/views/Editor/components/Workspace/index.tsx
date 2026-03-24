@@ -268,11 +268,30 @@ export const Workspace = () => {
     updateViewportSize();
 
     /**
+     * 在侧边栏宽度动画期间逐帧把滚动位置拉回中心。
+     * 这里只做 DOM 级滚动修正，不触发 React state，避免面板过渡过程中出现“先滑过头，再被最终纠偏拉回”的跳动。
+     */
+    const syncViewportCenter = () => {
+      centerWorkspaceViewport(viewportElement);
+    };
+
+    /**
      * 工作区尺寸变化后重新读取可视区大小。
-     * 使用防抖，避免在面板折叠动画期间高频触发 React State 更新（导致掉帧）。
+     * 这里拆成两层：
+     * 1. 立即用 rAF 做一次居中修正，保证左右面板开合动画期间画布视觉上始终贴着中心。
+     * 2. 延迟回写 viewportSize，避免高频触发 React State 更新影响动画流畅度。
      */
     let resizeTimer: number;
+    let centerFrame = 0;
     const observer = new ResizeObserver(() => {
+      if (centerFrame !== 0) {
+        window.cancelAnimationFrame(centerFrame);
+      }
+      centerFrame = window.requestAnimationFrame(() => {
+        centerFrame = 0;
+        syncViewportCenter();
+      });
+
       window.clearTimeout(resizeTimer);
       resizeTimer = window.setTimeout(() => {
         updateViewportSize();
@@ -281,6 +300,9 @@ export const Workspace = () => {
 
     observer.observe(viewportElement);
     return () => {
+      if (centerFrame !== 0) {
+        window.cancelAnimationFrame(centerFrame);
+      }
       window.clearTimeout(resizeTimer);
       observer.disconnect();
     };
