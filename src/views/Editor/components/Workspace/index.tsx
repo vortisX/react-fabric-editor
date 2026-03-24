@@ -376,7 +376,7 @@ export const Workspace = () => {
                 }}
                 onPreviewEnd={handleResizePreviewEnd}
               />
-              <div ref={canvasLayerRef} className="absolute inset-0 z-0 overflow-hidden">
+              <div ref={canvasLayerRef} className="absolute inset-0 z-0 overflow-visible">
                 <canvas ref={canvasRef} className="absolute left-0 top-0" />
               </div>
               <canvas
