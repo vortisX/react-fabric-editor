@@ -31,6 +31,9 @@ export const createEditorCanvas = (
   canvas.setViewportTransform(getEditorViewportTransform(1, 0, 0));
   (canvas as unknown as Canvas & FabricCanvasControlInternals).skipControlsDrawing =
     true;
+  canvas.wrapperEl.style.willChange = "transform";
+  canvas.lowerCanvasEl.style.transform = "translateZ(0)";
+  canvas.upperCanvasEl.style.transform = "translateZ(0)";
   return canvas;
 };
 

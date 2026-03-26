@@ -11,8 +11,9 @@ import {
   type GroupBoundsSnapshot,
 } from "./groupAlignment";
 import { enterGroupEditing, exitCurrentGroupEditing, normalizeVisibleGroupObject, resetGroupEditingState, type GroupEditingEntry } from "./groupEditing";
-import { addImageLayerToCanvas, addTextLayerToCanvas, finalizeImageScale, loadLayerStackToCanvas } from "./layers";
+import { addImageLayerToCanvas, addTextLayerToCanvas, createLayerStackObjects, finalizeImageScale, replaceCanvasLayerStack } from "./layers";
 import { findEditingChildren, findObjectById, findTopLevelObjectById, isTopLevelGroupObject, readImageLayer } from "./queries";
+import { reorderVisibleLayerObjects } from "./reorder";
 import { updateFabricLayerProps } from "./update";
 import type { FabricGroupLayer, FabricImageLayer, FabricLayerTarget, LayerMeasurement } from "./types";
 import { applyCanvasSize } from "./viewport";
@@ -33,6 +34,7 @@ export class EditorEngine {
     | { groupId: string; bounds: GroupBoundsSnapshot }
     | null = null;
   private pendingLoadedSelectionId: string | null = null;
+  private documentLoadToken = 0;
   /** 判断 Engine 是否已经完成 Fabric Canvas 初始化。 */
   public isReady(): boolean {
     return this.canvas !== null;
@@ -52,6 +54,7 @@ export class EditorEngine {
     this.editingGroupStack = [];
     this.pendingLoadedGroupBounds = null;
     this.pendingLoadedSelectionId = null;
+    this.documentLoadToken = 0;
     resetGroupEditingState();
     this.canvas = createEditorCanvas(canvasEl, width, height);
     setupGlobalUI();
@@ -72,6 +75,7 @@ export class EditorEngine {
     this.editingGroupStack = [];
     this.pendingLoadedGroupBounds = null;
     this.pendingLoadedSelectionId = null;
+    this.documentLoadToken = 0;
     resetGroupEditingState();
   }
   /** 向当前画布新增图片图层，并返回标准化后的尺寸测量结果。 */
@@ -319,23 +323,53 @@ export class EditorEngine {
     activeLayerId: string | null = null,
   ): void {
     if (!this.canvas) return;
+    const currentLoadToken = ++this.documentLoadToken;
     this.preparePendingLoadedState(activeLayerId);
     this.isDocumentLoading = true;
     this.editingGroupStack = [];
     resetGroupEditingState();
-    this.canvas.clear();
     this.resizeCanvas(doc.global.width, doc.global.height);
     const page = doc.pages[0];
     if (page?.background) {
       this.setBackground(page.background, doc.global.width, doc.global.height);
     }
     if (page?.layers.length) {
-      void loadLayerStackToCanvas(this.canvas, page.layers).then(() => {
-        this.finalizeDocumentLoad();
+      void createLayerStackObjects(page.layers).then((objects) => {
+        if (!this.canvas || currentLoadToken !== this.documentLoadToken) return;
+        replaceCanvasLayerStack(this.canvas, objects);
+        this.finalizeDocumentLoad(currentLoadToken);
       });
       return;
     }
-    this.finalizeDocumentLoad();
+    replaceCanvasLayerStack(this.canvas, []);
+    this.finalizeDocumentLoad(currentLoadToken);
+  }
+  public reorderLayers(
+    doc: DesignDocument,
+    pageId: string,
+    activeLayerId: string | null,
+    editingGroupIds: string[],
+  ): void {
+    if (!this.canvas) return;
+    const page =
+      doc.pages.find((item) => item.pageId === pageId) ?? doc.pages[0];
+    if (!page) return;
+    const previousActiveLayerId =
+      (this.canvas.getActiveObject() as FabricLayerTarget | undefined)?.id ?? null;
+    const hasChanged = reorderVisibleLayerObjects(
+      this.canvas,
+      page.layers,
+      editingGroupIds,
+    );
+    if (!hasChanged) return;
+    const nextActiveLayerId = activeLayerId ?? previousActiveLayerId;
+    if (nextActiveLayerId) {
+      const target = findObjectById(this.canvas, nextActiveLayerId);
+      if (target) {
+        this.canvas.setActiveObject(target);
+      }
+    }
+    this.canvas.requestRenderAll();
   }
   /** 更新文档真实尺寸，并同步刷新 Fabric 画布显示区域。 */
   public resizeCanvas(width: number, height: number): void {
@@ -527,7 +561,8 @@ export class EditorEngine {
     };
   }
   /** 在文档异步重载结束后统一恢复组位置与选中态。 */
-  private finalizeDocumentLoad(): void {
+  private finalizeDocumentLoad(loadToken: number): void {
+    if (loadToken !== this.documentLoadToken) return;
     this.applyPendingLoadedGroupBounds();
     this.applyPendingLoadedSelection();
     this.isDocumentLoading = false;

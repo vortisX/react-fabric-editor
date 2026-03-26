@@ -27,6 +27,13 @@ export type EditorSingleCommand =
       document: DesignDocument;
       activeLayerId: string | null;
     }
+  | {
+      type: "layers:reorder";
+      document: DesignDocument;
+      pageId: string;
+      activeLayerId: string | null;
+      editingGroupIds: string[];
+    }
   | { type: "canvas:resize"; width: number; height: number }
   | {
       type: "canvas:resize-and-translate";
@@ -518,9 +525,11 @@ export const buildLayerReorderCommand = (
   }
 
   return {
-    type: "document:load",
+    type: "layers:reorder",
     document: cloneDocument(doc),
+    pageId,
     activeLayerId,
+    editingGroupIds: [...editingGroupIds],
   };
 };
 

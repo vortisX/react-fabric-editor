@@ -164,22 +164,25 @@ export const normalizeVisibleGroupObject = async ({
   const currentGroup = findTopLevelObjectById(canvas, groupId);
   if (!groupLayer || !isTopLevelGroupObject(currentGroup)) return;
 
-  const objectIndex = canvas.getObjects().indexOf(currentGroup);
-  const shouldReselect =
-    preserveSelection && canvas.getActiveObject() === currentGroup;
-  const parentEditingGroupId = currentGroup.editingParentGroupId;
-  const previousBounds = currentGroup.getBoundingRect();
-  canvas.remove(currentGroup);
-
   const normalizedGroup = await createGroupObject({
     layer: groupLayer,
     createChildObject: createFabricObjectFromLayer,
   });
+
+  const latestGroup = findTopLevelObjectById(canvas, groupId);
+  if (!isTopLevelGroupObject(latestGroup)) return;
+
+  const objectIndex = canvas.getObjects().indexOf(latestGroup);
+  const shouldReselect =
+    preserveSelection && canvas.getActiveObject() === latestGroup;
+  const parentEditingGroupId = latestGroup.editingParentGroupId;
+  const previousBounds = latestGroup.getBoundingRect();
   normalizedGroup.editingParentGroupId = parentEditingGroupId;
   alignGroupObjectToBounds(normalizedGroup, {
     left: previousBounds.left,
     top: previousBounds.top,
   });
+  canvas.remove(latestGroup);
   canvas.insertAt(objectIndex, normalizedGroup as FabricGroupLayer);
 
   if (shouldReselect) {

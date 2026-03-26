@@ -162,6 +162,16 @@ export const applyWorkspaceEditorCommand = (
     return;
   }
 
+  if (editorCommand.type === 'layers:reorder') {
+    engineInstance.reorderLayers(
+      editorCommand.document,
+      editorCommand.pageId,
+      editorCommand.activeLayerId,
+      editorCommand.editingGroupIds,
+    );
+    return;
+  }
+
   if (editorCommand.type === 'document:load') {
     engineInstance.loadDocument(
       editorCommand.document,
