@@ -37,6 +37,9 @@ Zustand Store (`src/store/useEditorStore.ts`) 负责全盘状态：
 
 * **Fabric v7 API**：严格使用 Fabric.js 7.x 的 ES Module 语法（如 `import { Canvas, Textbox, FabricImage } from "fabric"`）。
 * **防闪烁与异步渲染 (Anti-Flicker & Async Rendering)**：当执行图层组合/解组、层级调整、或全盘 `document:load` 等操作时，由于图片等资源需要异步加载，**必须先通过 `Promise.all` 等待所有图层实例在内存中加载就绪后，再执行同步的 `canvas.remove/insertAt/clear` 和 `canvas.add` 操作**。绝不能先清空画布再等待异步加载，否则会导致明显的视觉闪烁。
+* **层级调整防闪烁铁律 (Reorder No-Flicker Rule)**：执行上移/下移/拖拽换位时，**默认必须走“原地重排”路径（如 `layers:reorder`）**，直接基于当前 Fabric 对象重排顺序；严禁退化为 `document:load -> canvas.clear()` 的整画布重建流程。重排期间应批处理（如临时关闭 `renderOnAddRemove`）并仅在末尾 `requestRenderAll()` 一次。
+* **组合操作防闪烁铁律 (Group No-Flicker Rule)**：执行“组合所选图层”或会触发文档重载的组合相关操作时，**必须先在内存中异步预构建完整新图层栈，再原子替换画布对象**，保证旧画面在替换前持续可见；严禁“先清空再等待资源加载”。同时必须防止并发加载回写旧结果（如使用 load token/cancel 机制）。
+* **防回归强约束 (No Regression Constraint)**：后续任何功能开发、重构或性能优化，**都不得破坏上述两条防闪烁规则**。凡是涉及图层层级、组合/解组、文档加载链路的改动，必须先自检并验证“画布持续可见、无闪烁、无抖动”。
 * **高频渲染优化**：调用更新时，**永远使用 `canvas.requestRenderAll()`** 而不是同步的 `canvas.renderAll()`。
 * **缩放重置策略 (Scale Normalization)**：Fabric 默认通过改变 `scaleX/scaleY` 来缩放对象。引擎在捕获到缩放事件时，**必须**将 `scale` 转换为实际的 `width/height/fontSize` 存入 Store，并强制将对象的 `scaleX/scaleY` 重置为 `1`。这保证了导出的 JSON 始终是标准尺寸。
 * **实时变形与排版同步 (Live Transform & Layout Sync)**：处理 `object:moving`、`object:scaling` 和 `object:resizing` 高频交互时，必须做节流更新。特别注意：**当拖拽文本框边缘改变宽度触发 `resizing` 时，必须在节流更新前调用 `target.initDimensions()` 和 `target.autoFitHeight()`，并立刻请求重绘 `canvas.requestRenderAll()`**，同时把重新计算后的真实 `width`、`height` 包含在 payload 中同步给 Store，确保 React 属性面板和画布表现完全一致。 
