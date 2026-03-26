@@ -17,6 +17,9 @@ export const SCHEMA_TO_FABRIC: Record<string, string> = {
   strokeWidth: 'boxStrokeWidth',
   strokeDashArray: 'boxStrokeDashArray',
   borderRadius: 'boxBorderRadius',
+  textStroke: 'stroke',
+  textStrokeWidth: 'strokeWidth',
+  textShadow: 'shadow',
 };
 
 // ==================== 全局样式 ====================

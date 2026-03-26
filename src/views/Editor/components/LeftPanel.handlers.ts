@@ -71,6 +71,12 @@ export const createDefaultTextLayer = (
 
     fill: "#333333",
 
+    textStroke: "",
+
+    textStrokeWidth: 0,
+
+    textShadow: null,
+
     textAlign: "left",
 
   };

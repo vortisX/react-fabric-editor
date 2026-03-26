@@ -56,6 +56,13 @@ export interface SolidFill {
 
 export type FillStyle = SolidFill | GradientFill;
 
+export interface TextShadowStyle {
+  color: string;
+  blur: number;
+  offsetX: number;
+  offsetY: number;
+}
+
 // 文本图层属性接口
 export interface TextLayer extends BaseLayer {
   type: "text";
@@ -75,6 +82,9 @@ export interface TextLayer extends BaseLayer {
   strokeWidth?: number; // 描边粗细
   strokeDashArray?: number[]; // 虚线数组
   borderRadius?: number; // 弧度 (边框圆角)
+  textStroke?: string;
+  textStrokeWidth?: number;
+  textShadow?: TextShadowStyle | null;
 }
 
 // 图片图层属性接口

@@ -1,4 +1,4 @@
-import { Textbox, FabricObject } from 'fabric';
+import { Textbox, FabricObject, Shadow } from 'fabric';
 import type { TextLayer } from '../../types/schema';
 import { fillStyleToFabric } from '../engine/fill';
 import { buildLayerInteractionProps } from '../engine/interaction';
@@ -223,6 +223,16 @@ export class CustomTextbox extends Textbox {
       width: layer.width,
       angle: layer.rotation,
       fill: fabricFill,
+      stroke: layer.textStroke ?? '',
+      strokeWidth: layer.textStrokeWidth ?? 0,
+      shadow: layer.textShadow
+        ? new Shadow({
+          color: layer.textShadow.color,
+          blur: layer.textShadow.blur,
+          offsetX: layer.textShadow.offsetX,
+          offsetY: layer.textShadow.offsetY,
+        })
+        : null,
       fontSize: layer.fontSize,
       fontFamily: layer.fontFamily,
       fontWeight: layer.fontWeight,

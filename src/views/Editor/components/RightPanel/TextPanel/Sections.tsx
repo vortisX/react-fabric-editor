@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { NumberInput, Select, FontSelect, Slider, ColorPicker, FillPicker, Button, Tooltip } from '../../../../../components/ui';
+import { NumberInput, Select, FontSelect, Slider, ColorPicker, FillPicker, Button, Tooltip, CollapsiblePanel } from '../../../../../components/ui';
 import {
   BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon,
   AlignLeftIcon, AlignCenterIcon, AlignRightIcon, AlignJustifyIcon,
@@ -39,6 +39,18 @@ const SectionHeader = ({ title }: { title: string }) => (
 interface TextSectionProps {
   layer: TextLayer;
   onPropChange: PropChangeHandler;
+}
+
+interface TextEffectsSectionProps extends TextSectionProps {
+  onStrokeChange: (color: string, width: number, options?: { commit?: boolean }) => void;
+  onShadowChange: (
+    color: string,
+    blur: number,
+    offsetX: number,
+    offsetY: number,
+    options?: { commit?: boolean },
+  ) => void;
+  onNeonGlow: (color: string, blur: number, options?: { commit?: boolean }) => void;
 }
 
 interface LayoutSectionProps {
@@ -262,6 +274,189 @@ export function BorderStyleSection({ layer, onPropChange }: TextSectionProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+export function TextEffectsSection({
+  layer,
+  onPropChange,
+  onStrokeChange,
+  onShadowChange,
+  onNeonGlow,
+}: TextEffectsSectionProps) {
+  const { t } = useTranslation();
+  const shadowColor = layer.textShadow?.color ?? '#000000';
+  const shadowBlur = layer.textShadow?.blur ?? 12;
+  const shadowOffsetX = layer.textShadow?.offsetX ?? 0;
+  const shadowOffsetY = layer.textShadow?.offsetY ?? 0;
+  const shadowEnabled = layer.textShadow !== null && layer.textShadow !== undefined;
+  const neonColor = layer.textShadow?.color ?? '#ff2d55';
+  const neonBlur = layer.textShadow?.blur ?? 28;
+
+  return (
+    <CollapsiblePanel
+      position="left"
+      defaultWidth={272}
+      collapsedWidth={272}
+      className="!z-0 !shadow-none bg-transparent border-b border-gray-100"
+    >
+      <div className="flex flex-col pb-3">
+        <SectionHeader title={t('rightPanel.textEffects')} />
+        <div className="px-4 flex flex-col gap-3">
+          <div className="flex flex-col gap-2 bg-[#f5f5f5] rounded p-2">
+            <div className="text-[11px] font-semibold text-gray-700">{t('rightPanel.textStroke')}</div>
+            <div className="flex items-center gap-2">
+              <ColorPicker
+                value={layer.textStroke || ''}
+                onChange={(color) => onStrokeChange(color, layer.textStrokeWidth ?? 0)}
+                size="small"
+                allowClear
+              />
+              <span className="text-xs text-gray-500">{t('rightPanel.strokeColor')}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-gray-400 w-10">{t('rightPanel.strokeWidth')}</span>
+              <Slider
+                className="flex-1"
+                min={0}
+                max={30}
+                value={layer.textStrokeWidth ?? 0}
+                onChange={(value) => onStrokeChange(layer.textStroke ?? '', value, { commit: false })}
+                onChangeEnd={(value) => onStrokeChange(layer.textStroke ?? '', value, { commit: true })}
+              />
+              <span className="text-[10px] text-gray-600 w-8 text-right">{layer.textStrokeWidth ?? 0}</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 bg-[#f5f5f5] rounded p-2">
+            <div className="flex items-center justify-between">
+              <div className="text-[11px] font-semibold text-gray-700">{t('rightPanel.dropShadow')}</div>
+              <Button
+                variant="text"
+                size="small"
+                className={shadowEnabled ? 'text-blue-600 bg-white shadow-sm' : 'text-gray-500'}
+                onClick={() => {
+                  if (shadowEnabled) {
+                    onPropChange('textShadow', null);
+                    return;
+                  }
+                  onShadowChange('#000000', 12, 4, 4, { commit: true });
+                }}
+              >
+                {shadowEnabled ? t('rightPanel.disable') : t('rightPanel.enable')}
+              </Button>
+            </div>
+            <div className={shadowEnabled ? 'flex flex-col gap-2' : 'flex flex-col gap-2 opacity-50 pointer-events-none'}>
+              <div className="flex items-center gap-2">
+                <ColorPicker
+                  value={shadowColor}
+                  onChange={(color) => onShadowChange(color, shadowBlur, shadowOffsetX, shadowOffsetY)}
+                  size="small"
+                />
+                <span className="text-xs text-gray-500">{t('rightPanel.shadowColor')}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-gray-400 w-10">{t('rightPanel.blur')}</span>
+                <Slider
+                  className="flex-1"
+                  min={0}
+                  max={80}
+                  value={shadowBlur}
+                  onChange={(value) => onShadowChange(shadowColor, value, shadowOffsetX, shadowOffsetY, { commit: false })}
+                  onChangeEnd={(value) => onShadowChange(shadowColor, value, shadowOffsetX, shadowOffsetY, { commit: true })}
+                />
+                <span className="text-[10px] text-gray-600 w-8 text-right">{shadowBlur}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-gray-400 w-10">{t('rightPanel.offsetX')}</span>
+                <Slider
+                  className="flex-1"
+                  min={-100}
+                  max={100}
+                  value={shadowOffsetX}
+                  onChange={(value) => onShadowChange(shadowColor, shadowBlur, value, shadowOffsetY, { commit: false })}
+                  onChangeEnd={(value) => onShadowChange(shadowColor, shadowBlur, value, shadowOffsetY, { commit: true })}
+                />
+                <span className="text-[10px] text-gray-600 w-8 text-right">{shadowOffsetX}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-gray-400 w-10">{t('rightPanel.offsetY')}</span>
+                <Slider
+                  className="flex-1"
+                  min={-100}
+                  max={100}
+                  value={shadowOffsetY}
+                  onChange={(value) => onShadowChange(shadowColor, shadowBlur, shadowOffsetX, value, { commit: false })}
+                  onChangeEnd={(value) => onShadowChange(shadowColor, shadowBlur, shadowOffsetX, value, { commit: true })}
+                />
+                <span className="text-[10px] text-gray-600 w-8 text-right">{shadowOffsetY}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 bg-[#f5f5f5] rounded p-2">
+            <div className="text-[11px] font-semibold text-gray-700">{t('rightPanel.effectPresets')}</div>
+            <div className="flex items-center gap-2">
+              <ColorPicker
+                value={neonColor}
+                onChange={(color) => onNeonGlow(color, neonBlur)}
+                size="small"
+              />
+              <span className="text-xs text-gray-500">{t('rightPanel.glowColor')}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-gray-400 w-10">{t('rightPanel.glowBlur')}</span>
+              <Slider
+                className="flex-1"
+                min={0}
+                max={120}
+                value={neonBlur}
+                onChange={(value) => onNeonGlow(neonColor, value, { commit: false })}
+                onChangeEnd={(value) => onNeonGlow(neonColor, value, { commit: true })}
+              />
+              <span className="text-[10px] text-gray-600 w-8 text-right">{neonBlur}</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1">
+              <Button
+                size="small"
+                variant="text"
+                className="text-[11px] bg-white text-red-500"
+                onClick={() => onNeonGlow('#ff2d55', 32)}
+              >
+                {t('rightPanel.presetNeonRed')}
+              </Button>
+              <Button
+                size="small"
+                variant="text"
+                className="text-[11px] bg-white text-blue-600"
+                onClick={() => {
+                  onStrokeChange('#1d4ed8', 2, { commit: true });
+                  onShadowChange('#0c4a6e', 4, 2, 2, { commit: true });
+                }}
+              >
+                {t('rightPanel.preset3DBlue')}
+              </Button>
+              <Button
+                size="small"
+                variant="text"
+                className="text-[11px] bg-white text-gray-700"
+                onClick={() => {
+                  const strokeColor =
+                    typeof layer.fill === 'string' && layer.fill
+                      ? layer.fill
+                      : '#111111';
+                  onStrokeChange(strokeColor, 2, { commit: true });
+                  onPropChange('fill', 'transparent');
+                  onPropChange('textShadow', null);
+                }}
+              >
+                {t('rightPanel.presetOutline')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </CollapsiblePanel>
   );
 }
 

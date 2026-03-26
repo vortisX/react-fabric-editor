@@ -1,7 +1,7 @@
-import { Textbox, type Canvas, type FabricObject } from "fabric";
+import { Shadow, Textbox, type Canvas, type FabricObject } from "fabric";
 
 import { useEditorStore } from "../../store/useEditorStore";
-import type { FillStyle, TextLayer } from "../../types/schema";
+import type { FillStyle, TextLayer, TextShadowStyle } from "../../types/schema";
 import { CustomTextbox } from "../text/CustomTextbox";
 import { fillStyleToFabric } from "./fill";
 import { LAYOUT_KEYS } from "./helpers";
@@ -34,6 +34,18 @@ export const buildTextLayerProps = (
   if (props.height !== undefined) {
     // 手动高度需要单独透传给 CustomTextbox，避免后续 autoFit 覆盖用户显式输入的高度。
     finalProps._manualHeight = props.height;
+  }
+
+  if (finalProps.shadow !== undefined) {
+    const rawShadow = finalProps.shadow as TextShadowStyle | null;
+    finalProps.shadow = rawShadow
+      ? new Shadow({
+        color: rawShadow.color,
+        blur: rawShadow.blur,
+        offsetX: rawShadow.offsetX,
+        offsetY: rawShadow.offsetY,
+      })
+      : null;
   }
 
   return finalProps;
